@@ -7,53 +7,11 @@ module Parser where
 
 import Control.Monad (void)
 import Data.Void
+import ParserUtils
+import Ast
 import Text.Megaparsec
 import Text.Megaparsec.Char
-import Text.Megaparsec.Expr
-import qualified Text.Megaparsec.Char.Lexer as L
-import Ast
 
-type Parser = Parsec Void String
-
--- | 'spaceConsumer' Consumes spaces and comments
-
-spaceConsumer :: Parser ()
-spaceConsumer = L.space space1 lineCmnt blockCmnt
-  where
-    lineCmnt  = L.skipLineComment "//"
-    blockCmnt = L.skipBlockComment "/*" "*/"
-
--- | 'lexeme' is a wrapper for lexemes that consumes all spaces and comments after a lexeme
-
-lexeme :: Parser a -> Parser a
-lexeme = L.lexeme spaceConsumer
-
--- | Symbol
-symbol :: String -> Parser String
-symbol = L.symbol spaceConsumer
-
--- | 'parens' parses something between parenthesis.
-parens :: Parser a -> Parser a
-parens = between (symbol "(") (symbol ")")
-
--- | 'braces' parses something between parenthesis.
-braces :: Parser a -> Parser a
-braces = between (symbol "{") (symbol "}")
-
--- | 'integer' parses an integer.
-
-integer :: Parser Integer
-integer = lexeme L.decimal
-
--- | 'semicolon' parses a semicolon.
-
-semicolon :: Parser String
-semicolon = symbol ";"
-
--- | 'kword' parses a reserved word (keyword).
-
-kword :: String -> Parser ()
-kword w = lexeme (string w *> notFollowedBy alphaNumChar)
 
 -- | 'mods' is a list of available modifiers
 mods :: [(Mod,String)]
@@ -114,18 +72,70 @@ bodyDecl = fieldDecl
 
 fieldDecl :: Parser [Decl]
 fieldDecl = do
+  mods <- modifiers
   fType <- jType
-  vars <- varDecls fType
+  vars <- varDecls mods fType
   semicolon
   return vars
-
 
 
 jType :: Parser Type
 jType = undefined
 
-varDecls :: Type -> Parser [Decl]
-varDecls = undefined
+varDecls :: [Mod] -> Type -> Parser [Decl]
+varDecls mods t = sepBy1 (varDecl mods t) comma
+
+varDecl :: [Mod] -> Type -> Parser Decl
+varDecl mods t = do
+  id <- identifier -- TODO Is this really just a simple identifier?
+  e <- optional assignment
+  return $ Field id mods t e
+  where
+    assignment :: Parser Expression
+    assignment = symbol "=" *> expression
+
+expression :: Parser Expression
+expression = conditional
+         <|> assignment
+
+conditional :: Parser Expression
+conditional = condOrExpr
+          <|> shortIf
+  where
+    -- | Short notation for If with question mark and colon
+    shortIf :: Parser Expression
+    shortIf = do
+      condE <- orExpr
+      _ <- symbol "?"
+      thenE <- expression
+      _ <- symbol ":"
+      elseE <- conditional -- TODO Why is this not a expression?
+      return $ If condE thenE elseE
+
+condOrExpr :: Parser Expression
+condOrExpr = undefined
+
+orExpr :: Parser Expression
+orExpr = binOp "||" (PrimBinOp Or) xorExpr -- TODO Why do LOGICALOR and OR exist?
+
+xorExpr :: Parser Expression
+xorExpr = binOp "^" (PrimBinOp XOr) andExpr
+
+andExpr :: Parser Expression
+andExpr = binOp "&&" (PrimBinOp And) eqExpr
+
+eqExpr :: Parser Expression
+eqExpr = try (binOp "==" (PrimBinOp Eq) eqExpr)
+     <|> binOp "!=" (\l r -> PrimUnOp Not $ PrimBinOp Eq l r) eqExpr
+
+relationExpr :: Parser Expression
+relationExpr = undefined
+
+assignment :: Parser Expression
+assignment = pure Assign -- TODO
+
+
+
 
 constructorDecl :: Parser [Decl]
 constructorDecl = undefined
@@ -133,84 +143,84 @@ constructorDecl = undefined
 methodDecl :: Parser [Decl]
 methodDecl = undefined
 
-stmts :: Parser [Stmt]
-stmts = sepBy stmt semicolon
 
-stmt :: Parser Stmt
-stmt = ifStmt
-  <|> whileStmt
-  <|> skipStmt
-  <|> assignStmt
-  <|> parens stmt
+-- stmts :: Parser [Stmt]
+-- stmts = sepBy stmt semicolon
 
-ifStmt :: Parser Stmt
-ifStmt = do
-  kword "if"
-  cond  <- bExpr
-  kword "then"
-  stmt1 <- stmt
-  kword "else"
-  stmt2 <- stmt
-  return (If cond stmt1 stmt2)
+-- stmt :: Parser Stmt
+-- stmt = ifStmt
+--   <|> whileStmt
+--   <|> skipStmt
+--   <|> assignStmt
+--   <|> parens stmt
 
-whileStmt :: Parser Stmt
-whileStmt = do
-  kword "while"
-  cond <- bExpr
-  kword "do"
-  stmt1 <- stmt
-  return (While cond stmt1)
+-- ifStmt :: Parser Stmt
+-- ifStmt = do
+--   kword "if"
+--   cond  <- bExpr
+--   kword "then"
+--   stmt1 <- stmt
+--   kword "else"
+--   stmt2 <- stmt
+--   return (If cond stmt1 stmt2)
 
-assignStmt :: Parser Stmt
-assignStmt = do
-  var  <- identifier
-  void (symbol ":=")
-  expr <- aExpr
-  return (Assign var expr)
+-- whileStmt :: Parser Stmt
+-- whileStmt = do
+--   kword "while"
+--   cond <- bExpr
+--   kword "do"
+--   stmt1 <- stmt
+--   return (While cond stmt1)
 
-skipStmt :: Parser Stmt
-skipStmt = Skip <$ kword "skip"
+-- assignStmt :: Parser Stmt
+-- assignStmt = do
+--   var  <- identifier
+--   void (symbol ":=")
+--   expr <- aExpr
+--   return (Assign var expr)
 
-aExpr :: Parser AExpr
-aExpr = makeExprParser aTerm aOperators
+-- skipStmt :: Parser Stmt
+-- skipStmt = Skip <$ kword "skip"
 
-bExpr :: Parser BExpr
-bExpr = makeExprParser bTerm bOperators
+-- aExpr :: Parser AExpr
+-- aExpr = makeExprParser aTerm aOperators
 
-aOperators :: [[Operator Parser AExpr]]
-aOperators =
-  [ [Prefix (Neg <$ symbol "-") ]
-  , [ InfixL (ABinary Multiply <$ symbol "*")
-    , InfixL (ABinary Divide   <$ symbol "/") ]
-  , [ InfixL (ABinary Add      <$ symbol "+")
-    , InfixL (ABinary Subtract <$ symbol "-") ]
-  ]
+-- bExpr :: Parser BExpr
+-- bExpr = makeExprParser bTerm bOperators
 
-bOperators :: [[Operator Parser BExpr]]
-bOperators =
-  [ [Prefix (Not <$ kword "not") ]
-  , [InfixL (BBinary And <$ kword "and")
-    , InfixL (BBinary Or <$ kword "or") ]
-  ]
+-- aOperators :: [[Operator Parser AExpr]]
+-- aOperators =
+--   [ [Prefix (Neg <$ symbol "-") ]
+--   , [ InfixL (ABinary Multiply <$ symbol "*")
+--     , InfixL (ABinary Divide   <$ symbol "/") ]
+--   , [ InfixL (ABinary Add      <$ symbol "+")
+--     , InfixL (ABinary Subtract <$ symbol "-") ]
+--   ]
 
-aTerm :: Parser AExpr
-aTerm = parens aExpr
-  <|> Var      <$> identifier
-  <|> IntConst <$> integer
+-- bOperators :: [[Operator Parser BExpr]]
+-- bOperators =
+--   [ [Prefix (Not <$ kword "not") ]
+--   , [InfixL (BBinary And <$ kword "and")
+--     , InfixL (BBinary Or <$ kword "or") ]
+--   ]
 
-bTerm :: Parser BExpr
-bTerm =  parens bExpr
-  <|> (BoolConst True  <$ kword "true")
-  <|> (BoolConst False <$ kword "false")
-  <|> rExpr
+-- aTerm :: Parser AExpr
+-- aTerm = parens aExpr
+--   <|> IntConst <$> integer
 
-rExpr :: Parser BExpr
-rExpr = do
-  a1 <- aExpr
-  op <- relation
-  a2 <- aExpr
-  return (RBinary op a1 a2)
+-- bTerm :: Parser BExpr
+-- bTerm =  parens bExpr
+--   <|> (BoolConst True  <$ kword "true")
+--   <|> (BoolConst False <$ kword "false")
+--   <|> rExpr
 
-relation :: Parser RBinOp
-relation = (symbol ">" *> pure Greater)
-  <|> (symbol "<" *> pure Less)
+-- rExpr :: Parser BExpr
+-- rExpr = do
+--   a1 <- aExpr
+--   op <- relation
+--   a2 <- aExpr
+--   return (RBinary op a1 a2)
+
+-- relation :: Parser RBinOp
+-- relation = (symbol ">" *> pure Greater)
+--   <|> (symbol "<" *> pure Less)
