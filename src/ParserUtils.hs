@@ -1,11 +1,15 @@
 module ParserUtils where
 
 import Data.Void
+import Control.Monad (void)
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 type Parser = Parsec Void String
+
+makeSingleton :: Parser a -> Parser [a]
+makeSingleton = (<$>) $ flip (:) []
 
 -- | 'spaceConsumer' Consumes spaces and comments
 
@@ -40,12 +44,12 @@ integer = lexeme L.decimal
 -- | 'semicolon' parses a semicolon.
 
 semicolon :: Parser ()
-semicolon = symbol ";" >>= const (pure ())
+semicolon = void (symbol ";")
 
 -- | 'comma' parses a comma.
 
 comma :: Parser ()
-comma = symbol "," >>= const (pure ())
+comma = void (symbol ",")
 
 -- | 'kword' parses a reserved word (keyword).
 

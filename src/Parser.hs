@@ -11,6 +11,8 @@ import ParserUtils
 import Ast
 import Text.Megaparsec
 import Text.Megaparsec.Char
+import Text.Megaparsec.Expr
+import qualified Text.Megaparsec.Char.Lexer as L
 
 
 -- | 'mods' is a list of available modifiers
@@ -23,15 +25,15 @@ kwords :: [String]
 kwords = ["if","then","else","while","do","skip","true","false","not","and","or","class"] ++ map snd mods
 
 
--- | 'identifier' parses an identifier. Identifiers start with a lower case letter.
+-- | 'name' parses an name. Names start with a lower case letter.
 
 -- TODO Add underscore and dollar sign as allowed chars
-identifier :: Parser Identifier
-identifier = Identifier <$> (lexeme . try) (p >>= check)
+name :: Parser Name
+name = Name <$> (lexeme . try) (p >>= check)
   where
     p       = (:) <$> letterChar <*> many alphaNumChar
     check x = if x `elem` kwords
-                then fail $ "keyword " ++ show x ++ " cannot be an identifier"
+                then fail $ "keyword " ++ show x ++ " cannot be an name"
                 else return x
 
 program :: Parser [Class]
@@ -46,7 +48,7 @@ decl = do
   mods <- modifiers
   kword "class"
   id <- identifier
-  body <- bodyDecls
+  body <- braces bodyDecls
   return $ Class id body
 
 modifiers :: Parser [Mod]
@@ -65,38 +67,34 @@ bodyDecls = concat <$> many bodyDecl
 
 -- TODO 'constructorDecl' and 'methodDecl' may be ambiguous and we should use 'try' one the first one then
 bodyDecl :: Parser [Decl]
-bodyDecl = fieldDecl
-       <|> constructorDecl
-       <|> methodDecl
-
+bodyDecl = try fieldDecl
+       <|> try (makeSingleton methodDecl)
+       <|> makeSingleton constructorDecl
 
 fieldDecl :: Parser [Decl]
 fieldDecl = do
   mods <- modifiers
-  fType <- jType
-  vars <- varDecls mods fType
+  fType <- identifier
+  vars <- map Field <$> varDecls mods fType
   semicolon
   return vars
 
 
-jType :: Parser Type
-jType = undefined
-
-varDecls :: [Mod] -> Type -> Parser [Decl]
+varDecls :: [Mod] -> Identifier -> Parser [VarDecl]
 varDecls mods t = sepBy1 (varDecl mods t) comma
 
-varDecl :: [Mod] -> Type -> Parser Decl
+varDecl :: [Mod] -> Identifier -> Parser VarDecl
 varDecl mods t = do
-  id <- identifier -- TODO Is this really just a simple identifier?
+  id <- name
   e <- optional assignment
-  return $ Field id mods t e
+  return $ (VarDecl id mods t e)
   where
     assignment :: Parser Expression
     assignment = symbol "=" *> expression
 
 expression :: Parser Expression
-expression = conditional
-         <|> assignment
+expression = try assignment
+         <|> conditional
 
 conditional :: Parser Expression
 conditional = condOrExpr
@@ -105,122 +103,252 @@ conditional = condOrExpr
     -- | Short notation for If with question mark and colon
     shortIf :: Parser Expression
     shortIf = do
-      condE <- orExpr
+      condE <- condOrExpr
       _ <- symbol "?"
       thenE <- expression
       _ <- symbol ":"
       elseE <- conditional -- TODO Why is this not a expression?
-      return $ If condE thenE elseE
+      return $ TernaryIf condE thenE elseE
 
 condOrExpr :: Parser Expression
-condOrExpr = undefined
+condOrExpr = makeExprParser (makeExprParser (unaryExpr <* spaceConsumer) aOperators) bOperators
 
-orExpr :: Parser Expression
-orExpr = binOp "||" (PrimBinOp Or) xorExpr -- TODO Why do LOGICALOR and OR exist?
+bOperators :: [[Operator Parser Expression]]
+bOperators =
+  [ [ InfixL (PrimBinOp Less       <$ symbol "<")
+    , InfixL (PrimBinOp LessEq     <$ symbol "<=")
+    , InfixL (PrimBinOp Greater    <$ symbol ">")
+    , InfixL (PrimBinOp GreaterEq  <$ symbol ">=")
+    , InfixL (PrimBinOp InstanceOf <$ kword "instanceof")]
+  , [ InfixL (PrimBinOp Eq         <$ symbol "==")
+    , InfixL (notEq                <$ symbol "!="
+             )]
+  , [ InfixL (PrimBinOp And        <$ symbol "&&")]
+  , [ InfixL (PrimBinOp Or         <$ symbol "||")]
+  ]
+  where
+    notEq l r = PrimUnOp Not $ PrimBinOp Eq l r
 
-xorExpr :: Parser Expression
-xorExpr = binOp "^" (PrimBinOp XOr) andExpr
+aOperators :: [[Operator Parser Expression]]
+aOperators =
+  [ [ Prefix  (PrimUnOp Neg       <$ symbol "-")
+    , Prefix  (id                 <$ symbol "+")
+    , Prefix  (PrimUnOp Not       <$ symbol "!")
+    , Prefix  (PrimUnOp BitCompl  <$ symbol "~")
+    , Prefix  (PrimUnOp PreIncr   <$ symbol "++")
+    , Postfix (PrimUnOp PostIncr  <$ symbol "++")
+    , Prefix  (PrimUnOp PreDecr   <$ symbol "--")
+    , Postfix (PrimUnOp PostDecr  <$ symbol "--")]
+  , [ InfixL  (PrimBinOp Multiply <$ symbol "*")
+    , InfixL  (PrimBinOp Divide   <$ symbol "/")
+    , InfixL  (PrimBinOp Modulo   <$ symbol "%")]
+  , [ InfixL  (PrimBinOp Add      <$ symbol "+")
+    , InfixL  (PrimBinOp Subtract <$ symbol "-")]
+  ]
 
-andExpr :: Parser Expression
-andExpr = binOp "&&" (PrimBinOp And) eqExpr
+unaryExpr :: Parser Expression
+unaryExpr = try primary <|> (Iden <$> identifier) <|> try castExpr
 
-eqExpr :: Parser Expression
-eqExpr = try (binOp "==" (PrimBinOp Eq) eqExpr)
-     <|> binOp "!=" (\l r -> PrimUnOp Not $ PrimBinOp Eq l r) eqExpr
+castExpr :: Parser Expression
+castExpr = fail "cast not implemented"
 
-relationExpr :: Parser Expression
-relationExpr = undefined
+-- we probably have to place some tries here
+primary :: Parser Expression
+primary = literal
+      <|> this
+      <|> parens expression
+      <|> instanceCreation
+      <|> try methodInvocation
+      <|> fieldAccess
+
+literal :: Parser Expression
+literal = Literal <$> (intLit <|> booleanLit <|> charLit <|> stringLit <|> nullLit)
+  where
+    intLit = IntegerL <$> integer
+    nullLit = Null <$ kword "null"
+
+booleanLit :: Parser Lit
+booleanLit = trueLit <|> falseLit
+  where
+    trueLit = BooleanL True <$ kword "true"
+    falseLit = BooleanL False <$ kword "false"
+
+charLit :: Parser Lit
+charLit = CharL <$> (char '\'' *> L.charLiteral <* char '\'')
+
+stringLit :: Parser Lit
+stringLit = StringL <$> (char '"' *> manyTill L.charLiteral (char '"'))
+
+this :: Parser Expression
+this = This <$ kword "this"
+
+instanceCreation :: Parser Expression
+instanceCreation = do
+  _ <- kword "new"
+  clType <- classType
+  args <- parens $ sepBy expression comma
+  return $ Instantiation clType args
+
+classType :: Parser Identifier
+classType = identifier
+
+identifier :: Parser Identifier
+identifier = createType <$> raw
+  where
+    raw :: Parser [Name]
+    raw = sepBy1 name (symbol ".")
+    createType :: [Name] -> Identifier
+    createType ids = Identifier (init ids) (last ids)
+
+-- TODO identifier and fieldAccess seem ambiguous. Does the grammar ensure differentiation?
+fieldAccess :: Parser Expression
+fieldAccess = parens primary <* symbol "." *> fieldAccess
+
+
+methodInvocation :: Parser Expression
+methodInvocation = do
+  fun <- Iden <$> identifier <|> parens primary
+  args <- parens $ sepBy expression comma
+  return $ Apply fun args
+
 
 assignment :: Parser Expression
-assignment = pure Assign -- TODO
+assignment = do
+  iden <- identifier
+  op <- assignmentOp
+  rhs <- expression
+  return $ Assign op iden rhs
 
+assignmentOp :: Parser AssignOp
+assignmentOp = choice $ map opParser assignOperators
+  where
+    opParser (rep,str) = rep <$ symbol str
+    -- TODO Complete for all operators
+    assignOperators = [(NormalAssign,"="),(PlusAssign,"+="),(MinusAssign,"-=")
+                      ,(MultiplyAssign,"*=")]
 
+constructorDecl :: Parser Decl
+constructorDecl = fail "not implemented"
 
+methodDecl :: Parser Decl
+methodDecl = do
+  mods   <- modifiers
+  rType  <- returnType
+  mName  <- name
+  params <- formalParamList
+  mBody  <- methodBody
+  return $ Method mName mods rType params mBody
+  where
+    returnType :: Parser Type
+    returnType = try (voidType <$ kword "void") <|> identifier
+    methodBody :: Parser (Maybe Expression)
+    methodBody = (Nothing <$ symbol ";") <|> (Just <$> block)
 
-constructorDecl :: Parser [Decl]
-constructorDecl = undefined
+formalParamList :: Parser [(Type,Name)]
+formalParamList = parens (sepBy formalParam comma)
+  where
+    formalParam = do paramType <- typeIden; paramName <- name; return (paramType,paramName)
 
-methodDecl :: Parser [Decl]
-methodDecl = undefined
+block :: Parser Expression
+block = (Block . concat) <$> braces (many blockStatement)
+  where
+    blockStatement = try localVarDecl <|> makeSingleton statement
 
+localVarDecl :: Parser [Expression]
+localVarDecl = do
+  vType <- typeIden
+  vDecs <- varDecls [] vType
+  semicolon
+  return $ map LocalVar vDecs
 
--- stmts :: Parser [Stmt]
--- stmts = sepBy stmt semicolon
+statement :: Parser Expression
+statement = try statementWithoutTrailing
+        <|> try ifStmt -- TODO Is it possible to merge if and ifThen?
+        <|> ifThenStmt
+        <|> whileStmt
 
--- stmt :: Parser Stmt
--- stmt = ifStmt
---   <|> whileStmt
---   <|> skipStmt
---   <|> assignStmt
---   <|> parens stmt
+ifStmt :: Parser Expression
+ifStmt = do
+  kword "if"
+  cond <- parens expression
+  thenBranch <- statement
+  return $ If cond thenBranch Nothing
 
--- ifStmt :: Parser Stmt
--- ifStmt = do
---   kword "if"
---   cond  <- bExpr
---   kword "then"
---   stmt1 <- stmt
---   kword "else"
---   stmt2 <- stmt
---   return (If cond stmt1 stmt2)
+ifThenStmt :: Parser Expression
+ifThenStmt = do
+  kword "if"
+  cond <- parens expression
+  thenBranch <- statementNoShortIf
+  kword "else"
+  elseBranch <- statement
+  return $ If cond thenBranch Nothing
 
--- whileStmt :: Parser Stmt
--- whileStmt = do
---   kword "while"
---   cond <- bExpr
---   kword "do"
---   stmt1 <- stmt
---   return (While cond stmt1)
+statementNoShortIf :: Parser Expression
+statementNoShortIf = statementWithoutTrailing
+                 <|> ifThenStmtNoShortIf
+                 <|> whileStmtNoShortIf
 
--- assignStmt :: Parser Stmt
--- assignStmt = do
---   var  <- identifier
---   void (symbol ":=")
---   expr <- aExpr
---   return (Assign var expr)
+ifThenStmtNoShortIf :: Parser Expression
+ifThenStmtNoShortIf = do
+  kword "if"
+  cond <- parens expression
+  thenBranch <- statementNoShortIf
+  kword "else"
+  elseBranch <- statementNoShortIf
+  return $ If cond thenBranch Nothing
 
--- skipStmt :: Parser Stmt
--- skipStmt = Skip <$ kword "skip"
+whileStmt :: Parser Expression
+whileStmt = do
+  kword "while"
+  cond <- parens expression
+  body <- statement
+  return $ While cond body
 
--- aExpr :: Parser AExpr
--- aExpr = makeExprParser aTerm aOperators
+whileStmtNoShortIf :: Parser Expression
+whileStmtNoShortIf = do
+  kword "while"
+  cond <- parens expression
+  body <- statementNoShortIf
+  return $ While cond body
 
--- bExpr :: Parser BExpr
--- bExpr = makeExprParser bTerm bOperators
+statementWithoutTrailing :: Parser Expression
+statementWithoutTrailing = block
+                       <|> try emptyStmt
+                       <|> try expressionStmt
+                       <|> returnStmt
+  where
+    -- TODO What should be the returned node here?
+    emptyStmt :: Parser Expression
+    emptyStmt = EmptyStmt <$ semicolon
 
--- aOperators :: [[Operator Parser AExpr]]
--- aOperators =
---   [ [Prefix (Neg <$ symbol "-") ]
---   , [ InfixL (ABinary Multiply <$ symbol "*")
---     , InfixL (ABinary Divide   <$ symbol "/") ]
---   , [ InfixL (ABinary Add      <$ symbol "+")
---     , InfixL (ABinary Subtract <$ symbol "-") ]
---   ]
+-- TODO Refactor this
+expressionStmt :: Parser Expression
+expressionStmt = statementExpr <* semicolon
+  where
+    statementExpr = try assignment
+                <|> preIncr
+                <|> preDecr
+                <|> try postIncr
+                <|> try postDecr
+                <|> methodInvocation
+                <|> instanceCreation
+    preIncr = PrimUnOp PreIncr <$> (symbol "++" *> unaryExpr)
+    preDecr = PrimUnOp PreDecr <$> (symbol "--" *> unaryExpr)
+    postIncr = do
+      e <- postFixExpr
+      ops <- many $ void (symbol "++")
+      return $  makeSeqOp PostIncr ops e
+    postDecr = do
+      e <- postFixExpr
+      ops <- many $ void (symbol "--")
+      return $  makeSeqOp PostDecr ops e
+    postFixExpr = try primary <|> (Iden <$> identifier)
+    makeSeqOp :: UnOp -> [()] -> Expression -> Expression
+    makeSeqOp constr ops e = foldr (\_ r -> PrimUnOp constr r) e ops
 
--- bOperators :: [[Operator Parser BExpr]]
--- bOperators =
---   [ [Prefix (Not <$ kword "not") ]
---   , [InfixL (BBinary And <$ kword "and")
---     , InfixL (BBinary Or <$ kword "or") ]
---   ]
+returnStmt :: Parser Expression
+returnStmt = Return <$> (kword "return" *> optional expression <* semicolon)
 
--- aTerm :: Parser AExpr
--- aTerm = parens aExpr
---   <|> IntConst <$> integer
-
--- bTerm :: Parser BExpr
--- bTerm =  parens bExpr
---   <|> (BoolConst True  <$ kword "true")
---   <|> (BoolConst False <$ kword "false")
---   <|> rExpr
-
--- rExpr :: Parser BExpr
--- rExpr = do
---   a1 <- aExpr
---   op <- relation
---   a2 <- aExpr
---   return (RBinary op a1 a2)
-
--- relation :: Parser RBinOp
--- relation = (symbol ">" *> pure Greater)
---   <|> (symbol "<" *> pure Less)
+-- TODO Add primitive types
+typeIden :: Parser Identifier
+typeIden = identifier
