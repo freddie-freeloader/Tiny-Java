@@ -13,3 +13,8 @@ A Compiler for a subset of Java :coffee:
   - use `stack test` to let stack run all tests in the `test` directory
   
     We use [hspec](http://hspec.github.io/) for our test suite.
+  - use `stack haddock` to generate html-documentation in `/docs`
+    The documentation is then available [here](https://freddie-freeloader.github.io/Tiny-Java/)
+
+## [Documentation](https://freddie-freeloader.github.io/Tiny-Java/)
+
