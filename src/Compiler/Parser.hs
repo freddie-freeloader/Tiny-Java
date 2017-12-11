@@ -6,7 +6,6 @@
 module Compiler.Parser where
 
 import Control.Monad (void)
-import Data.Void
 import Compiler.ParserUtils
 import Compiler.Ast
 import Text.Megaparsec
@@ -45,11 +44,11 @@ decls = many decl
 
 decl :: Parser Class
 decl = do
-  mods <- modifiers
+  modis <- modifiers
   kword "class"
-  id <- name
+  iden <- name
   body <- braces bodyDecls
-  return $ Class id mods body
+  return $ Class iden modis body
 
 modifiers :: Parser [Mod]
 modifiers = many modifier
@@ -73,24 +72,24 @@ bodyDecl = try fieldDecl
 
 fieldDecl :: Parser [Decl]
 fieldDecl = do
-  mods <- modifiers
+  modis <- modifiers
   fType <- identifier
-  vars <- map Field <$> varDecls mods fType
+  vars <- map Field <$> varDecls modis fType
   semicolon
   return vars
 
 
 varDecls :: [Mod] -> Identifier -> Parser [VarDecl]
-varDecls mods t = sepBy1 (varDecl mods t) comma
+varDecls modis t = sepBy1 (varDecl modis t) comma
 
 varDecl :: [Mod] -> Identifier -> Parser VarDecl
-varDecl mods t = do
-  id <- name
-  e <- optional assignment
-  return $ (VarDecl id mods t e)
+varDecl modis t = do
+  iden <- name
+  e <- optional varAssignment
+  return $ (VarDecl iden modis t e)
   where
-    assignment :: Parser Expression
-    assignment = symbol "=" *> expression
+    varAssignment :: Parser Expression
+    varAssignment = symbol "=" *> expression
 
 expression :: Parser Expression
 expression = try assignment
@@ -232,12 +231,12 @@ constructorDecl = fail "not implemented"
 
 methodDecl :: Parser Decl
 methodDecl = do
-  mods   <- modifiers
+  modis   <- modifiers
   rType  <- returnType
   mName  <- name
   params <- formalParamList
   mBody  <- methodBody
-  return $ Method mName mods rType params mBody
+  return $ Method mName modis rType params mBody
   where
     returnType :: Parser Type
     returnType = try (voidType <$ kword "void") <|> identifier
@@ -281,7 +280,7 @@ ifThenStmt = do
   thenBranch <- statementNoShortIf
   kword "else"
   elseBranch <- statement
-  return $ If cond thenBranch Nothing
+  return $ If cond thenBranch $ Just elseBranch
 
 statementNoShortIf :: Parser Expression
 statementNoShortIf = statementWithoutTrailing
@@ -295,7 +294,7 @@ ifThenStmtNoShortIf = do
   thenBranch <- statementNoShortIf
   kword "else"
   elseBranch <- statementNoShortIf
-  return $ If cond thenBranch Nothing
+  return $ If cond thenBranch $ Just elseBranch
 
 whileStmt :: Parser Expression
 whileStmt = do
