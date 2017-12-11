@@ -1,4 +1,4 @@
-module ParserUtils where
+module Compiler.ParserUtils where
 
 import Data.Void
 import Control.Monad (void)
@@ -7,6 +7,8 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 type Parser = Parsec Void String
+
+-- | 'makeSingleton' puts the result of a parser into an array
 
 makeSingleton :: Parser a -> Parser [a]
 makeSingleton = (<$>) $ flip (:) []

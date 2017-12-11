@@ -3,12 +3,12 @@
 --
 -- This module contains the complete parser
 
-module Parser where
+module Compiler.Parser where
 
 import Control.Monad (void)
 import Data.Void
-import ParserUtils
-import Ast
+import Compiler.ParserUtils
+import Compiler.Ast
 import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Expr
@@ -47,9 +47,9 @@ decl :: Parser Class
 decl = do
   mods <- modifiers
   kword "class"
-  id <- identifier
+  id <- name
   body <- braces bodyDecls
-  return $ Class id body
+  return $ Class id mods body
 
 modifiers :: Parser [Mod]
 modifiers = many modifier

@@ -1,9 +1,9 @@
 {-# LANGUAGE DuplicateRecordFields #-}
 -- | IMPORTANT/TODO: Name and Identifier are switched in meaning here compared to the grammar
-module Ast where
+module Compiler.Ast where
 
-data Class = Class Identifier [Decl]
-  deriving Show
+data Class = Class Name [Mod] [Decl]
+  deriving (Show,Eq)
 
 newtype Name = Name String
   deriving (Show,Eq)
@@ -25,7 +25,7 @@ data VarDecl = VarDecl { getName :: Name
                        , getMods :: [Mod]
                        , getType :: Type
                        , getRHS :: (Maybe Expression)}
-  deriving (Show)
+  deriving (Show, Eq)
 
 -- TODO Add some more named fields
 data Expression = TernaryIf Expression Expression Expression
@@ -44,14 +44,14 @@ data Expression = TernaryIf Expression Expression Expression
                 | Block [Expression]
                 | EmptyStmt -- TODO this should not be used
                 | Return (Maybe Expression)
-  deriving (Show)
+  deriving (Show, Eq)
 
 data Lit = IntegerL Integer
          | BooleanL Bool
          | CharL Char
          | StringL String
          | Null
-  deriving (Show)
+  deriving (Show, Eq)
 
 data AssignOp = NormalAssign
               | MultiplyAssign
@@ -65,7 +65,7 @@ data AssignOp = NormalAssign
               | AndAssign
               | XOrAssign
               | OrAssign
-  deriving (Show)
+  deriving (Show, Eq)
 
 data BinOp = And
            | Or
@@ -81,7 +81,7 @@ data BinOp = And
            | Add
            | Subtract
            | Modulo
-  deriving Show
+  deriving (Show, Eq)
 
 data UnOp = Not
           | Neg
@@ -90,7 +90,7 @@ data UnOp = Not
           | PreDecr
           | PostDecr
           | BitCompl -- | ~ Operator performs a bitwise complement
-  deriving Show
+  deriving (Show, Eq)
 
 -- TODO Add some more named fields
 data Decl = Field VarDecl
@@ -101,7 +101,7 @@ data Decl = Field VarDecl
                    , getReturnType :: Type
                    , getParamList :: [(Type, Name)]
                    , getBody :: Maybe Expression}
-   deriving Show
+  deriving (Show, Eq)
 
 data Mod = Public | Protected | Private | Static | Abstract
-  deriving Show
+  deriving (Show, Eq)
