@@ -1,5 +1,10 @@
+-- |
+-- Module      :  Compiler.Ast
+--
+-- This module contains the AST
+
 {-# LANGUAGE DuplicateRecordFields #-}
--- | IMPORTANT/TODO: Name and Identifier are switched in meaning here compared to the grammar
+
 module Compiler.Ast where
 
 data Class = Class Name [Mod] [Decl]
@@ -9,7 +14,7 @@ newtype Name = Name String
   deriving (Show,Eq)
 
 
--- | TODO What are Types?
+-- TODO What are Types?
 data Identifier = Identifier { path :: [Name]
                              , getName :: Name }
   deriving (Show, Eq)
@@ -20,7 +25,7 @@ voidType = Identifier [] $ Name "void"
 -- TODO Add primitive types here
 type Type = Identifier
 
--- | Is used for field definitions and local variable declarations
+-- | 'VarDecl' is used for field definitions and local variable declarations
 data VarDecl = VarDecl { getName :: Name
                        , getMods :: [Mod]
                        , getType :: Type
@@ -32,10 +37,10 @@ data Expression = TernaryIf Expression Expression Expression
                 | If Expression Expression (Maybe Expression)
                 | While { getCond :: Expression, getBody :: Expression }
                 | Assign AssignOp Identifier Expression
-                | PrimBinOp BinOp Expression Expression -- | Primitive binary Operation
-                | PrimUnOp UnOp Expression -- | Primitive unary Operation
-                | This -- | this keyword
-                | Instantiation Identifier [Expression] -- | Using new
+                | PrimBinOp BinOp Expression Expression -- ^ Primitive binary Operation
+                | PrimUnOp UnOp Expression -- ^ Primitive unary Operation
+                | This -- ^ this keyword
+                | Instantiation Identifier [Expression] -- ^ Using new
                 | Iden Identifier
                 | Select Expression Name
                 | Apply Expression [Expression]
@@ -89,7 +94,7 @@ data UnOp = Not
           | PostIncr
           | PreDecr
           | PostDecr
-          | BitCompl -- | ~ Operator performs a bitwise complement
+          | BitCompl -- ^ Tilde-Operator performs a bitwise complement
   deriving (Show, Eq)
 
 -- TODO Add some more named fields

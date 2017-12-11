@@ -1,0 +1,25 @@
+name: tiny-java
+version: 0.0.0
+synopsis: A compiler for a subset of Java
+description: This compiler was programmed a part of the \"Compilerbau\" seminar by Prof. Martin Plümicke.
+license: MIT
+copyright: No one
+author: Morty Smith <morty@smith.net>
+maintainer: Rick Sanchez <rick@sanchez.net>
+
+ghc-options: -Wall
+
+dependencies:
+ - base == 4.*
+ - megaparsec == 6.*
+
+library:
+  source-dirs: src
+
+tests:
+  spec:
+    source-dirs: test
+    main: Spec.hs
+    dependencies:
+      - tiny-java
+      - hspec == 2.*

@@ -1,5 +1,5 @@
 -- |
--- Module      :  Parser
+-- Module      :  Compiler.Parser
 --
 -- This module contains the complete parser
 

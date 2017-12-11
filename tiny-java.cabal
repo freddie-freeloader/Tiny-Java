@@ -2,62 +2,46 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b3bcdcc156768ff2a48e107cf2d431bce9df3636cb287fa0435415d0cf9d8936
+-- hash: 2fd7eeb19f57dbaa3968a880a9a657838855b15383056b5a9a2c9de15a4d8951
 
 name:           tiny-java
-version:        0.1.0.0
-synopsis:       Short description of your package
-description:    Please see the README on Github at <https://github.com/githubuser/tiny-java#readme>
-homepage:       https://github.com/githubuser/tiny-java#readme
-bug-reports:    https://github.com/githubuser/tiny-java/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2017 Author name here
-license:        BSD3
+version:        0.0.0
+synopsis:       A compiler for a subset of Java
+description:    This compiler was programmed a part of the \"Compilerbau\" seminar by Prof. Martin Plümicke.
+author:         Morty Smith <morty@smith.net>
+maintainer:     Rick Sanchez <rick@sanchez.net>
+copyright:      No one
+license:        MIT
 build-type:     Simple
 cabal-version:  >= 1.10
-
-source-repository head
-  type: git
-  location: https://github.com/githubuser/tiny-java
 
 library
   hs-source-dirs:
       src
-  build-depends: base >=4.7 && <5
-               , megaparsec >= 6.2 && <7
-               , ansi-wl-pprint
-  exposed-modules:
-      Compiler.Parser
-    , Compiler.Ast
-    , Compiler.ParserUtils
-  other-modules:
-      Paths_tiny_java
-  default-language: Haskell2010
-
-executable tiny-java-exe
-  main-is: Main.hs
-  hs-source-dirs:
-      app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall
   build-depends:
-      base >=4.7 && <5
-    , tiny-java
+      base ==4.*
+    , megaparsec ==6.*
+  exposed-modules:
+      Compiler.Ast
+      Compiler.Parser
+      Compiler.ParserUtils
   other-modules:
       Paths_tiny_java
   default-language: Haskell2010
 
-test-suite tiny-java-test
+test-suite spec
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall
   build-depends:
-      base >=4.7 && <5
-    , megaparsec >= 6.2 && <7
+      base ==4.*
+    , hspec ==2.*
+    , megaparsec ==6.*
     , tiny-java
-    , hspec == 2.*
   other-modules:
+      Compiler.ParserSpec
       Paths_tiny_java
   default-language: Haskell2010

@@ -1,3 +1,8 @@
+-- |
+-- Module      :  Compiler.ParserUtils
+--
+-- This module contains definitions and some useful helpers for "Compiler.Parser"
+
 module Compiler.ParserUtils where
 
 import Data.Void
@@ -13,7 +18,7 @@ type Parser = Parsec Void String
 makeSingleton :: Parser a -> Parser [a]
 makeSingleton = (<$>) $ flip (:) []
 
--- | 'spaceConsumer' Consumes spaces and comments
+-- | 'spaceConsumer' consumes spaces and comments
 
 spaceConsumer :: Parser ()
 spaceConsumer = L.space space1 lineCmnt blockCmnt
