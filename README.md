@@ -14,6 +14,7 @@ A Compiler for a subset of Java :coffee:
   
     We use [hspec](http://hspec.github.io/) for our test suite.
   - use `stack haddock` to generate html-documentation in `/docs`
+  
     The documentation is then available [here](https://freddie-freeloader.github.io/Tiny-Java/) (after pushing the updated
     `docs`-directory).
 ## [Documentation](https://freddie-freeloader.github.io/Tiny-Java/)
