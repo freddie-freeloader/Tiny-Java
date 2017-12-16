@@ -3,7 +3,7 @@
 --
 -- This module contains the complete parser
 
-module Compiler.Parser where
+module Compiler.Parser(parseTestString) where
 
 import           Compiler.Ast
 import           Compiler.ParserUtils
@@ -36,6 +36,11 @@ identifier = Identifier <$> (lexeme . try) (p >>= check)
                 then fail $ "keyword " ++ show x ++ " cannot be an identifier"
                 else return x
 
+-- | 'parseTest' parses a String, which contains multiple classes
+parseTestString :: String -> Maybe [Class]
+parseTestString = parseMaybe program
+
+-- | 'program' parses multiple classes
 program :: Parser [Class]
 program = between spaceConsumer eof decls
 
