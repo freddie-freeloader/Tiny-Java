@@ -24,15 +24,15 @@ kwords :: [String]
 kwords = ["if","then","else","while","do","skip","true","false","not","and","or","class"] ++ map snd mods
 
 
--- | 'name' parses an name. Names start with a lower case letter.
+-- | 'identifier' parses an identifier.
 
 -- TODO Add underscore and dollar sign as allowed chars
-name :: Parser Name
-name = Name <$> (lexeme . try) (p >>= check)
+identifier :: Parser Identifier
+identifier = Identifier <$> (lexeme . try) (p >>= check)
   where
     p       = (:) <$> letterChar <*> many alphaNumChar
     check x = if x `elem` kwords
-                then fail $ "keyword " ++ show x ++ " cannot be an name"
+                then fail $ "keyword " ++ show x ++ " cannot be an identifier"
                 else return x
 
 program :: Parser [Class]
@@ -46,7 +46,7 @@ decl :: Parser Class
 decl = do
   modis <- modifiers
   kword "class"
-  iden <- name
+  iden <- identifier
   body <- braces bodyDecls
   return $ Class iden modis body
 
@@ -73,18 +73,18 @@ bodyDecl = try fieldDecl
 fieldDecl :: Parser [Decl]
 fieldDecl = do
   modis <- modifiers
-  fType <- identifier
+  fType <- name
   vars <- map Field <$> varDecls modis fType
   semicolon
   return vars
 
 
-varDecls :: [Mod] -> Identifier -> Parser [VarDecl]
+varDecls :: [Mod] -> Name -> Parser [VarDecl]
 varDecls modis t = sepBy1 (varDecl modis t) comma
 
-varDecl :: [Mod] -> Identifier -> Parser VarDecl
+varDecl :: [Mod] -> Name -> Parser VarDecl
 varDecl modis t = do
-  iden <- name
+  iden <- identifier
   e <- optional varAssignment
   return $ (VarDecl iden modis t e)
   where
@@ -146,7 +146,7 @@ aOperators =
   ]
 
 unaryExpr :: Parser Expression
-unaryExpr = try primary <|> (Iden <$> identifier) <|> try castExpr
+unaryExpr = try primary <|> (Iden <$> name) <|> try castExpr
 
 castExpr :: Parser Expression
 castExpr = fail "cast not implemented"
@@ -188,32 +188,32 @@ instanceCreation = do
   args <- parens $ sepBy expression comma
   return $ Instantiation clType args
 
-classType :: Parser Identifier
-classType = identifier
+classType :: Parser Name
+classType = name
 
-identifier :: Parser Identifier
-identifier = createType <$> raw
+name :: Parser Name
+name = createType <$> raw
   where
-    raw :: Parser [Name]
-    raw = sepBy1 name (symbol ".")
-    createType :: [Name] -> Identifier
-    createType ids = Identifier (init ids) (last ids)
+    raw :: Parser [Identifier]
+    raw = sepBy1 identifier (symbol ".")
+    createType :: [Identifier] -> Name
+    createType ids = Name (init ids) (last ids)
 
--- TODO identifier and fieldAccess seem ambiguous. Does the grammar ensure differentiation?
+-- TODO name and fieldAccess seem ambiguous. Does the grammar ensure differentiation?
 fieldAccess :: Parser Expression
 fieldAccess = parens primary <* symbol "." *> fieldAccess
 
 
 methodInvocation :: Parser Expression
 methodInvocation = do
-  fun <- Iden <$> identifier <|> parens primary
+  fun <- Iden <$> name <|> parens primary
   args <- parens $ sepBy expression comma
   return $ Apply fun args
 
 
 assignment :: Parser Expression
 assignment = do
-  iden <- identifier
+  iden <- name
   op <- assignmentOp
   rhs <- expression
   return $ Assign op iden rhs
@@ -233,20 +233,20 @@ methodDecl :: Parser Decl
 methodDecl = do
   modis   <- modifiers
   rType  <- returnType
-  mName  <- name
+  mIdentifier  <- identifier
   params <- formalParamList
   mBody  <- methodBody
-  return $ Method mName modis rType params mBody
+  return $ Method mIdentifier modis rType params mBody
   where
     returnType :: Parser Type
-    returnType = try (voidType <$ kword "void") <|> identifier
+    returnType = try (voidType <$ kword "void") <|> name
     methodBody :: Parser (Maybe Expression)
     methodBody = (Nothing <$ symbol ";") <|> (Just <$> block)
 
-formalParamList :: Parser [(Type,Name)]
+formalParamList :: Parser [(Type,Identifier)]
 formalParamList = parens (sepBy formalParam comma)
   where
-    formalParam = do paramType <- typeIden; paramName <- name; return (paramType,paramName)
+    formalParam = do paramType <- typeIden; paramIdentifier <- identifier; return (paramType,paramIdentifier)
 
 block :: Parser Expression
 block = (Block . concat) <$> braces (many blockStatement)
@@ -341,7 +341,7 @@ expressionStmt = statementExpr <* semicolon
       e <- postFixExpr
       ops <- many $ void (symbol "--")
       return $  makeSeqOp PostDecr ops e
-    postFixExpr = try primary <|> (Iden <$> identifier)
+    postFixExpr = try primary <|> (Iden <$> name)
     makeSeqOp :: UnOp -> [()] -> Expression -> Expression
     makeSeqOp constr ops e = foldr (\_ r -> PrimUnOp constr r) e ops
 
@@ -349,5 +349,5 @@ returnStmt :: Parser Expression
 returnStmt = Return <$> (kword "return" *> optional expression <* semicolon)
 
 -- TODO Add primitive types
-typeIden :: Parser Identifier
-typeIden = identifier
+typeIden :: Parser Name
+typeIden = name

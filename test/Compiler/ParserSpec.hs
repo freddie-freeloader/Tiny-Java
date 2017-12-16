@@ -14,4 +14,4 @@ spec :: Spec
 spec = do
   describe "program" $ do
      it "parses an empty class" $ do
-       (parseMaybe program "class Test {}") `shouldBe` Just [(Class (Name "Test") [] [])]
+       (parseMaybe program "class Test {}") `shouldBe` Just [(Class (Identifier "Test") [] [])]

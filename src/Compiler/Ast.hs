@@ -7,26 +7,26 @@
 
 module Compiler.Ast where
 
-data Class = Class Name [Mod] [Decl]
+data Class = Class Identifier [Mod] [Decl]
   deriving (Show,Eq)
 
-newtype Name = Name String
+newtype Identifier = Identifier String
   deriving (Show,Eq)
 
 
 -- TODO What are Types?
-data Identifier = Identifier { path :: [Name]
-                             , getName :: Name }
+data Name = Name { path :: [Identifier]
+                             , getIdentifier :: Identifier }
   deriving (Show, Eq)
 
-voidType :: Identifier
-voidType = Identifier [] $ Name "void"
+voidType :: Name
+voidType = Name [] $ Identifier "void"
 
 -- TODO Add primitive types here
-type Type = Identifier
+type Type = Name
 
 -- | 'VarDecl' is used for field definitions and local variable declarations
-data VarDecl = VarDecl { getName :: Name
+data VarDecl = VarDecl { getIdentifier :: Identifier
                        , getMods :: [Mod]
                        , getType :: Type
                        , getRHS :: (Maybe Expression)}
@@ -36,13 +36,13 @@ data VarDecl = VarDecl { getName :: Name
 data Expression = TernaryIf Expression Expression Expression
                 | If Expression Expression (Maybe Expression)
                 | While { getCond :: Expression, getBody :: Expression }
-                | Assign AssignOp Identifier Expression
+                | Assign AssignOp Name Expression
                 | PrimBinOp BinOp Expression Expression -- ^ Primitive binary Operation
                 | PrimUnOp UnOp Expression -- ^ Primitive unary Operation
                 | This -- ^ this keyword
-                | Instantiation Identifier [Expression] -- ^ Using new
-                | Iden Identifier
-                | Select Expression Name
+                | Instantiation Name [Expression] -- ^ Using new
+                | Iden Name
+                | Select Expression Identifier
                 | Apply Expression [Expression]
                 | Literal Lit
                 | LocalVar VarDecl
@@ -101,10 +101,10 @@ data UnOp = Not
 data Decl = Field VarDecl
             -- TODO Maybe switch Mods and Type
           | Constructor
-          | Method { getName :: Name
+          | Method { getIdentifier :: Identifier
                    , getMods :: [Mod]
                    , getReturnType :: Type
-                   , getParamList :: [(Type, Name)]
+                   , getParamList :: [(Type, Identifier)]
                    , getBody :: Maybe Expression}
   deriving (Show, Eq)
 
