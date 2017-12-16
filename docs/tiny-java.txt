@@ -53,32 +53,44 @@ binOp :: String -> (a -> a -> a) -> Parser a -> Parser a
 
 -- | This module contains the AST
 module Compiler.Ast
+newtype Identifier
+Identifier :: String -> Identifier
+data Name
+Name :: [Identifier] -> Identifier -> Name
+[$sel:path:Name] :: Name -> [Identifier]
+[$sel:getIdentifier:Name] :: Name -> Identifier
+
+-- | <a>Class</a> is a java class definition
 data Class
-Class :: Name -> [Mod] -> [Decl] -> Class
-newtype Name
-Name :: String -> Name
-data Identifier
-Identifier :: [Name] -> Name -> Identifier
-[$sel:path:Identifier] :: Identifier -> [Name]
-[$sel:getName:Identifier] :: Identifier -> Name
-voidType :: Identifier
-type Type = Identifier
+Class :: Identifier -> [Mod] -> [Decl] -> Class
+
+-- | <a>Decl</a> are the different types of declaration inside a class
+data Decl
+Field :: VarDecl -> Decl
+Constructor :: Decl
+Method :: Identifier -> [Mod] -> Type -> [(Type, Identifier)] -> Maybe Statement -> Decl
+[$sel:getIdentifier:Field] :: Decl -> Identifier
+[$sel:getMods:Field] :: Decl -> [Mod]
+[$sel:getReturnType:Field] :: Decl -> Type
+[$sel:getParamList:Field] :: Decl -> [(Type, Identifier)]
+[$sel:getBody:Field] :: Decl -> Maybe Statement
+voidType :: Name
+type Type = Name
 
 -- | <a>VarDecl</a> is used for field definitions and local variable
 --   declarations
 data VarDecl
-VarDecl :: Name -> [Mod] -> Type -> (Maybe Expression) -> VarDecl
-[$sel:getName:VarDecl] :: VarDecl -> Name
+VarDecl :: Identifier -> [Mod] -> Type -> (Maybe Expression) -> VarDecl
+[$sel:getIdentifier:VarDecl] :: VarDecl -> Identifier
 [$sel:getMods:VarDecl] :: VarDecl -> [Mod]
 [$sel:getType:VarDecl] :: VarDecl -> Type
 [$sel:getRHS:VarDecl] :: VarDecl -> (Maybe Expression)
+
+-- | <a>Expression</a> is something that can be evaluated to a value
 data Expression
+
+-- | Short notation if, e.g. <tt>someBool? 42 : 1337</tt>
 TernaryIf :: Expression -> Expression -> Expression -> Expression
-If :: Expression -> Expression -> (Maybe Expression) -> Expression
-While :: Expression -> Expression -> Expression
-[$sel:getCond:TernaryIf] :: Expression -> Expression
-[$sel:getBody:TernaryIf] :: Expression -> Expression
-Assign :: AssignOp -> Identifier -> Expression -> Expression
 
 -- | Primitive binary Operation
 PrimBinOp :: BinOp -> Expression -> Expression -> Expression
@@ -89,16 +101,33 @@ PrimUnOp :: UnOp -> Expression -> Expression
 -- | this keyword
 This :: Expression
 
--- | Using new
-Instantiation :: Identifier -> [Expression] -> Expression
-Iden :: Identifier -> Expression
-Select :: Expression -> Name -> Expression
-Apply :: Expression -> [Expression] -> Expression
+-- | A variable
+Iden :: Name -> Expression
+Select :: Expression -> Identifier -> Expression
+
+-- | All kind of literals
 Literal :: Lit -> Expression
-LocalVar :: VarDecl -> Expression
-Block :: [Expression] -> Expression
-EmptyStmt :: Expression
-Return :: (Maybe Expression) -> Expression
+
+-- | A StatementExpression that is in an Expression position
+ExprExprStmt :: StmtExpr -> Expression
+data Statement
+While :: Expression -> Maybe Statement -> Statement
+[$sel:getCond:While] :: Statement -> Expression
+[$sel:getBody:While] :: Statement -> Maybe Statement
+If :: Expression -> (Maybe Statement) -> (Maybe Statement) -> Statement
+Block :: [Statement] -> Statement
+Return :: (Maybe Expression) -> Statement
+LocalVar :: VarDecl -> Statement
+StmtExprStmt :: StmtExpr -> Statement
+data StmtExpr
+Assign :: AssignOp -> Name -> Expression -> StmtExpr
+
+-- | Using new
+Instantiation :: Name -> [Expression] -> StmtExpr
+Apply :: Expression -> [Expression] -> StmtExpr
+
+-- | UnOp that returns something and has a side effect
+SEUnOp :: IncrOrDecr -> Expression -> StmtExpr
 data Lit
 IntegerL :: Integer -> Lit
 BooleanL :: Bool -> Lit
@@ -133,25 +162,17 @@ Divide :: BinOp
 Add :: BinOp
 Subtract :: BinOp
 Modulo :: BinOp
+data IncrOrDecr
+PreIncr :: IncrOrDecr
+PostIncr :: IncrOrDecr
+PreDecr :: IncrOrDecr
+PostDecr :: IncrOrDecr
 data UnOp
 Not :: UnOp
 Neg :: UnOp
-PreIncr :: UnOp
-PostIncr :: UnOp
-PreDecr :: UnOp
-PostDecr :: UnOp
 
 -- | Tilde-Operator performs a bitwise complement
 BitCompl :: UnOp
-data Decl
-Field :: VarDecl -> Decl
-Constructor :: Decl
-Method :: Name -> [Mod] -> Type -> [(Type, Name)] -> Maybe Expression -> Decl
-[$sel:getName:Field] :: Decl -> Name
-[$sel:getMods:Field] :: Decl -> [Mod]
-[$sel:getReturnType:Field] :: Decl -> Type
-[$sel:getParamList:Field] :: Decl -> [(Type, Name)]
-[$sel:getBody:Field] :: Decl -> Maybe Expression
 data Mod
 Public :: Mod
 Protected :: Mod
@@ -162,24 +183,30 @@ instance GHC.Classes.Eq Compiler.Ast.Class
 instance GHC.Show.Show Compiler.Ast.Class
 instance GHC.Classes.Eq Compiler.Ast.Decl
 instance GHC.Show.Show Compiler.Ast.Decl
-instance GHC.Classes.Eq Compiler.Ast.Expression
-instance GHC.Show.Show Compiler.Ast.Expression
+instance GHC.Classes.Eq Compiler.Ast.Statement
+instance GHC.Show.Show Compiler.Ast.Statement
 instance GHC.Classes.Eq Compiler.Ast.VarDecl
 instance GHC.Show.Show Compiler.Ast.VarDecl
 instance GHC.Classes.Eq Compiler.Ast.Mod
 instance GHC.Show.Show Compiler.Ast.Mod
+instance GHC.Classes.Eq Compiler.Ast.StmtExpr
+instance GHC.Show.Show Compiler.Ast.StmtExpr
+instance GHC.Classes.Eq Compiler.Ast.Expression
+instance GHC.Show.Show Compiler.Ast.Expression
 instance GHC.Classes.Eq Compiler.Ast.UnOp
 instance GHC.Show.Show Compiler.Ast.UnOp
+instance GHC.Classes.Eq Compiler.Ast.IncrOrDecr
+instance GHC.Show.Show Compiler.Ast.IncrOrDecr
 instance GHC.Classes.Eq Compiler.Ast.BinOp
 instance GHC.Show.Show Compiler.Ast.BinOp
 instance GHC.Classes.Eq Compiler.Ast.AssignOp
 instance GHC.Show.Show Compiler.Ast.AssignOp
 instance GHC.Classes.Eq Compiler.Ast.Lit
 instance GHC.Show.Show Compiler.Ast.Lit
-instance GHC.Classes.Eq Compiler.Ast.Identifier
-instance GHC.Show.Show Compiler.Ast.Identifier
 instance GHC.Classes.Eq Compiler.Ast.Name
 instance GHC.Show.Show Compiler.Ast.Name
+instance GHC.Classes.Eq Compiler.Ast.Identifier
+instance GHC.Show.Show Compiler.Ast.Identifier
 
 
 -- | This module contains the complete parser
@@ -191,8 +218,8 @@ mods :: [(Mod, String)]
 -- | <a>kwords</a> is a list of reserved words (keywords).
 kwords :: [String]
 
--- | <a>name</a> parses an name. Names start with a lower case letter.
-name :: Parser Name
+-- | <a>identifier</a> parses an identifier.
+identifier :: Parser Identifier
 program :: Parser [Class]
 
 -- | <a>decls</a> parses class declarations
@@ -203,8 +230,8 @@ modifier :: Parser Mod
 bodyDecls :: Parser [Decl]
 bodyDecl :: Parser [Decl]
 fieldDecl :: Parser [Decl]
-varDecls :: [Mod] -> Identifier -> Parser [VarDecl]
-varDecl :: [Mod] -> Identifier -> Parser VarDecl
+varDecls :: [Mod] -> Name -> Parser [VarDecl]
+varDecl :: [Mod] -> Name -> Parser VarDecl
 expression :: Parser Expression
 conditional :: Parser Expression
 condOrExpr :: Parser Expression
@@ -218,26 +245,26 @@ booleanLit :: Parser Lit
 charLit :: Parser Lit
 stringLit :: Parser Lit
 this :: Parser Expression
-instanceCreation :: Parser Expression
-classType :: Parser Identifier
-identifier :: Parser Identifier
+instanceCreation :: Parser StmtExpr
+classType :: Parser Name
+name :: Parser Name
 fieldAccess :: Parser Expression
-methodInvocation :: Parser Expression
-assignment :: Parser Expression
+methodInvocation :: Parser StmtExpr
+assignment :: Parser StmtExpr
 assignmentOp :: Parser AssignOp
 constructorDecl :: Parser Decl
 methodDecl :: Parser Decl
-formalParamList :: Parser [(Type, Name)]
-block :: Parser Expression
-localVarDecl :: Parser [Expression]
-statement :: Parser Expression
-ifStmt :: Parser Expression
-ifThenStmt :: Parser Expression
-statementNoShortIf :: Parser Expression
-ifThenStmtNoShortIf :: Parser Expression
-whileStmt :: Parser Expression
-whileStmtNoShortIf :: Parser Expression
-statementWithoutTrailing :: Parser Expression
-expressionStmt :: Parser Expression
-returnStmt :: Parser Expression
-typeIden :: Parser Identifier
+formalParamList :: Parser [(Type, Identifier)]
+block :: Parser Statement
+localVarDecl :: Parser [Statement]
+statement :: Parser (Maybe Statement)
+ifStmt :: Parser Statement
+ifThenStmt :: Parser Statement
+statementNoShortIf :: Parser (Maybe Statement)
+ifThenStmtNoShortIf :: Parser Statement
+whileStmt :: Parser Statement
+whileStmtNoShortIf :: Parser Statement
+statementWithoutTrailing :: Parser (Maybe Statement)
+expressionStmt :: Parser Statement
+returnStmt :: Parser Statement
+typeIden :: Parser Name
