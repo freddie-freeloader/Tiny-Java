@@ -16,7 +16,7 @@ newtype Identifier = Identifier String
 
 -- TODO What are Types?
 data Name = Name { path :: [Identifier]
-                             , getIdentifier :: Identifier }
+                 , getIdentifier :: Identifier }
   deriving (Show, Eq)
 
 voidType :: Name
@@ -34,21 +34,29 @@ data VarDecl = VarDecl { getIdentifier :: Identifier
 
 -- TODO Add some more named fields
 data Expression = TernaryIf Expression Expression Expression
-                | If Expression Expression (Maybe Expression)
-                | While { getCond :: Expression, getBody :: Expression }
-                | Assign AssignOp Name Expression
                 | PrimBinOp BinOp Expression Expression -- ^ Primitive binary Operation
                 | PrimUnOp UnOp Expression -- ^ Primitive unary Operation
                 | This -- ^ this keyword
-                | Instantiation Name [Expression] -- ^ Using new
                 | Iden Name
                 | Select Expression Identifier
-                | Apply Expression [Expression]
                 | Literal Lit
-                | LocalVar VarDecl
-                | Block [Expression]
-                | EmptyStmt -- TODO this should not be used
-                | Return (Maybe Expression)
+                | ExprExprStmt StmtExpr
+  deriving (Show, Eq)
+
+data Statement = While { getCond :: Expression
+                       , getBody :: Statement } -- TODO Shouldn't this be a list?
+               | If Expression Statement (Maybe Statement)
+               | Block [Statement]
+               | Return (Maybe Expression)
+               | LocalVar VarDecl
+               | EmptyStmt -- TODO this should not be used
+               | StmtExprStmt StmtExpr
+  deriving (Show, Eq)
+
+data StmtExpr = Assign AssignOp Name Expression
+              | Instantiation Name [Expression] -- ^ Using new
+              | Apply Expression [Expression]
+              | SEUnOp IncrOrDecr Expression -- ^ UnOp that returns something and has a side effect
   deriving (Show, Eq)
 
 data Lit = IntegerL Integer
@@ -58,6 +66,7 @@ data Lit = IntegerL Integer
          | Null
   deriving (Show, Eq)
 
+-- TODO Should we desugar those?
 data AssignOp = NormalAssign
               | MultiplyAssign
               | DivideAssign
@@ -88,12 +97,14 @@ data BinOp = And
            | Modulo
   deriving (Show, Eq)
 
+data IncrOrDecr = PreIncr
+                | PostIncr
+                | PreDecr
+                | PostDecr
+  deriving (Show, Eq)
+
 data UnOp = Not
           | Neg
-          | PreIncr
-          | PostIncr
-          | PreDecr
-          | PostDecr
           | BitCompl -- ^ Tilde-Operator performs a bitwise complement
   deriving (Show, Eq)
 
@@ -105,7 +116,7 @@ data Decl = Field VarDecl
                    , getMods :: [Mod]
                    , getReturnType :: Type
                    , getParamList :: [(Type, Identifier)]
-                   , getBody :: Maybe Expression}
+                   , getBody :: Maybe Statement}
   deriving (Show, Eq)
 
 data Mod = Public | Protected | Private | Static | Abstract

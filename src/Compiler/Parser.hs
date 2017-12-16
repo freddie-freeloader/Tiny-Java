@@ -92,16 +92,16 @@ varDecl modis t = do
     varAssignment = symbol "=" *> expression
 
 expression :: Parser Expression
-expression = try assignment
+expression = try (ExprExprStmt <$> assignment)
          <|> conditional
 
 conditional :: Parser Expression
 conditional = condOrExpr
-          <|> shortIf
+          <|> ternaryIf
   where
     -- | Short notation for If with question mark and colon
-    shortIf :: Parser Expression
-    shortIf = do
+    ternaryIf :: Parser Expression
+    ternaryIf = do
       condE <- condOrExpr
       _ <- symbol "?"
       thenE <- expression
@@ -134,16 +134,19 @@ aOperators =
     , Prefix  (id                 <$ symbol "+")
     , Prefix  (PrimUnOp Not       <$ symbol "!")
     , Prefix  (PrimUnOp BitCompl  <$ symbol "~")
-    , Prefix  (PrimUnOp PreIncr   <$ symbol "++")
-    , Postfix (PrimUnOp PostIncr  <$ symbol "++")
-    , Prefix  (PrimUnOp PreDecr   <$ symbol "--")
-    , Postfix (PrimUnOp PostDecr  <$ symbol "--")]
+    , Prefix  (makeUnOp PreIncr   <$ symbol "++")
+    , Postfix (makeUnOp PostIncr  <$ symbol "++")
+    , Prefix  (makeUnOp PreDecr   <$ symbol "--")
+    , Postfix (makeUnOp PostDecr  <$ symbol "--")]
   , [ InfixL  (PrimBinOp Multiply <$ symbol "*")
     , InfixL  (PrimBinOp Divide   <$ symbol "/")
     , InfixL  (PrimBinOp Modulo   <$ symbol "%")]
   , [ InfixL  (PrimBinOp Add      <$ symbol "+")
     , InfixL  (PrimBinOp Subtract <$ symbol "-")]
   ]
+  where
+    makeUnOp :: IncrOrDecr -> Expression -> Expression
+    makeUnOp op e = ExprExprStmt $ SEUnOp op e
 
 unaryExpr :: Parser Expression
 unaryExpr = try primary <|> (Iden <$> name) <|> try castExpr
@@ -156,8 +159,8 @@ primary :: Parser Expression
 primary = literal
       <|> this
       <|> parens expression
-      <|> instanceCreation
-      <|> try methodInvocation
+      <|> ExprExprStmt <$> instanceCreation
+      <|> try (ExprExprStmt <$> methodInvocation)
       <|> fieldAccess
 
 literal :: Parser Expression
@@ -181,7 +184,7 @@ stringLit = StringL <$> (char '"' *> manyTill L.charLiteral (char '"'))
 this :: Parser Expression
 this = This <$ kword "this"
 
-instanceCreation :: Parser Expression
+instanceCreation :: Parser StmtExpr
 instanceCreation = do
   _ <- kword "new"
   clType <- classType
@@ -204,14 +207,14 @@ fieldAccess :: Parser Expression
 fieldAccess = parens primary <* symbol "." *> fieldAccess
 
 
-methodInvocation :: Parser Expression
+methodInvocation :: Parser StmtExpr
 methodInvocation = do
   fun <- Iden <$> name <|> parens primary
   args <- parens $ sepBy expression comma
   return $ Apply fun args
 
 
-assignment :: Parser Expression
+assignment :: Parser StmtExpr
 assignment = do
   iden <- name
   op <- assignmentOp
@@ -240,7 +243,7 @@ methodDecl = do
   where
     returnType :: Parser Type
     returnType = try (voidType <$ kword "void") <|> name
-    methodBody :: Parser (Maybe Expression)
+    methodBody :: Parser (Maybe Statement)
     methodBody = (Nothing <$ symbol ";") <|> (Just <$> block)
 
 formalParamList :: Parser [(Type,Identifier)]
@@ -248,32 +251,33 @@ formalParamList = parens (sepBy formalParam comma)
   where
     formalParam = do paramType <- typeIden; paramIdentifier <- identifier; return (paramType,paramIdentifier)
 
-block :: Parser Expression
+block :: Parser Statement
 block = (Block . concat) <$> braces (many blockStatement)
   where
+    blockStatement :: Parser [Statement]
     blockStatement = try localVarDecl <|> makeSingleton statement
 
-localVarDecl :: Parser [Expression]
+localVarDecl :: Parser [Statement]
 localVarDecl = do
   vType <- typeIden
   vDecs <- varDecls [] vType
   semicolon
   return $ map LocalVar vDecs
 
-statement :: Parser Expression
+statement :: Parser Statement
 statement = try statementWithoutTrailing
         <|> try ifStmt -- TODO Is it possible to merge if and ifThen?
         <|> ifThenStmt
         <|> whileStmt
 
-ifStmt :: Parser Expression
+ifStmt :: Parser Statement
 ifStmt = do
   kword "if"
   cond <- parens expression
   thenBranch <- statement
   return $ If cond thenBranch Nothing
 
-ifThenStmt :: Parser Expression
+ifThenStmt :: Parser Statement
 ifThenStmt = do
   kword "if"
   cond <- parens expression
@@ -282,12 +286,12 @@ ifThenStmt = do
   elseBranch <- statement
   return $ If cond thenBranch $ Just elseBranch
 
-statementNoShortIf :: Parser Expression
+statementNoShortIf :: Parser Statement
 statementNoShortIf = statementWithoutTrailing
                  <|> ifThenStmtNoShortIf
                  <|> whileStmtNoShortIf
 
-ifThenStmtNoShortIf :: Parser Expression
+ifThenStmtNoShortIf :: Parser Statement
 ifThenStmtNoShortIf = do
   kword "if"
   cond <- parens expression
@@ -296,34 +300,35 @@ ifThenStmtNoShortIf = do
   elseBranch <- statementNoShortIf
   return $ If cond thenBranch $ Just elseBranch
 
-whileStmt :: Parser Expression
+whileStmt :: Parser Statement
 whileStmt = do
   kword "while"
   cond <- parens expression
   body <- statement
   return $ While cond body
 
-whileStmtNoShortIf :: Parser Expression
+whileStmtNoShortIf :: Parser Statement
 whileStmtNoShortIf = do
   kword "while"
   cond <- parens expression
   body <- statementNoShortIf
   return $ While cond body
 
-statementWithoutTrailing :: Parser Expression
+statementWithoutTrailing :: Parser Statement
 statementWithoutTrailing = block
                        <|> try emptyStmt
                        <|> try expressionStmt
                        <|> returnStmt
   where
     -- TODO What should be the returned node here?
-    emptyStmt :: Parser Expression
+    emptyStmt :: Parser Statement
     emptyStmt = EmptyStmt <$ semicolon
 
 -- TODO Refactor this
-expressionStmt :: Parser Expression
-expressionStmt = statementExpr <* semicolon
+expressionStmt :: Parser Statement
+expressionStmt = StmtExprStmt <$> statementExpr <* semicolon
   where
+    statementExpr :: Parser StmtExpr
     statementExpr = try assignment
                 <|> preIncr
                 <|> preDecr
@@ -331,21 +336,21 @@ expressionStmt = statementExpr <* semicolon
                 <|> try postDecr
                 <|> methodInvocation
                 <|> instanceCreation
-    preIncr = PrimUnOp PreIncr <$> (symbol "++" *> unaryExpr)
-    preDecr = PrimUnOp PreDecr <$> (symbol "--" *> unaryExpr)
+    preIncr = SEUnOp PreIncr <$> (symbol "++" *> unaryExpr)
+    preDecr = SEUnOp PreDecr <$> (symbol "--" *> unaryExpr)
     postIncr = do
       e <- postFixExpr
       ops <- many $ void (symbol "++")
-      return $  makeSeqOp PostIncr ops e
+      return $  (case makeSeqOp PostIncr ops e of ExprExprStmt inner -> inner; _ -> undefined)
     postDecr = do
       e <- postFixExpr
       ops <- many $ void (symbol "--")
-      return $  makeSeqOp PostDecr ops e
+      return $ (case makeSeqOp PostDecr ops e of ExprExprStmt inner -> inner; _ -> undefined)
     postFixExpr = try primary <|> (Iden <$> name)
-    makeSeqOp :: UnOp -> [()] -> Expression -> Expression
-    makeSeqOp constr ops e = foldr (\_ r -> PrimUnOp constr r) e ops
+    makeSeqOp :: IncrOrDecr -> [()] -> Expression -> Expression
+    makeSeqOp constr ops e = foldr (\_ r -> (\x y-> ExprExprStmt $ SEUnOp x y) constr r) e ops
 
-returnStmt :: Parser Expression
+returnStmt :: Parser Statement
 returnStmt = Return <$> (kword "return" *> optional expression <* semicolon)
 
 -- TODO Add primitive types
