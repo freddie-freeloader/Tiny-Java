@@ -80,11 +80,11 @@ type Type = Name
 -- | <a>VarDecl</a> is used for field definitions and local variable
 --   declarations
 data VarDecl
-VarDecl :: Identifier -> [Mod] -> Type -> (Maybe Expression) -> VarDecl
+VarDecl :: Identifier -> [Mod] -> Type -> Maybe Expression -> VarDecl
 [$sel:getIdentifier:VarDecl] :: VarDecl -> Identifier
 [$sel:getMods:VarDecl] :: VarDecl -> [Mod]
 [$sel:getType:VarDecl] :: VarDecl -> Type
-[$sel:getRHS:VarDecl] :: VarDecl -> (Maybe Expression)
+[$sel:getRHS:VarDecl] :: VarDecl -> Maybe Expression
 
 -- | <a>Expression</a> is something that can be evaluated to a value
 data Expression
@@ -114,7 +114,10 @@ data Statement
 While :: Expression -> Maybe Statement -> Statement
 [$sel:getCond:While] :: Statement -> Expression
 [$sel:getBody:While] :: Statement -> Maybe Statement
-If :: Expression -> (Maybe Statement) -> (Maybe Statement) -> Statement
+If :: Expression -> Maybe Statement -> Maybe Statement -> Statement
+[$sel:getCond:While] :: Statement -> Expression
+[$sel:getThenStmt:While] :: Statement -> Maybe Statement
+[$sel:getElseStmt:While] :: Statement -> Maybe Statement
 Block :: [Statement] -> Statement
 Return :: (Maybe Expression) -> Statement
 LocalVar :: VarDecl -> Statement

@@ -5,14 +5,14 @@
 
 module Compiler.Parser where
 
-import Control.Monad (void)
-import Compiler.ParserUtils
-import Compiler.Ast
-import Text.Megaparsec
-import Text.Megaparsec.Char
-import Text.Megaparsec.Expr
+import           Compiler.Ast
+import           Compiler.ParserUtils
+import           Control.Monad              (void)
+import           Data.Maybe                 (catMaybes)
+import           Text.Megaparsec
+import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
-import Data.Maybe (catMaybes)
+import           Text.Megaparsec.Expr
 
 
 -- | 'mods' is a list of available modifiers
@@ -87,7 +87,7 @@ varDecl :: [Mod] -> Name -> Parser VarDecl
 varDecl modis t = do
   iden <- identifier
   e <- optional varAssignment
-  return $ (VarDecl iden modis t e)
+  return $ VarDecl iden modis t e
   where
     varAssignment :: Parser Expression
     varAssignment = symbol "=" *> expression
@@ -285,7 +285,7 @@ ifThenStmt = do
   thenBranch <- statementNoShortIf
   kword "else"
   elseBranch <- statement
-  return $ If cond thenBranch $ elseBranch
+  return $ If cond thenBranch elseBranch
 
 statementNoShortIf :: Parser (Maybe Statement)
 statementNoShortIf = statementWithoutTrailing
@@ -299,7 +299,7 @@ ifThenStmtNoShortIf = do
   thenBranch <- statementNoShortIf
   kword "else"
   elseBranch <- statementNoShortIf
-  return $ If cond thenBranch $ elseBranch
+  return $ If cond thenBranch elseBranch
 
 whileStmt :: Parser Statement
 whileStmt = do
@@ -342,11 +342,11 @@ expressionStmt = StmtExprStmt <$> statementExpr <* semicolon
     postIncr = do
       e <- postFixExpr
       ops <- many $ void (symbol "++")
-      return $  (case makeSeqOp PostIncr ops e of ExprExprStmt inner -> inner; _ -> undefined)
+      return (case makeSeqOp PostIncr ops e of ExprExprStmt inner -> inner; _ -> undefined)
     postDecr = do
       e <- postFixExpr
       ops <- many $ void (symbol "--")
-      return $ (case makeSeqOp PostDecr ops e of ExprExprStmt inner -> inner; _ -> undefined)
+      return (case makeSeqOp PostDecr ops e of ExprExprStmt inner -> inner; _ -> undefined)
     postFixExpr = try primary <|> (Iden <$> name)
     makeSeqOp :: IncrOrDecr -> [()] -> Expression -> Expression
     makeSeqOp constr ops e = foldr (\_ r -> (\x y-> ExprExprStmt $ SEUnOp x y) constr r) e ops

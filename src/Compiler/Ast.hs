@@ -10,7 +10,7 @@ module Compiler.Ast where
 newtype Identifier = Identifier String
   deriving (Show,Eq)
 
-data Name = Name { path :: [Identifier]
+data Name = Name { path          :: [Identifier]
                  , getIdentifier :: Identifier }
   deriving (Show, Eq)
 
@@ -22,10 +22,10 @@ data Class = Class Identifier [Mod] [Decl]
 data Decl = Field VarDecl
           | Constructor
           | Method { getIdentifier :: Identifier
-                   , getMods :: [Mod]
+                   , getMods       :: [Mod]
                    , getReturnType :: Type
-                   , getParamList :: [(Type, Identifier)]
-                   , getBody :: Maybe Statement}
+                   , getParamList  :: [(Type, Identifier)]
+                   , getBody       :: Maybe Statement}
   deriving (Show, Eq)
 
 -- TODO Should this be a type or name?
@@ -37,9 +37,9 @@ type Type = Name
 
 -- | 'VarDecl' is used for field definitions and local variable declarations
 data VarDecl = VarDecl { getIdentifier :: Identifier
-                       , getMods :: [Mod]
-                       , getType :: Type
-                       , getRHS :: (Maybe Expression)}
+                       , getMods       :: [Mod]
+                       , getType       :: Type
+                       , getRHS        :: Maybe Expression}
   deriving (Show, Eq)
 
 -- TODO Add some more named fields
@@ -56,7 +56,9 @@ data Expression = TernaryIf Expression Expression Expression -- ^ Short notation
 
 data Statement = While { getCond :: Expression
                        , getBody :: Maybe Statement }
-               | If Expression (Maybe Statement) (Maybe Statement)
+               | If { getCond     :: Expression
+                    , getThenStmt :: Maybe Statement
+                    , getElseStmt :: Maybe Statement }
                | Block [Statement]
                | Return (Maybe Expression)
                | LocalVar VarDecl

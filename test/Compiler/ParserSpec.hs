@@ -1,9 +1,9 @@
 module Compiler.ParserSpec (main, spec) where
 
-import Test.Hspec
-import Compiler.Parser
-import Text.Megaparsec
-import Compiler.Ast
+import           Compiler.Ast
+import           Compiler.Parser
+import           Test.Hspec
+import           Text.Megaparsec
 
 -- `main` is here so that this module can be run from GHCi on its own.  It is
 -- not needed for automatic spec discovery.
