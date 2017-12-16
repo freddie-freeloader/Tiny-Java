@@ -44,12 +44,11 @@ data Expression = TernaryIf Expression Expression Expression
   deriving (Show, Eq)
 
 data Statement = While { getCond :: Expression
-                       , getBody :: Statement } -- TODO Shouldn't this be a list?
-               | If Expression Statement (Maybe Statement)
+                       , getBody :: Maybe Statement }
+               | If Expression (Maybe Statement) (Maybe Statement)
                | Block [Statement]
                | Return (Maybe Expression)
                | LocalVar VarDecl
-               | EmptyStmt -- TODO this should not be used
                | StmtExprStmt StmtExpr
   deriving (Show, Eq)
 

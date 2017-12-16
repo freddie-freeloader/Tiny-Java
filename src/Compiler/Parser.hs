@@ -12,6 +12,7 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Char.Lexer as L
+import Data.Maybe (catMaybes)
 
 
 -- | 'mods' is a list of available modifiers
@@ -255,7 +256,7 @@ block :: Parser Statement
 block = (Block . concat) <$> braces (many blockStatement)
   where
     blockStatement :: Parser [Statement]
-    blockStatement = try localVarDecl <|> makeSingleton statement
+    blockStatement = try localVarDecl <|> catMaybes <$> makeSingleton statement
 
 localVarDecl :: Parser [Statement]
 localVarDecl = do
@@ -264,11 +265,11 @@ localVarDecl = do
   semicolon
   return $ map LocalVar vDecs
 
-statement :: Parser Statement
+statement :: Parser (Maybe Statement)
 statement = try statementWithoutTrailing
-        <|> try ifStmt -- TODO Is it possible to merge if and ifThen?
-        <|> ifThenStmt
-        <|> whileStmt
+        <|> try (Just <$> ifStmt) -- TODO Is it possible to merge if and ifThen?
+        <|> Just <$> ifThenStmt
+        <|> Just <$> whileStmt
 
 ifStmt :: Parser Statement
 ifStmt = do
@@ -284,12 +285,12 @@ ifThenStmt = do
   thenBranch <- statementNoShortIf
   kword "else"
   elseBranch <- statement
-  return $ If cond thenBranch $ Just elseBranch
+  return $ If cond thenBranch $ elseBranch
 
-statementNoShortIf :: Parser Statement
+statementNoShortIf :: Parser (Maybe Statement)
 statementNoShortIf = statementWithoutTrailing
-                 <|> ifThenStmtNoShortIf
-                 <|> whileStmtNoShortIf
+                 <|> Just <$> ifThenStmtNoShortIf
+                 <|> Just <$> whileStmtNoShortIf
 
 ifThenStmtNoShortIf :: Parser Statement
 ifThenStmtNoShortIf = do
@@ -298,7 +299,7 @@ ifThenStmtNoShortIf = do
   thenBranch <- statementNoShortIf
   kword "else"
   elseBranch <- statementNoShortIf
-  return $ If cond thenBranch $ Just elseBranch
+  return $ If cond thenBranch $ elseBranch
 
 whileStmt :: Parser Statement
 whileStmt = do
@@ -314,15 +315,15 @@ whileStmtNoShortIf = do
   body <- statementNoShortIf
   return $ While cond body
 
-statementWithoutTrailing :: Parser Statement
-statementWithoutTrailing = block
+statementWithoutTrailing :: Parser (Maybe Statement)
+statementWithoutTrailing = Just <$> block
                        <|> try emptyStmt
-                       <|> try expressionStmt
-                       <|> returnStmt
+                       <|> try (Just <$> expressionStmt)
+                       <|> Just <$> returnStmt
   where
     -- TODO What should be the returned node here?
-    emptyStmt :: Parser Statement
-    emptyStmt = EmptyStmt <$ semicolon
+    emptyStmt :: Parser (Maybe Statement)
+    emptyStmt = Nothing <$ semicolon
 
 -- TODO Refactor this
 expressionStmt :: Parser Statement
