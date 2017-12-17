@@ -11,15 +11,14 @@ import Text.Megaparsec
 import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
+-- | 'Parser' is using Void for custom errors. This might change someday.
 type Parser = Parsec Void String
 
 -- | 'makeSingleton' puts the result of a parser into an array
-
 makeSingleton :: Parser a -> Parser [a]
 makeSingleton = (<$>) $ flip (:) []
 
 -- | 'spaceConsumer' consumes spaces and comments
-
 spaceConsumer :: Parser ()
 spaceConsumer = L.space space1 lineCmnt blockCmnt
   where
@@ -27,7 +26,6 @@ spaceConsumer = L.space space1 lineCmnt blockCmnt
     blockCmnt = L.skipBlockComment "/*" "*/"
 
 -- | 'lexeme' is a wrapper for lexemes that consumes all spaces and comments after a lexeme
-
 lexeme :: Parser a -> Parser a
 lexeme = L.lexeme spaceConsumer
 
@@ -44,22 +42,18 @@ braces :: Parser a -> Parser a
 braces = between (symbol "{") (symbol "}")
 
 -- | 'integer' parses an integer.
-
 integer :: Parser Integer
 integer = lexeme L.decimal
 
 -- | 'semicolon' parses a semicolon.
-
 semicolon :: Parser ()
 semicolon = void (symbol ";")
 
 -- | 'comma' parses a comma.
-
 comma :: Parser ()
 comma = void (symbol ",")
 
 -- | 'kword' parses a reserved word (keyword).
-
 kword :: String -> Parser ()
 kword w = lexeme (string w *> notFollowedBy alphaNumChar)
 

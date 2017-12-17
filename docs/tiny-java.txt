@@ -13,6 +13,9 @@
 -- | This module contains definitions and some useful helpers for
 --   <a>Compiler.Parser</a>
 module Compiler.ParserUtils
+
+-- | <a>Parser</a> is using Void for custom errors. This might change
+--   someday.
 type Parser = Parsec Void String
 
 -- | <a>makeSingleton</a> puts the result of a parser into an array
@@ -53,12 +56,43 @@ binOp :: String -> (a -> a -> a) -> Parser a -> Parser a
 
 -- | This module contains the AST
 module Compiler.Ast
+
+-- | <a>Identifier</a> is a simple identifier, e.g. for a parameter
 newtype Identifier
 Identifier :: String -> Identifier
+
+-- | <a>Name</a> represents a Name of something with the relative path to
+--   it
 data Name
 Name :: [Identifier] -> Identifier -> Name
 [$sel:path:Name] :: Name -> [Identifier]
 [$sel:getIdentifier:Name] :: Name -> Identifier
+
+-- | <a>Type</a> are different types of types
+data Type
+
+-- | Represents a primitive java type
+PrimType :: PType -> Type
+
+-- | Represents a reference type
+RefType :: Name -> Type
+
+-- | Represents the void type in java
+JVoid :: Type
+
+-- | <a>PType</a> represent the primitive types
+data PType
+Boolean :: PType
+Int :: PType
+Char :: PType
+
+-- | <a>Mod</a> are the different Modifiers in Java
+data Mod
+Public :: Mod
+Protected :: Mod
+Private :: Mod
+Static :: Mod
+Abstract :: Mod
 
 -- | <a>Class</a> is a java class definition
 data Class
@@ -74,8 +108,6 @@ Method :: Identifier -> [Mod] -> Type -> [(Type, Identifier)] -> Maybe Statement
 [$sel:getReturnType:Field] :: Decl -> Type
 [$sel:getParamList:Field] :: Decl -> [(Type, Identifier)]
 [$sel:getBody:Field] :: Decl -> Maybe Statement
-voidType :: Name
-type Type = Name
 
 -- | <a>VarDecl</a> is used for field definitions and local variable
 --   declarations
@@ -91,6 +123,9 @@ data Expression
 
 -- | Short notation if, e.g. <tt>someBool? 42 : 1337</tt>
 TernaryIf :: Expression -> Expression -> Expression -> Expression
+[$sel:getCond:TernaryIf] :: Expression -> Expression
+[$sel:getElseStmt:TernaryIf] :: Expression -> Expression
+[$sel:getThenStmt:TernaryIf] :: Expression -> Expression
 
 -- | Primitive binary Operation
 PrimBinOp :: BinOp -> Expression -> Expression -> Expression
@@ -110,6 +145,10 @@ Literal :: Lit -> Expression
 
 -- | A StatementExpression that is in an Expression position
 ExprExprStmt :: StmtExpr -> Expression
+Cast :: Type -> Expression -> Expression
+
+-- | <a>Statement</a> is dual to <a>Expression</a> since it does not
+--   evaluate to a value
 data Statement
 While :: Expression -> Maybe Statement -> Statement
 [$sel:getCond:While] :: Statement -> Expression
@@ -122,6 +161,9 @@ Block :: [Statement] -> Statement
 Return :: (Maybe Expression) -> Statement
 LocalVar :: VarDecl -> Statement
 StmtExprStmt :: StmtExpr -> Statement
+
+-- | <a>StmtExpr</a> can be a <a>Statement</a> as well as an
+--   <a>Expression</a>
 data StmtExpr
 Assign :: AssignOp -> Name -> Expression -> StmtExpr
 
@@ -131,12 +173,16 @@ Apply :: Expression -> [Expression] -> StmtExpr
 
 -- | UnOp that returns something and has a side effect
 SEUnOp :: IncrOrDecr -> Expression -> StmtExpr
+
+-- | <a>Lit</a> are the Java literals
 data Lit
 IntegerL :: Integer -> Lit
 BooleanL :: Bool -> Lit
 CharL :: Char -> Lit
 StringL :: String -> Lit
 Null :: Lit
+
+-- | <a>AssignOp</a> represent different ways to assign a value
 data AssignOp
 NormalAssign :: AssignOp
 MultiplyAssign :: AssignOp
@@ -150,6 +196,8 @@ USignedShiftRightAssign :: AssignOp
 AndAssign :: AssignOp
 XOrAssign :: AssignOp
 OrAssign :: AssignOp
+
+-- | <a>BinOp</a> are all primitive binary operations
 data BinOp
 And :: BinOp
 Or :: BinOp
@@ -165,23 +213,22 @@ Divide :: BinOp
 Add :: BinOp
 Subtract :: BinOp
 Modulo :: BinOp
-data IncrOrDecr
-PreIncr :: IncrOrDecr
-PostIncr :: IncrOrDecr
-PreDecr :: IncrOrDecr
-PostDecr :: IncrOrDecr
+
+-- | <a>UnOp</a> are all primitive unary operations
 data UnOp
 Not :: UnOp
 Neg :: UnOp
 
 -- | Tilde-Operator performs a bitwise complement
 BitCompl :: UnOp
-data Mod
-Public :: Mod
-Protected :: Mod
-Private :: Mod
-Static :: Mod
-Abstract :: Mod
+
+-- | <a>IncrOrDecr</a> represent different ways of increment/decrement a
+--   field in an effectful way
+data IncrOrDecr
+PreIncr :: IncrOrDecr
+PostIncr :: IncrOrDecr
+PreDecr :: IncrOrDecr
+PostDecr :: IncrOrDecr
 instance GHC.Classes.Eq Compiler.Ast.Class
 instance GHC.Show.Show Compiler.Ast.Class
 instance GHC.Classes.Eq Compiler.Ast.Decl
@@ -190,22 +237,26 @@ instance GHC.Classes.Eq Compiler.Ast.Statement
 instance GHC.Show.Show Compiler.Ast.Statement
 instance GHC.Classes.Eq Compiler.Ast.VarDecl
 instance GHC.Show.Show Compiler.Ast.VarDecl
-instance GHC.Classes.Eq Compiler.Ast.Mod
-instance GHC.Show.Show Compiler.Ast.Mod
-instance GHC.Classes.Eq Compiler.Ast.StmtExpr
-instance GHC.Show.Show Compiler.Ast.StmtExpr
 instance GHC.Classes.Eq Compiler.Ast.Expression
 instance GHC.Show.Show Compiler.Ast.Expression
-instance GHC.Classes.Eq Compiler.Ast.UnOp
-instance GHC.Show.Show Compiler.Ast.UnOp
+instance GHC.Classes.Eq Compiler.Ast.StmtExpr
+instance GHC.Show.Show Compiler.Ast.StmtExpr
 instance GHC.Classes.Eq Compiler.Ast.IncrOrDecr
 instance GHC.Show.Show Compiler.Ast.IncrOrDecr
+instance GHC.Classes.Eq Compiler.Ast.UnOp
+instance GHC.Show.Show Compiler.Ast.UnOp
 instance GHC.Classes.Eq Compiler.Ast.BinOp
 instance GHC.Show.Show Compiler.Ast.BinOp
 instance GHC.Classes.Eq Compiler.Ast.AssignOp
 instance GHC.Show.Show Compiler.Ast.AssignOp
 instance GHC.Classes.Eq Compiler.Ast.Lit
 instance GHC.Show.Show Compiler.Ast.Lit
+instance GHC.Classes.Eq Compiler.Ast.Mod
+instance GHC.Show.Show Compiler.Ast.Mod
+instance GHC.Classes.Eq Compiler.Ast.Type
+instance GHC.Show.Show Compiler.Ast.Type
+instance GHC.Classes.Eq Compiler.Ast.PType
+instance GHC.Show.Show Compiler.Ast.PType
 instance GHC.Classes.Eq Compiler.Ast.Name
 instance GHC.Show.Show Compiler.Ast.Name
 instance GHC.Classes.Eq Compiler.Ast.Identifier

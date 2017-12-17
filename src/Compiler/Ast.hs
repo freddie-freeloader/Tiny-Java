@@ -7,11 +7,29 @@
 
 module Compiler.Ast where
 
+-- | 'Identifier' is a simple identifier, e.g. for a parameter
 newtype Identifier = Identifier String
   deriving (Show,Eq)
 
+-- | 'Name' represents a Name of something with the relative path to it
 data Name = Name { path          :: [Identifier]
                  , getIdentifier :: Identifier }
+  deriving (Show, Eq)
+
+-- | 'Type' are different types of types
+data Type = PrimType PType -- ^ Represents a primitive java type
+          | RefType Name -- ^ Represents a reference type
+          | JVoid -- ^ Represents the void type in java
+  deriving (Show, Eq)
+
+-- | 'PType' represent the primitive types
+data PType = Boolean
+           | Int
+           | Char
+  deriving (Show, Eq)
+
+-- | 'Mod' are the different Modifiers in Java
+data Mod = Public | Protected | Private | Static | Abstract
   deriving (Show, Eq)
 
 -- | 'Class' is a java class definition
@@ -28,13 +46,6 @@ data Decl = Field VarDecl
                    , getBody       :: Maybe Statement}
   deriving (Show, Eq)
 
--- TODO Should this be a type or name?
-voidType :: Name
-voidType = Name [] $ Identifier "void"
-
--- TODO Add primitive types here
-type Type = Name
-
 -- | 'VarDecl' is used for field definitions and local variable declarations
 data VarDecl = VarDecl { getIdentifier :: Identifier
                        , getMods       :: [Mod]
@@ -42,9 +53,11 @@ data VarDecl = VarDecl { getIdentifier :: Identifier
                        , getRHS        :: Maybe Expression}
   deriving (Show, Eq)
 
--- TODO Add some more named fields
 -- | 'Expression' is something that can be evaluated to a value
-data Expression = TernaryIf Expression Expression Expression -- ^ Short notation if, e.g. @someBool? 42 : 1337@
+data Expression = TernaryIf { getCond     :: Expression
+                            , getElseStmt :: Expression
+                            , getThenStmt :: Expression
+                            } -- ^ Short notation if, e.g. @someBool? 42 : 1337@
                 | PrimBinOp BinOp Expression Expression -- ^ Primitive binary Operation
                 | PrimUnOp UnOp Expression -- ^ Primitive unary Operation
                 | This -- ^ this keyword
@@ -52,8 +65,10 @@ data Expression = TernaryIf Expression Expression Expression -- ^ Short notation
                 | Select Expression Identifier
                 | Literal Lit -- ^ All kind of literals
                 | ExprExprStmt StmtExpr -- ^ A StatementExpression that is in an Expression position
+                | Cast Type Expression
   deriving (Show, Eq)
 
+-- | 'Statement' is dual to 'Expression' since it does not evaluate to a value
 data Statement = While { getCond :: Expression
                        , getBody :: Maybe Statement }
                | If { getCond     :: Expression
@@ -65,12 +80,14 @@ data Statement = While { getCond :: Expression
                | StmtExprStmt StmtExpr
   deriving (Show, Eq)
 
+-- | 'StmtExpr' can be a 'Statement' as well as an 'Expression'
 data StmtExpr = Assign AssignOp Name Expression
               | Instantiation Name [Expression] -- ^ Using new
               | Apply Expression [Expression]
               | SEUnOp IncrOrDecr Expression -- ^ UnOp that returns something and has a side effect
   deriving (Show, Eq)
 
+-- | 'Lit' are the Java literals
 data Lit = IntegerL Integer
          | BooleanL Bool
          | CharL Char
@@ -78,7 +95,7 @@ data Lit = IntegerL Integer
          | Null
   deriving (Show, Eq)
 
--- TODO Should we desugar those?
+-- | 'AssignOp' represent different ways to assign a value
 data AssignOp = NormalAssign
               | MultiplyAssign
               | DivideAssign
@@ -93,6 +110,7 @@ data AssignOp = NormalAssign
               | OrAssign
   deriving (Show, Eq)
 
+-- | 'BinOp' are all primitive binary operations
 data BinOp = And
            | Or
            | XOr
@@ -109,16 +127,15 @@ data BinOp = And
            | Modulo
   deriving (Show, Eq)
 
-data IncrOrDecr = PreIncr
-                | PostIncr
-                | PreDecr
-                | PostDecr
-  deriving (Show, Eq)
-
+-- | 'UnOp' are all primitive unary operations
 data UnOp = Not
           | Neg
           | BitCompl -- ^ Tilde-Operator performs a bitwise complement
   deriving (Show, Eq)
 
-data Mod = Public | Protected | Private | Static | Abstract
+-- | 'IncrOrDecr' represent different ways of increment/decrement a field in an effectful way
+data IncrOrDecr = PreIncr
+                | PostIncr
+                | PreDecr
+                | PostDecr
   deriving (Show, Eq)

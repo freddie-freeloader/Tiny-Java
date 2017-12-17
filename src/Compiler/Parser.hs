@@ -79,16 +79,16 @@ bodyDecl = try fieldDecl
 fieldDecl :: Parser [Decl]
 fieldDecl = do
   modis <- modifiers
-  fType <- name
+  fType <- javaType
   vars <- map Field <$> varDecls modis fType
   semicolon
   return vars
 
 
-varDecls :: [Mod] -> Name -> Parser [VarDecl]
+varDecls :: [Mod] -> Type -> Parser [VarDecl]
 varDecls modis t = sepBy1 (varDecl modis t) comma
 
-varDecl :: [Mod] -> Name -> Parser VarDecl
+varDecl :: [Mod] -> Type -> Parser VarDecl
 varDecl modis t = do
   iden <- identifier
   e <- optional varAssignment
@@ -155,15 +155,25 @@ aOperators =
     makeUnOp op e = ExprExprStmt $ SEUnOp op e
 
 unaryExpr :: Parser Expression
-unaryExpr = try primary <|> (Iden <$> name) <|> try castExpr
+unaryExpr = try castExpr <|> try primary <|> (Iden <$> name)
 
 castExpr :: Parser Expression
-castExpr = fail "cast not implemented"
+castExpr = do jType <- parens javaType; e <- unaryExpr; return $ Cast jType e
 
--- we probably have to place some tries here
+javaType :: Parser Type
+javaType = try voidType <|> try primType <|> RefType <$> name
+  where
+    voidType :: Parser Type
+    voidType = JVoid <$ kword "void"
+
+    primType :: Parser Type
+    primType = choice (map (try . (<$>) PrimType) [ Int <$ kword "int"
+                                                  , Char <$ kword "char"
+                                                  , Boolean <$ kword "boolean"])
+
 primary :: Parser Expression
 primary = literal
-      <|> this
+      <|> try this
       <|> parens expression
       <|> ExprExprStmt <$> instanceCreation
       <|> try (ExprExprStmt <$> methodInvocation)
@@ -248,14 +258,14 @@ methodDecl = do
   return $ Method mIdentifier modis rType params mBody
   where
     returnType :: Parser Type
-    returnType = try (voidType <$ kword "void") <|> name
+    returnType = try (JVoid <$ kword "void") <|> javaType
     methodBody :: Parser (Maybe Statement)
     methodBody = (Nothing <$ symbol ";") <|> (Just <$> block)
 
 formalParamList :: Parser [(Type,Identifier)]
 formalParamList = parens (sepBy formalParam comma)
   where
-    formalParam = do paramType <- typeIden; paramIdentifier <- identifier; return (paramType,paramIdentifier)
+    formalParam = do paramType <- javaType; paramIdentifier <- identifier; return (paramType,paramIdentifier)
 
 block :: Parser Statement
 block = (Block . concat) <$> braces (many blockStatement)
@@ -265,7 +275,7 @@ block = (Block . concat) <$> braces (many blockStatement)
 
 localVarDecl :: Parser [Statement]
 localVarDecl = do
-  vType <- typeIden
+  vType <- javaType
   vDecs <- varDecls [] vType
   semicolon
   return $ map LocalVar vDecs
@@ -358,7 +368,3 @@ expressionStmt = StmtExprStmt <$> statementExpr <* semicolon
 
 returnStmt :: Parser Statement
 returnStmt = Return <$> (kword "return" *> optional expression <* semicolon)
-
--- TODO Add primitive types
-typeIden :: Parser Name
-typeIden = name
