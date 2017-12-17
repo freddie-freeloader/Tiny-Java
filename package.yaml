@@ -1,7 +1,7 @@
 name: tiny-java
 version: 0.0.0
 synopsis: A compiler for a subset of Java
-description: This compiler was programmed a part of the \"Compilerbau\" seminar by Prof. Martin Plümicke.
+description: This compiler was programmed as part of the \"Compilerbau\" seminar by Prof. Martin Plümicke.
 license: MIT
 copyright: No one
 author: Morty Smith <morty@smith.net>
