@@ -1,13 +1,11 @@
--- This file has been generated from package.yaml by hpack version 0.20.0.
+-- This file has been generated from package.yaml by hpack version 0.17.1.
 --
 -- see: https://github.com/sol/hpack
---
--- hash: 2fd7eeb19f57dbaa3968a880a9a657838855b15383056b5a9a2c9de15a4d8951
 
 name:           tiny-java
 version:        0.0.0
 synopsis:       A compiler for a subset of Java
-description:    This compiler was programmed a part of the \"Compilerbau\" seminar by Prof. Martin Plümicke.
+description:    This compiler was programmed as a part of the \"Compilerbau\" seminar by Prof. Martin Plümicke.
 author:         Morty Smith <morty@smith.net>
 maintainer:     Rick Sanchez <rick@sanchez.net>
 copyright:      No one
@@ -20,14 +18,13 @@ library
       src
   ghc-options: -Wall
   build-depends:
-      base ==4.*
-    , megaparsec ==6.*
+      base == 4.*
+    , megaparsec == 6.*
   exposed-modules:
+      Compiler.AbstractBytecode
       Compiler.Ast
       Compiler.Parser
       Compiler.ParserUtils
-  other-modules:
-      Paths_tiny_java
   default-language: Haskell2010
 
 test-suite spec
@@ -37,11 +34,10 @@ test-suite spec
       test
   ghc-options: -Wall
   build-depends:
-      base ==4.*
-    , hspec ==2.*
-    , megaparsec ==6.*
+      base == 4.*
+    , megaparsec == 6.*
     , tiny-java
+    , hspec == 2.*
   other-modules:
       Compiler.ParserSpec
-      Paths_tiny_java
   default-language: Haskell2010

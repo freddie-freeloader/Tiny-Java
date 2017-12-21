@@ -313,4 +313,3 @@ function pageLoad() {
   resetStyle();
   restoreCollapsed();
 }
-
