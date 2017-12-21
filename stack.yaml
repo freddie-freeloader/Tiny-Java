@@ -4,8 +4,7 @@ extra-package-dbs: []
 packages:
 - .
 extra-deps:
-- megaparsec-6.2.0
-resolver: lts-9.17
+resolver: lts-10.0
 build:
   haddock-arguments:
     haddock-args:
