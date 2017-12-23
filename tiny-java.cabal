@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 2b7bef5d98951765f9f46f21335026df995b668f8bfe9b4095382e103b4dc54e
+-- hash: 44031a34a911e773bf54e6519f3236a4260659b4d8ae60fbecdddd395f58df90
 
 name:           tiny-java
 version:        0.0.0
@@ -18,7 +18,8 @@ cabal-version:  >= 1.10
 library
   hs-source-dirs:
       src
-  ghc-options: -Wall
+  default-extensions: DuplicateRecordFields
+  ghc-options: -Wall -fno-warn-name-shadowing
   build-depends:
       base ==4.*
     , megaparsec ==6.*
@@ -36,7 +37,8 @@ test-suite spec
   main-is: Spec.hs
   hs-source-dirs:
       test
-  ghc-options: -Wall
+  default-extensions: DuplicateRecordFields
+  ghc-options: -Wall -fno-warn-name-shadowing
   build-depends:
       base ==4.*
     , hspec ==2.*

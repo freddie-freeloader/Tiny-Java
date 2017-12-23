@@ -7,7 +7,9 @@ copyright: No one
 author: Morty Smith <morty@smith.net>
 maintainer: Rick Sanchez <rick@sanchez.net>
 
-ghc-options: -Wall
+ghc-options: -Wall -fno-warn-name-shadowing
+
+default-extensions: DuplicateRecordFields
 
 dependencies:
  - base == 4.*

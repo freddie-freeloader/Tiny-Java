@@ -3,8 +3,6 @@
 --
 -- This module contains the AST
 
-{-# LANGUAGE DuplicateRecordFields #-}
-
 module Compiler.Ast where
 
 -- | 'Identifier' is a simple identifier, e.g. for a parameter
