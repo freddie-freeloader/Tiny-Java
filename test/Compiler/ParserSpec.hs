@@ -251,7 +251,7 @@ spec = do
                 getType = PrimType Int,
                 getRHS = Nothing}),
             Field (VarDecl {
-                getIdentifier = Identifier "proField",
+                getIdentifier = Identifier "proFiel",
                 getMods = [Protected],
                 getType = PrimType Int,
                 getRHS = Nothing})]

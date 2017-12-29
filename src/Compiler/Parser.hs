@@ -22,8 +22,9 @@ mods = [(Protected,"protected"),(Public,"public"),(Private,"private"),(Static,"s
 -- | 'kwords' is a list of reserved words (keywords).
 
 kwords :: [String]
-kwords = ["if","then","else","while","do","skip","true","false","not","and","or","class","int","boolean","char","null","void"] ++ map snd mods
-
+kwords = ["this","if","then","else","while","do","skip"
+         ,"true","false","not","and","or","class","int"
+         ,"boolean","char","null","void","super"] ++ map snd mods
 
 -- | 'identifier' parses an identifier.
 
@@ -360,16 +361,19 @@ expressionStmt = StmtExprStmt <$> statementExpr <* semicolon
     preIncr = SEUnOp PreIncr <$> (symbol "++" *> unaryExpr)
     preDecr = SEUnOp PreDecr <$> (symbol "--" *> unaryExpr)
     postIncr = do
-      e <- postFixExpr
+      e   <- postFixExpr
       ops <- many $ void (symbol "++")
-      return (case makeSeqOp PostIncr ops e of ExprExprStmt inner -> inner; _ -> undefined)
+      return $
+        case makeSeqOp PostIncr ops e of ExprExprStmt inner -> inner; _ -> undefined
     postDecr = do
-      e <- postFixExpr
+      e   <- postFixExpr
       ops <- many $ void (symbol "--")
-      return (case makeSeqOp PostDecr ops e of ExprExprStmt inner -> inner; _ -> undefined)
+      return $
+        case makeSeqOp PostDecr ops e of ExprExprStmt inner -> inner; _ -> undefined
     postFixExpr = try primary <|> (Iden <$> name)
     makeSeqOp :: IncrOrDecr -> [()] -> Expression -> Expression
-    makeSeqOp constr ops e = foldr (\_ r -> (\x y-> ExprExprStmt $ SEUnOp x y) constr r) e ops
+    makeSeqOp constr ops e =
+      foldr (\_ r -> (\x y-> ExprExprStmt $ SEUnOp x y) constr r) e ops
 
 returnStmt :: Parser Statement
 returnStmt = Return <$> (kword "return" *> optional expression <* semicolon)
