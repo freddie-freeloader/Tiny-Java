@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/freddie-freeloader/Tiny-Java.svg?branch=master)](https://travis-ci.org/freddie-freeloader/Tiny-Java)
+
 # Tiny-Java
 
 A Compiler for a subset of Java :coffee:
