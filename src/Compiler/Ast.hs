@@ -36,7 +36,10 @@ data Class = Class Identifier [Mod] [Decl]
 
 -- | 'Decl' are the different types of declaration inside a class
 data Decl = Field VarDecl
-          | Constructor
+          | Constructor { getIdentifier :: Identifier
+                        , getMods       :: [Mod]
+                        , getParamList  :: [(Type, Identifier)]
+                        , getBody       :: Maybe Statement}
           | Method { getIdentifier :: Identifier
                    , getMods       :: [Mod]
                    , getReturnType :: Type

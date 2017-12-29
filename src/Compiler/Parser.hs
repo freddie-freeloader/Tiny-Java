@@ -22,7 +22,7 @@ mods = [(Protected,"protected"),(Public,"public"),(Private,"private"),(Static,"s
 -- | 'kwords' is a list of reserved words (keywords).
 
 kwords :: [String]
-kwords = ["if","then","else","while","do","skip","true","false","not","and","or","class"] ++ map snd mods
+kwords = ["if","then","else","while","do","skip","true","false","not","and","or","class","int","boolean","char","null","void"] ++ map snd mods
 
 
 -- | 'identifier' parses an identifier.
@@ -246,7 +246,12 @@ assignmentOp = choice $ map opParser assignOperators
                       ,(MultiplyAssign,"*=")]
 
 constructorDecl :: Parser Decl
-constructorDecl = fail "not implemented"
+constructorDecl = do
+  mods <- modifiers
+  iden <- identifier
+  params <- formalParamList
+  body <- block
+  return $ Constructor iden mods params (Just body)
 
 methodDecl :: Parser Decl
 methodDecl = do
