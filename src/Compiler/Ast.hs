@@ -67,6 +67,7 @@ data Expression = TernaryIf { getCond     :: Expression
                 | Literal Lit -- ^ All kind of literals
                 | ExprExprStmt StmtExpr -- ^ A StatementExpression that is in an Expression position
                 | Cast Type Expression
+                | TypedExpression(Expression, Type)
   deriving (Show, Eq)
 
 -- | 'Statement' is dual to 'Expression' since it does not evaluate to a value
@@ -79,6 +80,7 @@ data Statement = While { getCond :: Expression
                | Return (Maybe Expression)
                | LocalVar VarDecl
                | StmtExprStmt StmtExpr
+               | TypedStatement(Statement, Type)
   deriving (Show, Eq)
 
 -- | 'StmtExpr' can be a 'Statement' as well as an 'Expression'
@@ -86,6 +88,7 @@ data StmtExpr = Assign AssignOp Name Expression
               | Instantiation Name [Expression] -- ^ Using new
               | Apply Expression [Expression]
               | SEUnOp IncrOrDecr Expression -- ^ UnOp that returns something and has a side effect
+              | TypedStmtExpr(StmtExpr, Type)
   deriving (Show, Eq)
 
 -- | 'Lit' are the Java literals
