@@ -339,8 +339,8 @@ whileStmtNoShortIf = do
 statementWithoutTrailing :: Parser (Maybe Statement)
 statementWithoutTrailing = Just <$> block
                        <|> try emptyStmt
+                       <|> try (Just <$> returnStmt)
                        <|> try (Just <$> expressionStmt)
-                       <|> Just <$> returnStmt
   where
     -- TODO What should be the returned node here?
     emptyStmt :: Parser (Maybe Statement)
