@@ -6,7 +6,9 @@
 module Compiler.Ast where
 
 -- | 'Identifier' is a simple identifier, e.g. for a parameter
-newtype Identifier = Identifier String
+data Identifier = Identifier String
+                | This
+                | Super
   deriving (Show,Eq)
 
 -- | 'Name' represents a Name of something with the relative path to it
@@ -61,7 +63,6 @@ data Expression = TernaryIf { getCond     :: Expression
                             } -- ^ Short notation if, e.g. @someBool? 42 : 1337@
                 | PrimBinOp BinOp Expression Expression -- ^ Primitive binary Operation
                 | PrimUnOp UnOp Expression -- ^ Primitive unary Operation
-                | This -- ^ this keyword
                 | Iden Name -- ^ A variable
                 | Select Expression Identifier
                 | Literal Lit -- ^ All kind of literals

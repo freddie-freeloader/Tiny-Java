@@ -22,20 +22,20 @@ mods = [(Protected,"protected"),(Public,"public"),(Private,"private"),(Static,"s
 -- | 'kwords' is a list of reserved words (keywords).
 
 kwords :: [String]
-kwords = ["this","if","then","else","while","do","skip"
-         ,"true","false","not","and","or","class","int"
-         ,"boolean","char","null","void","super"] ++ map snd mods
+kwords = ["if","then","else","while","do","skip"
+         ,"true","false","not","and","or","class"] ++ map snd mods
 
 -- | 'identifier' parses an identifier.
 
 -- TODO Add underscore and dollar sign as allowed chars
 identifier :: Parser Identifier
-identifier = Identifier <$> (lexeme . try) (p >>= check)
+identifier = (lexeme . try) (p >>= check)
   where
     p       = (:) <$> letterChar <*> many alphaNumChar
-    check x = if x `elem` kwords
-                then fail $ "keyword " ++ show x ++ " cannot be an identifier"
-                else return x
+    check x | x `elem` kwords = fail $ "keyword " ++ show x ++ " cannot be an identifier"
+            | x == "this" = return This
+            | x == "super" = return Super
+            | otherwise = return $ Identifier x
 
 -- | 'parseTest' parses a String, which contains multiple classes
 parseTestString :: String -> Maybe [Class]
@@ -174,7 +174,6 @@ javaType = try voidType <|> try primType <|> RefType <$> name
 
 primary :: Parser Expression
 primary = literal
-      <|> try this
       <|> parens expression
       <|> ExprExprStmt <$> instanceCreation
       <|> try (ExprExprStmt <$> methodInvocation)
@@ -197,9 +196,6 @@ charLit = CharL <$> (char '\'' *> L.charLiteral <* char '\'')
 
 stringLit :: Parser Lit
 stringLit = StringL <$> (char '"' *> manyTill L.charLiteral (char '"'))
-
-this :: Parser Expression
-this = This <$ kword "this"
 
 instanceCreation :: Parser StmtExpr
 instanceCreation = do
