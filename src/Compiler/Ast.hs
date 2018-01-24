@@ -82,6 +82,8 @@ data Statement = While { getCond :: Expression
                | LocalVar VarDecl
                | StmtExprStmt StmtExpr
                | TypedStatement(Statement, Type)
+               | Continue
+               | Break
   deriving (Show, Eq)
 
 -- | 'StmtExpr' can be a 'Statement' as well as an 'Expression'
