@@ -23,7 +23,7 @@ mods = [(Protected,"protected"),(Public,"public"),(Private,"private"),(Static,"s
 
 kwords :: [String]
 kwords = ["if","then","else","while","do","skip"
-         ,"true","false","not","and","or","class"] ++ map snd mods
+         ,"true","false","not","and","or","class","return"] ++ map snd mods
 
 -- | 'identifier' parses an identifier.
 
