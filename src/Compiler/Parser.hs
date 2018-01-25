@@ -138,19 +138,25 @@ bOperators =
 
 aOperators :: [[Operator Parser Expression]]
 aOperators =
-  [ [ Prefix  (PrimUnOp Neg       <$ symbol "-")
-    , Prefix  (id                 <$ symbol "+")
-    , Prefix  (PrimUnOp Not       <$ symbol "!")
-    , Prefix  (PrimUnOp BitCompl  <$ symbol "~")
-    , Prefix  (makeUnOp PreIncr   <$ symbol "++")
-    , Postfix (makeUnOp PostIncr  <$ symbol "++")
-    , Prefix  (makeUnOp PreDecr   <$ symbol "--")
-    , Postfix (makeUnOp PostDecr  <$ symbol "--")]
-  , [ InfixL  (PrimBinOp Multiply <$ symbol "*")
-    , InfixL  (PrimBinOp Divide   <$ symbol "/")
-    , InfixL  (PrimBinOp Modulo   <$ symbol "%")]
-  , [ InfixL  (PrimBinOp Add      <$ symbol "+")
-    , InfixL  (PrimBinOp Subtract <$ symbol "-")]
+  [ [ Prefix  (PrimUnOp Neg         <$ symbol "-")
+    , Prefix  (id                   <$ symbol "+")
+    , Prefix  (PrimUnOp Not         <$ symbol "!")
+    , Prefix  (PrimUnOp BitCompl    <$ symbol "~")
+    , Prefix  (makeUnOp PreIncr     <$ symbol "++")
+    , Postfix (makeUnOp PostIncr    <$ symbol "++")
+    , Prefix  (makeUnOp PreDecr     <$ symbol "--")
+    , Postfix (makeUnOp PostDecr    <$ symbol "--")]
+  , [ InfixL  (PrimBinOp BitAnd     <$ symbol "& ")
+    , InfixL  (PrimBinOp BitOr      <$ symbol "| ")
+    , InfixL  (PrimBinOp ShiftLeft  <$ symbol "<<")
+    , InfixL  (PrimBinOp UnsignedShiftRight
+               <$ symbol ">>>")
+    , InfixL  (PrimBinOp ShiftRight <$ symbol ">>")
+    , InfixL  (PrimBinOp Multiply   <$ symbol "*")
+    , InfixL  (PrimBinOp Divide     <$ symbol "/")
+    , InfixL  (PrimBinOp Modulo     <$ symbol "%")]
+  , [ InfixL  (PrimBinOp Add        <$ symbol "+")
+    , InfixL  (PrimBinOp Subtract   <$ symbol "-")]
   ]
   where
     makeUnOp :: IncrOrDecr -> Expression -> Expression
