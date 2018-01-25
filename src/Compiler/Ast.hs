@@ -109,18 +109,17 @@ data AssignOp = NormalAssign
               | ModuloAssign
               | PlusAssign
               | MinusAssign
-              | ShiftLeftAssign
-              | SignedShiftRightAssign
-              | USignedShiftRightAssign
+              | LeftAssign
+              | ShiftRightAssign
+              | UnsignedShiftRightAssign
               | AndAssign
-              | XOrAssign
+              | BitXOrAssign
               | OrAssign
   deriving (Show, Eq)
 
 -- | 'BinOp' are all primitive binary operations
 data BinOp = And
            | Or
-           | XOr
            | Eq
            | Less
            | LessEq
@@ -132,6 +131,12 @@ data BinOp = And
            | Add
            | Subtract
            | Modulo
+           | ShiftLeft
+           | ShiftRight
+           | UnsignedShiftRight
+           | BitAnd
+           | BitOr
+           | BitXOr
   deriving (Show, Eq)
 
 -- | 'UnOp' are all primitive unary operations

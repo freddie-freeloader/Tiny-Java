@@ -152,6 +152,7 @@ aOperators =
     , InfixL  (PrimBinOp UnsignedShiftRight
                <$ symbol ">>>")
     , InfixL  (PrimBinOp ShiftRight <$ symbol ">>")
+    , InfixL  (PrimBinOp BitXOr     <$ symbol "^")
     , InfixL  (PrimBinOp Multiply   <$ symbol "*")
     , InfixL  (PrimBinOp Divide     <$ symbol "/")
     , InfixL  (PrimBinOp Modulo     <$ symbol "%")]
