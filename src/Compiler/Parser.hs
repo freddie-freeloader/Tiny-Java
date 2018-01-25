@@ -104,8 +104,8 @@ expression = try (ExprExprStmt <$> assignment)
          <|> conditional
 
 conditional :: Parser Expression
-conditional = condOrExpr
-          <|> ternaryIf
+conditional = try ternaryIf
+          <|> condOrExpr
   where
     -- | Short notation for If with question mark and colon
     ternaryIf :: Parser Expression
@@ -274,7 +274,8 @@ block :: Parser Statement
 block = (Block . concat) <$> braces (many blockStatement)
   where
     blockStatement :: Parser [Statement]
-    blockStatement = try localVarDecl <|> catMaybes <$> makeSingleton statement
+    blockStatement = try localVarDecl
+                 <|> catMaybes <$> makeSingleton statement
 
 localVarDecl :: Parser [Statement]
 localVarDecl = do
@@ -285,8 +286,8 @@ localVarDecl = do
 
 statement :: Parser (Maybe Statement)
 statement = try statementWithoutTrailing
+        <|> try (Just <$> ifThenStmt)
         <|> try (Just <$> ifStmt) -- TODO Is it possible to merge if and ifThen?
-        <|> Just <$> ifThenStmt
         <|> Just <$> whileStmt
 
 ifStmt :: Parser Statement
