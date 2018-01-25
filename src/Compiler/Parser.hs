@@ -248,7 +248,8 @@ assignmentOp = choice $ map opParser assignOperators
     opParser (rep,str) = rep <$ symbol str
     -- TODO Complete for all operators
     assignOperators = [(NormalAssign,"="),(PlusAssign,"+="),(MinusAssign,"-=")
-                      ,(MultiplyAssign,"*=")]
+                      ,(MultiplyAssign,"*="),(DivideAssign,"/="),(ModuloAssign,"%=")
+                      ,(LeftShiftAssign,"<<="),(BitXOrAssign,"^=")]
 
 constructorDecl :: Parser Decl
 constructorDecl = do
