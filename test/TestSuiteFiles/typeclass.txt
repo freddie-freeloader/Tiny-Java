@@ -1,0 +1,41 @@
+class Typeclass {
+    int intField;
+    char charField;
+    boolean floatField;
+}
+AST:
+Just [Class (Identifier "Typeclass") [] 
+[Field (VarDecl {
+    getIdentifier = Identifier "intField",
+    getMods = [],
+    getType = PrimType Int,
+    getRHS = Nothing}),
+Field (VarDecl {
+    getIdentifier = Identifier "charField",
+    getMods = [],
+    getType = PrimType Char,
+    getRHS = Nothing}),
+Field (VarDecl {
+    getIdentifier = Identifier "floatField",
+    getMods = [],
+    getType = PrimType Boolean,
+    getRHS = Nothing})
+]]
+Tast:
+Just [Class (Identifier "Typeclass") [] 
+[Field (VarDecl {
+    getIdentifier = Identifier "intField",
+    getMods = [],
+    getType = PrimType Int,
+    getRHS = Nothing}),
+Field (VarDecl {
+    getIdentifier = Identifier "charField",
+    getMods = [],
+    getType = PrimType Char,
+    getRHS = Nothing}),
+Field (VarDecl {
+    getIdentifier = Identifier "floatField",
+    getMods = [],
+    getType = PrimType Boolean,
+    getRHS = Nothing})
+]]

@@ -1,0 +1,38 @@
+class ObjParam{
+    void ObjParamMethod(ObjParam op){}
+}
+Ast:
+      Just 
+	    [Class 
+		 (Identifier "ObjParam") 
+		 [] 
+		 [Method {
+		  getIdentifier = Identifier "ObjParamMethod", 
+		  getMods = [], 
+		  getReturnType = JVoid, 
+		  getParamList = 
+		   [(RefType 
+		    (Name {
+			 path = [], 
+			 getIdentifier = Identifier "ObjParam"}),
+			Identifier "op")], 
+		  getBody = Just (Block [])}]]
+
+
+TAst:
+      Just 
+	    [Class 
+		 (Identifier "ObjParam") 
+		 [] 
+		 [Method {
+		  getIdentifier = Identifier "ObjParamMethod", 
+		  getMods = [], 
+		  getReturnType = JVoid, 
+		  getParamList = 
+		   [(RefType 
+		    (Name {
+			 path = [], 
+			 getIdentifier = Identifier "ObjParam"}),
+			Identifier "op")], 
+		  getBody = Just (TypedStatement (Block []), JVoid)}]]
+		  

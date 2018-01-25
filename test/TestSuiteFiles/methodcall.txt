@@ -1,0 +1,45 @@
+class Mthodcallclass {
+    void methodCallmethod(){
+        callMethod();
+    }
+    
+    void callMethod (){
+    
+    }
+}
+
+AST:
+Just [Class (Identifier "Mthodcallclass") [] 
+[Method {
+    getIdentifier = Identifier "methodCallmethod", 
+    getMods = [],
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (Block [
+        StmtExprStmt (Apply (Iden (Name {path = [], getIdentifier = Identifier "callMethod"})) [])])
+    },
+Method {
+    getIdentifier = Identifier "callMethod",
+    getMods = [], 
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (Block [])
+}]]
+
+TAST:
+Just [Class (Identifier "Mthodcallclass") [] 
+[Method {
+    getIdentifier = Identifier "methodCallmethod", 
+    getMods = [],
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (TypedStatement (Block [ 
+        (TypedStatement StmtExprStmt (TypedStatementExpression (Apply (TypedExpression (Iden (Name {path = [], getIdentifier = Identifier "callMethod"})), JVoid) []), JVoid), JVoid)]), JVoid)
+    },
+Method {
+    getIdentifier = Identifier "callMethod",
+    getMods = [], 
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (TypedStatement (Block []), JVoid)
+}]]

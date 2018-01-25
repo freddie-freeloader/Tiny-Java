@@ -1,0 +1,55 @@
+class Objectclass {
+
+    Objectclass(){
+    
+    }
+
+    void objectMethod(){
+        Objectclass om = new Objectclass();
+    }
+}
+
+AST:
+Just [Class (Identifier "Objectclass") [] 
+[Method {
+    getIdentifier "objectMethod",
+    getMods = [],
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (Block [
+        LocalVar (VarDecl {
+            getIdentifier = Identifier "om", 
+            getMods = [], 
+            getType = Objecttype "Objectclass", 
+            getRHS = Just (Block [
+                StmtExprStmt (Instantiation (Name 
+                    {path = [], 
+                    getIdentifier = Identifier "Objectclass"}) 
+                    [])
+                ])
+            })
+    ])
+}]]
+
+
+TAST:
+Just [Class (Identifier "Objectclass") [] 
+[Method {
+    getIdentifier "objectMethod",
+    getMods = [],
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (TypedStatement (Block [
+        (TypedStatement LocalVar (VarDecl {
+            getIdentifier = Identifier "om", 
+            getMods = [], 
+            getType = Objecttype "Objectclass", 
+            getRHS = Just (TypedExpression (Block [
+                (TypedExpression StmtExprStmt (TypedStatementExpression (Instantiation (Name 
+                    {path = [], 
+                    getIdentifier = Identifier "Objectclass"}) 
+                    []), RefType "Objectclass")
+                ], RefType "Objectclass")), RefType "Objectclass")
+            })
+    , JVoid)]), JVoid)
+}]]

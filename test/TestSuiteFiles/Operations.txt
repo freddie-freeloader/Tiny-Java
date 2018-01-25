@@ -1,0 +1,98 @@
+class Calculations{
+    Calculations(){
+        int i = 0 + 5;
+        i = 2 - 1;
+        i = 5 / 2;
+        i = 8 * 9;
+    }
+}
+Ast:
+       Just 
+	    [Class 
+		 (Identifier "Calculations") 
+		 [] 
+		 [Constructor {
+		  getIdentifier = Identifier "Calculations", 
+		  getMods = [], 
+		  getParamList = [], 
+		  getBody = 
+		   Just 
+		    (Block 
+			 [LocalVar 
+			  (VarDecl {
+			   getIdentifier = Identifier "i", 
+			   getMods = [], 
+			   getType = PrimType Int, 
+			   getRHS = 
+			    Just 
+				 (PrimBinOp Add (Literal (IntegerL 0)) (Literal (IntegerL 5)))}),
+			 StmtExprStmt 
+			  (Assign NormalAssign 
+			   (Name {
+			    path = [], 
+				getIdentifier = Identifier "i"}) 
+			  (PrimBinOp Subtract 
+			   (Literal (IntegerL 2)) (Literal (IntegerL 1)))), 
+			 StmtExprStmt 
+			  (Assign NormalAssign 
+			   (Name {
+			    path = [], 
+				getIdentifier = Identifier "i"}) 
+			   (PrimBinOp Divide 
+			    (Literal (IntegerL 5)) 
+			    (Literal (IntegerL 2)))),
+			 StmtExprStmt 
+			  (Assign NormalAssign 
+			   (Name {
+			    path = [], 
+				getIdentifier = Identifier "i"}) 
+			   (PrimBinOp Multiply 
+			    (Literal (IntegerL 8)) 
+				(Literal (IntegerL 9))))])}]]
+
+
+TAst:
+       Just 
+	    [Class 
+		 (Identifier "Calculations") 
+		 [] 
+		 [Constructor {
+		  getIdentifier = Identifier "Calculations", 
+		  getMods = [], 
+		  getParamList = [], 
+		  getBody = 
+		   Just 
+		    (TypedStatement (Block 
+			 [LocalVar 
+			  (VarDecl {
+			   getIdentifier = Identifier "i", 
+			   getMods = [], 
+			   getType = PrimType Int, 
+			   getRHS = 
+			    Just 
+				 (TypeExpression (PrimBinOp Add (TypedExpression(Literal (IntegerL 0)), PrimType Int) (TypedExpression (Literal (IntegerL 5)), PrimType Int)), PrimType Int)}),
+			 (TypedStatement (StmtExprStmt 
+			  (TypedStatementExpression (Assign NormalAssign 
+			   (Name {
+			    path = [], 
+				getIdentifier = Identifier "i"}) 
+			  (TypedExpression (PrimBinOp Subtract 
+			   (TypedExpression (Literal (IntegerL 2)), PrimType Int) (TypeExpression (Literal (IntegerL 1)), PrimType Int)), PrimType Int)), PrimType Int)), PrimType Int), 
+			 (TypedStatement StmtExprStmt 
+			  (TypedStatementExpression (Assign NormalAssign 
+			   (Name {
+			    path = [], 
+				getIdentifier = Identifier "i"}) 
+			   (TypedExpression (PrimBinOp Divide 
+			    (Literal (IntegerL 5)) 
+			    (Literal (IntegerL 2))), PrimType Int)), PrimType Int), PrimType Int),
+			 (Typed StatmenrStmtExprStmt StmtExprStmt 
+			  (Assign NormalAssign 
+			   (Name {
+			    path = [], 
+				getIdentifier = Identifier "i"}) 
+			   (TypeExpression (PrimBinOp Multiply 
+			    (TypedExpression (Literal (IntegerL 8)), PrimType Int) 
+				(TypedExpression (Literal (IntegerL 9)), PrimType Int)), PrimType Int)), PrimType Int)]), JVoid)}]]
+				
+				

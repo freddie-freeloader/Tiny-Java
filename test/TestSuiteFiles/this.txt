@@ -1,0 +1,55 @@
+class UseThis{
+	int hand; 
+	void thisMethod(){
+		this.hand = 2;
+	}
+}
+Ast:
+    Just
+        [Class
+            (Identifier "UseThis")
+            []
+            [Field (VarDecl {
+                getIdentifier = Identifier "hand",
+                getMods = [Private],
+                getType = PrimType Int,
+                getRHS = Nothing}),
+			 Method {
+			  getIdentifier = Identifier "intMethod", 
+			  getMods = [], 
+			  getReturnType = JVoid, 
+			  getParamList = [], 
+			  getBody = 
+			   Just (Block 
+			    [StmtExprStmt 
+				 (Assign NormalAssign
+				  (Name {
+				   path = [], 
+				   getIdentifier = Identifier "this.hand"})
+				  (Literal (IntegerL 2)))])}
+			]]
+			
+TAst:
+    Just
+        [Class
+            (Identifier "UseThis")
+            []
+            [Field (VarDecl {
+                getIdentifier = Identifier "hand",
+                getMods = [Private],
+                getType = PrimType Int,
+                getRHS = Nothing}),
+			 Method {
+			  getIdentifier = Identifier "intMethod", 
+			  getMods = [], 
+			  getReturnType = JVoid, 
+			  getParamList = [], 
+			  getBody = 
+			   Just TypedStatement((Block 
+			    [TypedStatement(StmtExprStmt 
+				 (TypedStatementExpression (Assign NormalAssign
+				  (Name {
+				   path = [This], 
+				   getIdentifier = Identifier "hand"})
+				  (TypedExpression (Literal (IntegerL 2)), PrimType Int)), PrimType Int),PrimType Int)]),PrimType Int)}
+			]]

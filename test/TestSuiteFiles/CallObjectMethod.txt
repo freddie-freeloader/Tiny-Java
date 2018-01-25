@@ -1,0 +1,56 @@
+class Objectmethod{
+    void objectcalling(){
+        new Objectmethod().methodToCall();
+    }
+    
+    public void methodToCall(){
+    
+    }
+}
+
+AST:
+Just [Class (Identifier "Objectmethod") [] [
+Method {
+    getIdentifier = Identifier "objectcalling",
+    getMods = [], 
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (Block [
+            StmtExprStmt (Apply 
+                (StmtExprStmt (Instantiation (Name 
+                    {path = [], 
+                    getIdentifier = Identifier "Objectmethod"}) 
+                    [])) 
+                [Objectcall])
+            ])},
+Method {
+    getIdentifier = Identifier "methodToCall",
+    getMods = [Public], 
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (Block [])}
+]]
+
+
+TAST:
+Just [Class (Identifier "Objectmethod") [] [
+Method {
+    getIdentifier = Identifier "objectcalling",
+    getMods = [], 
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (TypedStatement (Block [
+            (TypedStatement StmtExprStmt (Apply 
+                (StmtExprStmt (TypedExpression (Instantiation (Name 
+                    {path = [], 
+                    getIdentifier = Identifier "Objectmethod"}) 
+                    []), RefType "Objectmethod")), RefType "Objectmethod")) 
+                [Objectcall])
+            ]), JVoid)},
+Method {
+    getIdentifier = Identifier "methodToCall",
+    getMods = [Public], 
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (TypedStatement (Block []), JVoid)}
+]]

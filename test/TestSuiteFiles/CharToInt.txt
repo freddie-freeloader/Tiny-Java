@@ -1,0 +1,41 @@
+class CtoI{
+	int castToInt(char c){
+		return (int)c;
+	}
+}
+
+Ast:
+     Just 
+	    [Class 
+		 (Identifier "CtoI") 
+		 [] 
+		 [Method {
+		  getIdentifier = Identifier "castToInt", 
+		  getMods = [], 
+		  getReturnType = PrimType Int, 
+		  getParamList = [(PrimType Char,Identifier "c")], 
+		  getBody = Just 
+		   (Block 
+		    [Return 
+			 (Just 
+			  (Cast (PrimType Int) 
+			   (Iden (Name {path = [], getIdentifier = Identifier "c"}))))])}]]
+			   
+			   
+TAst:
+     Just 
+	    [Class 
+		 (Identifier "CtoI") 
+		 [] 
+		 [Method {
+		  getIdentifier = Identifier "castToInt", 
+		  getMods = [], 
+		  getReturnType = PrimType Int, 
+		  getParamList = [(PrimType Char,Identifier "c")], 
+		  getBody = Just 
+		   (TypedStatement (Block 
+		    [(TypedStatement Return
+			 (Just 
+			  (TypedExpression (Cast (PrimType Int) 
+			   (TypedExpression (Iden (Name {path = [], getIdentifier = Identifier "c"})), PrimType Int)), PrimType Integer)), PrimType Int)]), PrimType Int)}]]
+	

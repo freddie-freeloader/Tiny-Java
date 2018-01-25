@@ -1,0 +1,37 @@
+class Smallobjectclass {
+    void objectMethod(){
+        new Smallobjectclass();
+    }
+}
+
+AST:
+Just [Class (Identifier "Smallobjectclass") [] 
+[Method {
+    getIdentifier = Identifier "objectMethod",
+    getMods = [],
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (Block [
+        StmtExprStmt (Instantiation (Name 
+                {path = [], 
+                getIdentifier = Identifier "Smallobjectclass"}) 
+                [])
+        ])
+    }
+]]
+
+TAST:
+Just [Class (Identifier "Smallobjectclass") [] 
+[Method {
+    getIdentifier = Identifier "objectMethod",
+    getMods = [],
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (TypedStatement (Block [
+        (TypedStatement StmtExprStmt (TypedStatementExpression (Instantiation (Name 
+                {path = [], 
+                getIdentifier = Identifier "Smallobjectclass"}) 
+                []),RefType "Smallobjectclass"), RefType "Smallobjectclass")
+        ]), JVoid)
+    }
+]]

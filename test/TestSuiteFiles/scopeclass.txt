@@ -1,0 +1,45 @@
+class Scopefieldclass{
+    private int prField;
+    public int puField;
+    protected int proField;
+}
+
+AST:
+Just [Class (Identifier "Scopefieldclass") 
+[] 
+[Field (VarDecl {
+    getIdentifier = Identifier "prField",
+    getMods = [Private],
+    getType = PrimType Int,
+    getRHS = Nothing}),
+Field (VarDecl {
+    getIdentifier = Identifier "puField",
+    getMods = [Public],
+    getType = PrimType Int,
+    getRHS = Nothing}),
+Field (VarDecl {
+    getIdentifier = Identifier "proField",
+    getMods = [Protected],
+    getType = PrimType Int,
+    getRHS = Nothing})
+]]
+
+TAST:
+Just [Class (Identifier "Scopefieldclass") 
+[] 
+[Field (VarDecl {
+    getIdentifier = Identifier "prField",
+    getMods = [Private],
+    getType = PrimType Int,
+    getRHS = Nothing}),
+Field (VarDecl {
+    getIdentifier = Identifier "puField",
+    getMods = [Public],
+    getType = PrimType Int,
+    getRHS = Nothing}),
+Field (VarDecl {
+    getIdentifier = Identifier "proField",
+    getMods = [Protected],
+    getType = PrimType Int,
+    getRHS = Nothing})
+]]

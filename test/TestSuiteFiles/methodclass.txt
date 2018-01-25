@@ -1,0 +1,27 @@
+class Methodclass {
+    void Method() {
+    
+    }
+}
+
+AST:
+Just [Class (Identifier "Methodclass") [] 
+[Method {
+    getIdentifier = Identifier "Method",
+    getMods = [],
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (Block [])
+    }
+]]
+
+TAST:
+Just [Class (Identifier "Methodclass") [] 
+[Method {
+    getIdentifier = Identifier "Method",
+    getMods = [],
+    getReturnType = JVoid,
+    getParamList = [], 
+    getBody = Just (TypedStatement (Block []), JVoid)
+    }
+]]

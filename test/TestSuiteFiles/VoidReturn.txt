@@ -1,0 +1,31 @@
+class VRet{
+    void MyVoid(){
+        return;
+    }
+}
+
+Ast:
+  Just
+	[Class
+		(Identifier "VRet")
+		[]
+		[Method {
+		 getIdentifier = Identifier "ObjParamMethod", 
+		 getMods = [], 
+		 getReturnType = JVoid, 
+		 getParamList = [], 
+		 getBody = Just (Return Nothing)}]]
+
+Tast:
+  Just
+	[Class
+		(Identifier "VRet")
+		[]
+		[Method {
+		 getIdentifier = Identifier "ObjParamMethod", 
+		 getMods = [], 
+		 getReturnType = JVoid, 
+		 getParamList = [], 
+		 getBody = Just (TypedStatement (Return Nothing), JVoid)}]]
+		 
+		 

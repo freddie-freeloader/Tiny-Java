@@ -1,0 +1,98 @@
+class ObjCall {
+    
+    void CallMethod(){
+        ObjCall oc = new ObjCall();
+        oc.CallMe();
+    }
+    
+    public void CallMe(){}
+}
+
+AST:
+Just 
+	[Class 
+	(Identifier "ObjCall") 
+	[] 
+	[Method {
+		getIdentifier = Identifier "CallMethod", 
+		getMods = [], 
+		getReturnType = JVoid, 
+		getParamList = [], 
+		getBody = 
+			Just 
+				(Block 
+				[LocalVar 
+					(VarDecl {
+						getIdentifier = Identifier "oc", 
+						getMods = [], 
+						getType = RefType 
+							(Name {
+								path = [], 
+								getIdentifier = Identifier "ObjCall"}), 
+						getRHS = 
+							Just 
+								(ExprExprStmt 
+									(Instantiation 
+										(Name {
+											path = [], 
+											getIdentifier = Identifier "ObjCall"}) 
+									[]))}),
+					StmtExprStmt 
+						(Apply 
+							(Iden 
+								(Name {
+									path = 
+									[Identifier "oc"], 
+									getIdentifier = Identifier "CallMe"})) 
+							[])])},
+	Method {
+		getIdentifier = Identifier "CallMe", 
+		getMods = [Public], 
+		getReturnType = JVoid, 
+		getParamList = [], 
+		getBody = Just (Block [])}]]
+		
+		
+TAST:
+Just 
+	[Class 
+	(Identifier "ObjCall") 
+	[] 
+	[Method {
+		getIdentifier = Identifier "CallMethod", 
+		getMods = [], 
+		getReturnType = JVoid, 
+		getParamList = [], 
+		getBody =
+			Just 
+				(TypedStatement (Block 
+				[(TypedStatement (LocalVar 
+					(VarDecl {
+						getIdentifier = Identifier "oc", 
+						getMods = [], 
+						getType = RefType 
+							(Name {
+								path = [], 
+								getIdentifier = Identifier "ObjCall"}), 
+						getRHS = 
+							Just 
+								(TypedExpression (ExprExprStmt 
+									(TypedStatementExpression (Instantiation 
+										(Name {
+											path = [], 
+											getIdentifier = Identifier "ObjCall"}) 
+									[]), RefType "ObjCall")),  RefType "ObjCall")})), RefType "ObjCall"),
+					(TypedStatement StmtExprStmt 
+						(TypedStatementExpression (Apply 
+							(Iden 
+								(Name {
+									path = 
+									[Identifier "oc"], 
+									getIdentifier = Identifier "CallMe"})) 
+							[]), JVoid),  JVoid)]),  JVoid)},
+	Method {
+		getIdentifier = Identifier "CallMe", 
+		getMods = [Public], 
+		getReturnType = JVoid, 
+		getParamList = [], 
+		getBody = Just (TypedStatement (Block []), JVoid)}]]

@@ -1,0 +1,27 @@
+class Comments{
+	/*Multiline Comment*/ 
+	Comments(){
+		/*int ignoreMe;*/
+	}
+}
+Ast:
+       Just
+        [Class
+            (Identifier "Comments")
+            []
+            [Constructor {
+            getIdentifier = Identifier "Comments",
+            getMods = [],
+            getParamList = [],
+            getBody = Just (Block[])}]]
+		
+Ast:
+       Just
+        [Class
+            (Identifier "Comments")
+            []
+            [Constructor {
+            getIdentifier = Identifier "Comments",
+            getMods = [],
+            getParamList = [],
+            getBody = Just (TypedStatement (Block[]), JVoid)}]]

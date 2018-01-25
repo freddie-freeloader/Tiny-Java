@@ -1,0 +1,99 @@
+class ObjParamCall {
+    
+    void CallParamMethod(){
+        ObjParamCall opc = new ObjParamCall();
+        opc.CallMe(opc);
+    }
+    
+    public void CallMe(ObjParamCall oPC){}
+}
+
+Ast:
+       Just 
+	    [Class 
+		 (Identifier "ObjParamCall") 
+		  [] 
+		  [Method {
+		   getIdentifier = Identifier "CallParamMethod", 
+		   getMods = [], 
+		   getReturnType = JVoid, 
+		   getParamList = [], 
+		   getBody = 
+		    Just 
+			 (Block 
+			  [LocalVar 
+			   (VarDecl {
+			    getIdentifier = Identifier "opc", 
+				getMods = [], 
+				getType = RefType 
+				 (Name {
+				  path = [], 
+				  getIdentifier = Identifier "ObjParamCall"}), 
+				getRHS = 
+				 Just 
+				  (ExprExprStmt 
+				   (Instantiation 
+				    (Name {
+					 path = [], 
+					 getIdentifier = Identifier "ObjParamCall"}) 
+					[]))}),
+			   StmtExprStmt 
+			    (Apply  
+				 (Iden 
+				  (Name {
+				   path = [Identifier "opc"], 
+				   getIdentifier = Identifier "CallMe"})) 
+				 [Iden (Name {path = [], getIdentifier = Identifier "opc"})])])},
+		  Method {
+		   getIdentifier = Identifier "CallMe", 
+		   getMods = [Public], 
+		   getReturnType = JVoid, 
+		   getParamList = 
+		    [(RefType (Name {path = [], getIdentifier = Identifier "ObjParamCall"}),
+			 Identifier "oPC")], 
+		   getBody = Just (Block [])}]]
+
+TAst:
+       Just 
+	    [Class 
+		 (Identifier "ObjParamCall") 
+		  [] 
+		  [Method {
+		   getIdentifier = Identifier "CallParamMethod", 
+		   getMods = [], 
+		   getReturnType = JVoid, 
+		   getParamList = [], 
+		   getBody = 
+		    Just 
+			 (TypedStatement (Block 
+			  [(TypedStatement LocalVar 
+			   (VarDecl {
+			    getIdentifier = Identifier "opc", 
+				getMods = [], 
+				getType = RefType 
+				 (Name {
+				  path = [], 
+				  getIdentifier = Identifier "ObjParamCall"}), 
+				getRHS = 
+				 Just 
+				  (TypedExpression (ExprExprStmt 
+				   (TypedExpressionStatement (Instantiation 
+				    (Name {
+					 path = [], 
+					 getIdentifier = Identifier "ObjParamCall"}) 
+					[]), RefType "ObjParamCall")), RefType "ObjParamCall") }), RefType "ObjParamCall"),
+			   (TypedStatement StmtExprStmt 
+			    (TypedExpressionStatement (Apply  
+				 (Iden 
+				  (Name {
+				   path = [Identifier "opc"], 
+				   getIdentifier = Identifier "CallMe"})) 
+				 [Iden (Name {path = [], getIdentifier = Identifier "opc"})]), JVoid), JVoid)]), JVoid)},
+		  Method {
+		   getIdentifier = Identifier "CallMe", 
+		   getMods = [Public], 
+		   getReturnType = JVoid, 
+		   getParamList = 
+		    [(RefType (Name {path = [], getIdentifier = Identifier "ObjParamCall"}),
+			 Identifier "oPC")], 
+		   getBody = Just (TypedStatemetn (Block []), JVoid)}]]

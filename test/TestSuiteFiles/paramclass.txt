@@ -1,0 +1,24 @@
+class Paramclass {
+    void paramMethod(int i_param, boolean b_param, char c_param){
+    }
+}
+
+AST:
+Just [Class (Identifier "Paramclass") [] 
+[Method {
+    getIdentifier = Identifier "paramMethod",
+    getMods = [],
+    getReturnType = JVoid,
+    getParamList = [(PrimType Int,Identifier "i_param"), (PrimType boolean,Identifier "b_param"), (PrimType char,Identifier "c_param")], 
+    getBody = Just (Block [])
+}]]
+
+TAST:
+Just [Class (Identifier "Paramclass") [] 
+[Method {
+    getIdentifier = Identifier "paramMethod",
+    getMods = [],
+    getReturnType = JVoid,
+    getParamList = [(PrimType Int,Identifier "i_param"), (PrimType boolean,Identifier "b_param"), (PrimType char,Identifier "c_param")], 
+    getBody = Just (TypedStatement (Block []), JVoid)
+}]]
