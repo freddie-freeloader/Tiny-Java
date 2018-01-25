@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 44031a34a911e773bf54e6519f3236a4260659b4d8ae60fbecdddd395f58df90
+-- hash: fdeb4cb70639707f4f7443484938c90a32b5692fb94823451379cf64144b448c
 
 name:           tiny-java
 version:        0.0.0
@@ -22,12 +22,23 @@ library
   ghc-options: -Wall -fno-warn-name-shadowing
   build-depends:
       base ==4.*
+    , bytestring ==0.10.8.*
     , megaparsec ==6.*
+    , text ==1.2.*
   exposed-modules:
       Compiler.AbstractBytecode
       Compiler.Ast
+      Compiler.BytecodeGeneration.AttributesToByte
+      Compiler.BytecodeGeneration.ByteFileGenerator
+      Compiler.BytecodeGeneration.ConstantPoolToByte
+      Compiler.BytecodeGeneration.FieldsToByte
+      Compiler.BytecodeGeneration.InstructionsToBytes
+      Compiler.BytecodeGeneration.MethodsToByte
+      Compiler.BytecodeGeneration.ToByteUtil
+      Compiler.Instructions
       Compiler.Parser
       Compiler.ParserUtils
+      Compiler.Type_Check
   other-modules:
       Paths_tiny_java
   default-language: Haskell2010
@@ -41,8 +52,10 @@ test-suite spec
   ghc-options: -Wall -fno-warn-name-shadowing
   build-depends:
       base ==4.*
+    , bytestring ==0.10.8.*
     , hspec ==2.*
     , megaparsec ==6.*
+    , text ==1.2.*
     , tiny-java
   other-modules:
       Compiler.ParserSpec

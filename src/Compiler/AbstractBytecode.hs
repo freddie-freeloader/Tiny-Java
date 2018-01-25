@@ -1,30 +1,37 @@
 module Compiler.AbstractBytecode where
-
 import Data.Int (Int16, Int32, Int64)
+import Data.Word (Word8,Word16,Word32,Word64)
+import Compiler.Instructions
 
 data ClassFile = ClassFile
-  { -- | Should be initialized as 0xCAFEBABE
-    magic :: Magic
-    -- | Sets the version of the classfile (will be constant)
-  , minor_version :: MinorVersion
-  , major_version :: MajorVersion
-  -- | Constantenpool
-  , constant_pool :: ConstantPool
-  , classFileAccessFlags :: ClassFileAccessFlags
-  , this :: ThisClass
-  , super :: SuperClass
-  -- | Interfaces
-  , interfaces :: Interfaces
-  , fields :: Fields -- Fields
-  , methods :: Methods -- Methoden
-  , attributes :: Attributes -- Attribute
-  }
+  { magic :: Magic -- CAFEBABE
+  , minver :: MinorVersion -- Versionen
+  , maxver :: MajorVersion
+  , count_cp :: ConstantPool_Count -- Anz. Eintr. Konst.pool
+  , array_cp :: ConstantPool -- Konstantenpool
+  , classFileAccessFlags :: ClassFileAccessFlags -- Berechtigungen
+  , this :: ThisClass -- This-Klasse
+  , super :: SuperClass -- Super-Klasse
+  , count_interfaces :: Interfaces_Count -- Anz. Interfaces
+  , array_interfaces :: Interfaces -- Interfaces
+  , count_fields :: Fields_Count -- Anzahl Fields
+  , array_fields :: Fields -- Fields
+  , count_methods :: Methods_Count -- Methoden
+  , array_methods :: Methods -- Methoden
+  , count_attributes :: Attributes_Count -- Anz. Attribute
+  , array_attributes :: Attributes -- Attribute
+  } deriving (Eq, Show)
 
 data Magic = Magic
+ deriving (Eq, Show)
 
 data MinorVersion = MinorVersion
+ deriving (Eq, Show)
 
 data MajorVersion = MajorVersion
+ deriving (Eq, Show)
+
+type ConstantPool_Count = Word16
 
 type ConstantPool = [Constant]
 
@@ -60,8 +67,8 @@ data Constant =
       double_value :: Double
     }
   | CONSTANT_NameAndType{
-      constnat_name_and_type_name_index :: Index_Constant_Pool
-    , constnat_name_and_type_descriptor_index :: Index_Constant_Pool
+      constant_name_and_type_name_index :: Index_Constant_Pool
+    , constant_name_and_type_descriptor_index :: Index_Constant_Pool
     }
   | CONSTANT_Utf8{
       utf8_value :: String
@@ -78,9 +85,10 @@ data Constant =
   | CONSTANT_InvokeDynamic{
       bootstrap_method_attribute_index :: Index_Bootstrap_Methods
     , name_and_type_index :: Index_Constant_Pool
-    }
+    }  deriving (Eq, Show)
 
-type Index_Constant_Pool = Int64 -- Maybe Data
+
+type Index_Constant_Pool = Word16
 
 data Reference = GetField
                 |GetStatic
@@ -91,8 +99,9 @@ data Reference = GetField
                 |InvokeSpecial
                 |NewInvokeSpecial
                 |InvokeInterface
+                 deriving (Eq, Show)
 
-type Index_Bootstrap_Methods = Int64 -- Maybe Data
+type Index_Bootstrap_Methods = Word16
 
 type ClassFileAccessFlags = [ClassFileAccessFlag]
 
@@ -104,18 +113,24 @@ data ClassFileAccessFlag = PUBLIC
                   |SYNTHETIC
                   |ANNOTATION
                   |ENUM
+                         deriving (Eq, Show)
 
 data ThisClass = ThisClass{
                 this_class_index :: Index_Constant_Pool
-                }
+                } deriving (Eq, Show)
 
 data SuperClass = SuperClass{
-                super_class_index :: Maybe Index_Constant_Pool
-                }
+                super_class_index :: Index_Constant_Pool
+                }  deriving (Eq, Show)
+
+type Interfaces_Count = Word16
 
 type Interfaces = [Interface]
 
 data Interface = Interface -- Maybe TODO
+  deriving (Eq, Show)
+
+type Fields_Count = Word16
 
 type Fields = [Field]
 
@@ -124,7 +139,7 @@ data Field = Field{
   , field_name_index :: Index_Constant_Pool -- name_index
   , field_descriptor_index :: Index_Constant_Pool -- descriptor_index
   , field_attributes :: Attributes
-  }
+  } deriving (Eq, Show)
 
 type FieldAccessFlags = [FieldAccessFlag]
 
@@ -137,6 +152,9 @@ data FieldAccessFlag = F_PUBLIC
                     |F_TRANSIENT
                     |F_SYNTHETIC
                     |F_ENUM
+                     deriving (Eq, Show)
+
+type Methods_Count = Word16
 
 type Methods = [Method]
 
@@ -145,7 +163,7 @@ data Method = Method{
   , method_name_index :: Index_Constant_Pool -- name_index
   , method_descriptor_index :: Index_Constant_Pool -- descriptor_index
   , method_attributes :: Attributes
-  }
+  } deriving (Eq, Show)
 
 type MethodAccessFlags = [MethodAccessFlag]
 
@@ -161,59 +179,60 @@ data MethodAccessFlag = M_PUBLIC
                       |M_ABSTRACT
                       |M_STRICT
                       |M_SYNTHETIC
+                      deriving (Eq, Show)
+
+type Attributes_Count = Word16
 
 type Attributes = [Attribute]
 
-data Attribute =
+data Attribute = -- Maybe TODO extend
     ConstantValue {
-     attribute_name_index :: Index_Constant_Pool
-   , attribute_constantvalue_index :: Index_Constant_Pool
+     constant_value_name_index :: Index_Constant_Pool
+   , constant_value_constantvalue_index :: Index_Constant_Pool
    }
    |Code {
-      attribute_name_index :: Index_Constant_Pool -- attribute_name_index
-    , max_stack :: Int16 -- max_stack
-    , max_locals :: Int16 -- max_local
+      code_name_index :: Index_Constant_Pool -- attribute_name_index
+    , max_stack :: Word16 -- max_stack
+    , max_locals :: Word16 -- max_local
     , code :: Instructions
     , exception_tables :: ExceptionTables
-    , code_attributes :: Attributes
-  }
-  |StackMapTable {
-    attribute_name_index :: Index_Constant_Pool
-  , stack_map_frame :: Entries
-  }
-  | InnerClass {
-    inner_class_name_index :: Index_Constant_Pool
-  , classes :: Classes
-  }
-  | Synthetic {
-    synthetic_name_index :: Index_Constant_Pool
-  }
-  | SourceFile {
-    source_file_name_index :: Index_Constant_Pool
-  , sourcefile_index :: Index_Constant_Pool
-  }
-  | LineNumberTable {
-    line_number_table_name_index :: Index_Constant_Pool
-  , line_number_table :: LineNumberTable
-  }
-  | LocalVariableTable{
-    local_variable_table_name_index :: Index_Constant_Pool
-  , local_variable_table :: LocalVariableTable
-  }
-  | Deprecated {
-    deprecated_name_index :: Index_Constant_Pool
-  }
-
-data Instructions = Aaload
-                  | Bipush --TODO
+    , attributes :: Attributes
+    }
+    |StackMapTable {
+      stack_map_name_index :: Index_Constant_Pool
+    , stack_map_frame :: Entries
+    }
+    | InnerClass {
+      inner_class_name_index :: Index_Constant_Pool
+    , classes :: Classes
+    }
+    | Synthetic {
+      synthetic_name_index :: Index_Constant_Pool
+    }
+    | SourceFile {
+      source_file_name_index :: Index_Constant_Pool
+    , sourcefile_index :: Index_Constant_Pool
+    }
+    | LineNumberTable {
+      line_number_table_name_index :: Index_Constant_Pool
+    , line_number_table :: LineNumberTable
+    }
+    | LocalVariableTable{
+      local_variable_table_name_index :: Index_Constant_Pool
+    , local_variable_table :: LocalVariableTable
+    }
+    | Deprecated {
+      deprecated_name_index :: Index_Constant_Pool
+    } deriving (Eq, Show)
 
 type ExceptionTables = [ExceptionTable]
 
 data ExceptionTable = Exception --Maybe TODO
+ deriving (Eq, Show)
 
-type Entries = [Entry]
+type Entries = [Entrie]
 
-data Entry = SameFrame
+data Entrie = SameFrame
             | SameLocals1StackItemFrame {
               stack :: UnionStack
             }
@@ -235,7 +254,7 @@ data Entry = SameFrame
               offset_delta :: Int16
             , locals :: UnionLocals
             , stack :: UnionLocals
-            }
+            } deriving (Eq, Show)
 
 
 type UnionLocals = [Local]
@@ -255,6 +274,7 @@ data VerificationType = ItemTop
                       | ItemUninitialized {
                         offset :: Int16
                       }
+                       deriving (Eq, Show)
 
 type Classes = [Class]
 
@@ -263,7 +283,7 @@ data Class = Class {
                   , outer_class_info_index :: Maybe Index_Constant_Pool
                   , inner_name_index :: Maybe Index_Constant_Pool
                   , inner_class_access_flags :: InnerClassAccessFlags
-                  }
+                  } deriving (Eq, Show)
 
 type InnerClassAccessFlags = [InnerClassAccessFlag]
 
@@ -277,19 +297,20 @@ data InnerClassAccessFlag = IC_PUBLIC
                           | IC_SYNTHETIC
                           | IC_ANNOTATION
                           | IC_ENUM
+                          deriving (Eq, Show)
 
 type LineNumberTable = [LineNumber]
 
 data LineNumber = LineNumber {
-                    line_number_start_pc :: Int16
-                  , line_number :: Int16
-                  }
+                    line_number_start_pc :: Word16
+                  , line_number :: Word16
+                  } deriving (Eq, Show)
 
 type LocalVariableTable = [LocalVariable]
 
 data LocalVariable = LocalVariable {
-                      local_variable_start_pc :: Int16
+                      local_variable_start_pc :: Word16
                     , local_variable_name_index :: Index_Constant_Pool
                     , local_variable_descriptor_index :: Index_Constant_Pool
-                    , index :: Int -- FIXME figure out something
-                    }
+                    , local_variable_index :: Word16 -- is index of the LocalVariableTable
+                    } deriving (Eq, Show)
