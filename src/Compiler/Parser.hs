@@ -23,7 +23,8 @@ mods = [(Protected,"protected"),(Public,"public"),(Private,"private"),(Static,"s
 
 kwords :: [String]
 kwords = ["if","then","else","while","do","skip"
-         ,"true","false","not","and","or","class","return"] ++ map snd mods
+         ,"true","false","not","and","or","class"
+         ,"return","continue","break"] ++ map snd mods
 
 -- | 'identifier' parses an identifier.
 
@@ -334,6 +335,8 @@ whileStmtNoShortIf = do
 
 statementWithoutTrailing :: Parser (Maybe Statement)
 statementWithoutTrailing = Just <$> block
+                       <|> try (const (Just Continue) <$> kword "continue" <* semicolon)
+                       <|> try (const (Just Break) <$> kword "break" <* semicolon)
                        <|> try emptyStmt
                        <|> try (Just <$> returnStmt)
                        <|> try (Just <$> expressionStmt)

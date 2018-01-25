@@ -548,7 +548,7 @@ spec = do
 		  Just (Block 
 		   [While {
 			 getCond = Literal (BooleanL True), 
-			 getBody = Just (Block [])}])}]]
+			 getBody = Just (Block [Break])}])}]]
      it "some method calls on rhs and calculations with methods (method + method)" $
 	   parseTestString "class MethodCalc{void Calc(){int i = intMethod();char c = 'a';if(boolMethod())c = charMethod();boolean b;b = boolMethod();        int q = intMethod() + i;        int a = intMethod() + intMethod();}    int intMethod(){return 1;}    boolean boolMethod(){return true;}    char charMethod(){return 'Z';}    }"
 	   `shouldBe`
