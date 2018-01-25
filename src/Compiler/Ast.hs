@@ -109,7 +109,7 @@ data AssignOp = NormalAssign
               | ModuloAssign
               | PlusAssign
               | MinusAssign
-              | LeftAssign
+              | LeftShiftAssign
               | ShiftRightAssign
               | UnsignedShiftRightAssign
               | AndAssign
