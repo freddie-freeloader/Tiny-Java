@@ -259,88 +259,88 @@ spec = do
      it "a method which is called from an object" $
        parseTestString "class ObjCall {void CallMethod(){ObjCall oc = new ObjCall();oc.CallMe();}public void CallMe(){}}"
        `shouldBe`
-       Just 
-	   [Class 
-	   (Identifier "ObjCall") 
-	   [] 
+       Just
+	   [Class
+	   (Identifier "ObjCall")
+	   []
 	   [Method {
-		getIdentifier = Identifier "CallMethod", 
-		getMods = [], 
-		getReturnType = JVoid, 
-		getParamList = [], 
-		getBody = 
-			Just 
-				(Block 
-				[LocalVar 
+		getIdentifier = Identifier "CallMethod",
+		getMods = [],
+		getReturnType = JVoid,
+		getParamList = [],
+		getBody =
+			Just
+				(Block
+				[LocalVar
 					(VarDecl {
-						getIdentifier = Identifier "oc", 
-						getMods = [], 
-						getType = RefType 
+						getIdentifier = Identifier "oc",
+						getMods = [],
+						getType = RefType
 							(Name {
-								path = [], 
-								getIdentifier = Identifier "ObjCall"}), 
-						getRHS = 
-							Just 
-								(ExprExprStmt 
-									(Instantiation 
+								path = [],
+								getIdentifier = Identifier "ObjCall"}),
+						getRHS =
+							Just
+								(ExprExprStmt
+									(Instantiation
 										(Name {
-											path = [], 
-											getIdentifier = Identifier "ObjCall"}) 
+											path = [],
+											getIdentifier = Identifier "ObjCall"})
 									[]))}),
-					StmtExprStmt 
-						(Apply 
-							(Iden 
+					StmtExprStmt
+						(Apply
+							(Iden
 								(Name {
-									path = 
-									[Identifier "oc"], 
-									getIdentifier = Identifier "CallMe"})) 
+									path =
+									[Identifier "oc"],
+									getIdentifier = Identifier "CallMe"}))
 							[])])},
 	    Method {
-		 getIdentifier = Identifier "CallMe", 
-		 getMods = [Public], 
-		 getReturnType = JVoid, 
-		 getParamList = [], 
+		 getIdentifier = Identifier "CallMe",
+		 getMods = [Public],
+		 getReturnType = JVoid,
+		 getParamList = [],
 		 getBody = Just (Block [])}]]
      it "a method call on right hand side" $
 	   parseTestString "class RetToVar{    void MethodToVar(){int i = GetInt();}    public int GetInt(){return 0;}}"
        `shouldBe`
-       Just 
-	   [Class 
-	    (Identifier "RetToVar") 
-	    [] 
+       Just
+	   [Class
+	    (Identifier "RetToVar")
+	    []
 	    [Method {
-		 getIdentifier = Identifier "MethodToVar", 
-		 getMods = [], 
-		 getReturnType = JVoid, 
-		 getParamList = [], 
-		 getBody = 
-		  Just 
-		   (Block 
-		    [LocalVar 
+		 getIdentifier = Identifier "MethodToVar",
+		 getMods = [],
+		 getReturnType = JVoid,
+		 getParamList = [],
+		 getBody =
+		  Just
+		   (Block
+		    [LocalVar
 			 (VarDecl {
-			  getIdentifier = Identifier "i", 
-			  getMods = [], 
-			  getType = PrimType Int, 
-			  getRHS = 
-			   Just 
-			    (ExprExprStmt 
-				 (Apply 
-				  (Iden 
+			  getIdentifier = Identifier "i",
+			  getMods = [],
+			  getType = PrimType Int,
+			  getRHS =
+			   Just
+			    (ExprExprStmt
+				 (Apply
+				  (Iden
 				   (Name {
-				    path = [], 
-					getIdentifier = Identifier "GetInt"})) 
+				    path = [],
+					getIdentifier = Identifier "GetInt"}))
 				 []))})])},
 		Method {
-		 getIdentifier = Identifier "GetInt", 
-		 getMods = [Public], 
-		 getReturnType = PrimType Int, 
-		 getParamList = [], 
-		 getBody = 
-		  Just 
-		   (Block 
-		    [Return 
-			 (Just 
-			  (Literal 
+		 getIdentifier = Identifier "GetInt",
+		 getMods = [Public],
+		 getReturnType = PrimType Int,
+		 getParamList = [],
+		 getBody =
+		  Just
+		   (Block
+		    [Return
+			 (Just
+			  (Literal
 			   (IntegerL 0)))])}]]
      it "a ternary operator" $
 	   parseTestString "class Ternary{void ternary(){int tern = 5 < 7 ? 1 : 2;}}"
@@ -350,85 +350,93 @@ spec = do
             (Identifier "Ternary")
             []
             [Method {
-		     getIdentifier = Identifier "ternary", 
-		     getMods = [Public], 
-		     getReturnType = JVoid, 
-		     getParamList = [], 
-		     getBody = 
-		      Just 
-		       (Block 
-		        [LocalVar 
+		     getIdentifier = Identifier "ternary",
+		     getMods = [],
+		     getReturnType = JVoid,
+		     getParamList = [],
+		     getBody =
+		      Just
+		       (Block
+		        [LocalVar
 			     (VarDecl {
-			      getIdentifier = Identifier "i", 
-			      getMods = [], 
-			      getType = PrimType Int, 
-			      getRHS = 
-			       Just 
+			      getIdentifier = Identifier "tern",
+			      getMods = [],
+			      getType = PrimType Int,
+			      getRHS =
+			       Just
 			        (TernaryIf {
 					 getCond = PrimBinOp  Less (Literal (IntegerL 5)) (Literal (IntegerL 7)),
-					 getElseStmt = Literal (IntegerL 2),
-					 getThenStmt = Literal (IntegerL 1)
+					 getElseStmt = Literal (IntegerL 1),
+					 getThenStmt = Literal (IntegerL 2)
 					})})])}]]
      it "if-else expression" $
 	   parseTestString "class IfClass{ void ifMethod(){if(1 > 0){}else{}}}"
 	   `shouldBe`
-       Just 
-	    [Class 
-		 (Identifier "IfClass") 
-		 [] 
+       Just
+	    [Class
+		 (Identifier "IfClass")
+		 []
 		 [Method {
-		  getIdentifier = Identifier "ifMethod", 
-		  getMods = [], 
-		  getReturnType = JVoid, 
-		  getParamList = [], 
-		  getBody = 
-		   Just (Block 
+		  getIdentifier = Identifier "ifMethod",
+		  getMods = [],
+		  getReturnType = JVoid,
+		  getParamList = [],
+		  getBody =
+		   Just (Block
 		    [If {
-			 getCond = PrimBinOp Greater 
-			  (Literal (IntegerL 1)) (Literal (IntegerL 0)), 
-			 getThenStmt = 
-			  Just (Block []), 
+			 getCond = PrimBinOp Greater
+			  (Literal (IntegerL 1)) (Literal (IntegerL 0)),
+			 getThenStmt =
+			  Just (Block []),
 			 getElseStmt = Just (Block[])}])}]]
      it "if-elseif expression" $
        parseTestString "class IfClass{ void ifMethod(){if(1 > 0){}else if(1 < 0){}}}"
 	   `shouldBe`
-       Just 
-	    [Class 
-		 (Identifier "IfClass") 
-		 [] 
+       Just
+	    [Class
+		 (Identifier "IfClass")
+		 []
 		 [Method {
-		  getIdentifier = Identifier "ifMethod", 
-		  getMods = [], 
-		  getReturnType = JVoid, 
-		  getParamList = [], 
-		  getBody = 
-		   Just (Block 
+		  getIdentifier = Identifier "ifMethod",
+		  getMods = [],
+		  getReturnType = JVoid,
+		  getParamList = [],
+		  getBody =
+		   Just (Block
 		    [If {
-			 getCond = PrimBinOp Greater 
-			  (Literal (IntegerL 1)) (Literal (IntegerL 0)), 
-			 getThenStmt = 
-			  Just (Block []), 
-			 getElseStmt = Just (Block[])}])}]]
+			 getCond = PrimBinOp Greater
+			  (Literal (IntegerL 1))
+                          (Literal (IntegerL 0))
+                        , getThenStmt = Just (Block [])
+                        , getElseStmt = Just If {getCond = PrimBinOp Less
+                                                     (Literal (IntegerL 1))
+                                                     (Literal (IntegerL 0))
+                                                 , getThenStmt = Just (Block [])
+                                                 , getElseStmt = Nothing}}])}]]
      it "if-elseif-else expression" $
        parseTestString "class IfClass{ void ifMethod(){if(1 > 0){}else if(1 < 0){}else{}}}"
 	   `shouldBe`
-       Just 
-	    [Class 
-		 (Identifier "IfClass") 
-		 [] 
+       Just
+	    [Class
+		 (Identifier "IfClass")
+		 []
 		 [Method {
-		  getIdentifier = Identifier "ifMethod", 
-		  getMods = [], 
-		  getReturnType = JVoid, 
-		  getParamList = [], 
-		  getBody = 
-		   Just (Block 
+		  getIdentifier = Identifier "ifMethod",
+		  getMods = [],
+		  getReturnType = JVoid,
+		  getParamList = [],
+		  getBody =
+		   Just (Block
 		    [If {
-			 getCond = PrimBinOp Greater 
-			  (Literal (IntegerL 1)) (Literal (IntegerL 0)), 
-			 getThenStmt = 
-			  Just (Block []), 
-			 getElseStmt = Just (Block[])}])}]]
+			 getCond = PrimBinOp Greater
+			  (Literal (IntegerL 1)) (Literal (IntegerL 0)),
+			 getThenStmt =
+			  Just (Block []),
+			 getElseStmt = Just If {getCond = PrimBinOp Less
+                                                 (Literal (IntegerL 1))
+                                                 (Literal (IntegerL 0))
+                                               , getThenStmt = Just (Block [])
+                                               , getElseStmt = Just (Block [])}}])}]]
      it "a void method with return" $
        parseTestString "class VRet{void MyVoid(){return;}}"
 	   `shouldBe`
@@ -437,74 +445,74 @@ spec = do
             (Identifier "VRet")
             []
             [Method {
-		     getIdentifier = Identifier "MyVoid", 
-		     getMods = [], 
-		     getReturnType = JVoid, 
-		     getParamList = [], 
+		     getIdentifier = Identifier "MyVoid",
+		     getMods = [],
+		     getReturnType = JVoid,
+		     getParamList = [],
 		     getBody = Just (Block[Return Nothing])}]]
      it "an Object as parameter" $
 	   parseTestString "class ObjParam{void ObjParamMethod(ObjParam op){}}"
 	   `shouldBe`
-       Just 
-	    [Class 
-		 (Identifier "ObjParam") 
-		 [] 
+       Just
+	    [Class
+		 (Identifier "ObjParam")
+		 []
 		 [Method {
-		  getIdentifier = Identifier "ObjParamMethod", 
-		  getMods = [], 
-		  getReturnType = JVoid, 
-		  getParamList = 
-		   [(RefType 
+		  getIdentifier = Identifier "ObjParamMethod",
+		  getMods = [],
+		  getReturnType = JVoid,
+		  getParamList =
+		   [(RefType
 		    (Name {
-			 path = [], 
+			 path = [],
 			 getIdentifier = Identifier "ObjParam"}),
-			Identifier "op")], 
+			Identifier "op")],
 		  getBody = Just (Block [])}]]
      it "a method call with Object as parameter" $
 	   parseTestString "class ObjParamCall {    void CallParamMethod(){ObjParamCall opc = new ObjParamCall();opc.CallMe(opc);}    public void CallMe(ObjParamCall oPC){}}"
 	   `shouldBe`
-       Just 
-	    [Class 
-		 (Identifier "ObjParamCall") 
-		  [] 
+       Just
+	    [Class
+		 (Identifier "ObjParamCall")
+		  []
 		  [Method {
-		   getIdentifier = Identifier "CallParamMethod", 
-		   getMods = [], 
-		   getReturnType = JVoid, 
-		   getParamList = [], 
-		   getBody = 
-		    Just 
-			 (Block 
-			  [LocalVar 
+		   getIdentifier = Identifier "CallParamMethod",
+		   getMods = [],
+		   getReturnType = JVoid,
+		   getParamList = [],
+		   getBody =
+		    Just
+			 (Block
+			  [LocalVar
 			   (VarDecl {
-			    getIdentifier = Identifier "opc", 
-				getMods = [], 
-				getType = RefType 
+			    getIdentifier = Identifier "opc",
+				getMods = [],
+				getType = RefType
 				 (Name {
-				  path = [], 
-				  getIdentifier = Identifier "ObjParamCall"}), 
-				getRHS = 
-				 Just 
-				  (ExprExprStmt 
-				   (Instantiation 
+				  path = [],
+				  getIdentifier = Identifier "ObjParamCall"}),
+				getRHS =
+				 Just
+				  (ExprExprStmt
+				   (Instantiation
 				    (Name {
-					 path = [], 
-					 getIdentifier = Identifier "ObjParamCall"}) 
+					 path = [],
+					 getIdentifier = Identifier "ObjParamCall"})
 					[]))}),
-			   StmtExprStmt 
-			    (Apply  
-				 (Iden 
+			   StmtExprStmt
+			    (Apply
+				 (Iden
 				  (Name {
-				   path = [Identifier "opc"], 
-				   getIdentifier = Identifier "CallMe"})) 
+				   path = [Identifier "opc"],
+				   getIdentifier = Identifier "CallMe"}))
 				 [Iden (Name {path = [], getIdentifier = Identifier "opc"})])])},
 		  Method {
-		   getIdentifier = Identifier "CallMe", 
-		   getMods = [Public], 
-		   getReturnType = JVoid, 
-		   getParamList = 
+		   getIdentifier = Identifier "CallMe",
+		   getMods = [Public],
+		   getReturnType = JVoid,
+		   getParamList =
 		    [(RefType (Name {path = [], getIdentifier = Identifier "ObjParamCall"}),
-			 Identifier "oPC")], 
+			 Identifier "oPC")],
 		   getBody = Just (Block [])}]]
      it "this keyword" $
 	   parseTestString "class UseThis{int hand; void thisMethod(){this.hand = 2;}}"
@@ -519,280 +527,280 @@ spec = do
                 getType = PrimType Int,
                 getRHS = Nothing}),
 			 Method {
-			  getIdentifier = Identifier "thisMethod", 
-			  getMods = [], 
-			  getReturnType = JVoid, 
-			  getParamList = [], 
-			  getBody = 
-			   Just (Block 
-			    [StmtExprStmt 
+			  getIdentifier = Identifier "thisMethod",
+			  getMods = [],
+			  getReturnType = JVoid,
+			  getParamList = [],
+			  getBody =
+			   Just (Block
+			    [StmtExprStmt
 				 (Assign NormalAssign
 				  (Name {
-				   path = [This], 
+				   path = [This],
 				   getIdentifier = Identifier "hand"})
 				  (Literal (IntegerL 2)))])}
 			]]
      it "break keyword" $
        parseTestString "class UseBreak{void breakMethod(){while(true){break;}}}"
 	   `shouldBe`
-	   Just 
+	   Just
 	   [Class
 	    (Identifier "UseBreak")
 		[]
-		[Method 
+		[Method
 		 {getIdentifier = Identifier "breakMethod",
 		 getMods = [],
 		 getReturnType = JVoid,
 		 getParamList = [],
-		 getBody = 
-		  Just (Block 
+		 getBody =
+		  Just (Block
 		   [While {
-			 getCond = Literal (BooleanL True), 
+			 getCond = Literal (BooleanL True),
 			 getBody = Just (Block [Break])}])}]]
      it "some method calls on rhs and calculations with methods (method + method)" $
 	   parseTestString "class MethodCalc{void Calc(){int i = intMethod();char c = 'a';if(boolMethod())c = charMethod();boolean b;b = boolMethod();        int q = intMethod() + i;        int a = intMethod() + intMethod();}    int intMethod(){return 1;}    boolean boolMethod(){return true;}    char charMethod(){return 'Z';}    }"
 	   `shouldBe`
-       Just 
-	    [Class 
-		 (Identifier "MethodCalc") 
-		 [] 
+       Just
+	    [Class
+		 (Identifier "MethodCalc")
+		 []
 		 [Method {
-		  getIdentifier = Identifier "Calc", 
-		  getMods = [], 
-		  getReturnType = JVoid, 
-		  getParamList = [], 
-		  getBody = 
-		   Just 
-		    (Block 
-			 [LocalVar 
+		  getIdentifier = Identifier "Calc",
+		  getMods = [],
+		  getReturnType = JVoid,
+		  getParamList = [],
+		  getBody =
+		   Just
+		    (Block
+			 [LocalVar
 			  (VarDecl {
-			   getIdentifier = Identifier "i", 
-			   getMods = [], 
-			   getType = PrimType Int, 
-			   getRHS = 
-			    Just 
-				 (ExprExprStmt 
-				  (Apply 
-				   (Iden 
+			   getIdentifier = Identifier "i",
+			   getMods = [],
+			   getType = PrimType Int,
+			   getRHS =
+			    Just
+				 (ExprExprStmt
+				  (Apply
+				   (Iden
 				    (Name {
-					 path = [], 
-					 getIdentifier = Identifier "intMethod"})) 
+					 path = [],
+					 getIdentifier = Identifier "intMethod"}))
 					 []))}),
-			 LocalVar 
+			 LocalVar
 			  (VarDecl {
-			   getIdentifier = Identifier "c", 
-			    getMods = [], 
-				getType = PrimType Char, 
-				getRHS = 
-				 Just 
+			   getIdentifier = Identifier "c",
+			    getMods = [],
+				getType = PrimType Char,
+				getRHS =
+				 Just
 				  (Literal (CharL 'a'))}),
 			 If {
-			  getCond = ExprExprStmt 
-			   (Apply 
-			    (Iden 
-				 (Name { 
-				  path = [], 
-				  getIdentifier = Identifier "boolMethod"})) []), 
-			  getThenStmt = 
-			   Just 
-			    (StmtExprStmt 
-				 (Assign NormalAssign 
-				  (Name {
-				   path = [], 
-				   getIdentifier = Identifier "c"}) 
-				  (ExprExprStmt 
-				   (Apply 
-				    (Iden 
-					 (Name {
-					  path = [], 
-					  getIdentifier = Identifier "charMethod"})) [])))), 
-			  getElseStmt = Nothing},
-			 LocalVar  
-			  (VarDecl {
-			   getIdentifier = Identifier "b", 
-			   getMods = [], 
-			   getType = PrimType Boolean, 
-			   getRHS = Nothing}),
-			  StmtExprStmt 
-			  (Assign NormalAssign 
-			   (Name {
-			    path = [], 
-				 getIdentifier = Identifier "b"}) 
-			  (ExprExprStmt 
-			   (Apply 
-			    (Iden 
+			  getCond = ExprExprStmt
+			   (Apply
+			    (Iden
 				 (Name {
-				  path = [], 
+				  path = [],
+				  getIdentifier = Identifier "boolMethod"})) []),
+			  getThenStmt =
+			   Just
+			    (StmtExprStmt
+				 (Assign NormalAssign
+				  (Name {
+				   path = [],
+				   getIdentifier = Identifier "c"})
+				  (ExprExprStmt
+				   (Apply
+				    (Iden
+					 (Name {
+					  path = [],
+					  getIdentifier = Identifier "charMethod"})) [])))),
+			  getElseStmt = Nothing},
+			 LocalVar
+			  (VarDecl {
+			   getIdentifier = Identifier "b",
+			   getMods = [],
+			   getType = PrimType Boolean,
+			   getRHS = Nothing}),
+			  StmtExprStmt
+			  (Assign NormalAssign
+			   (Name {
+			    path = [],
+				 getIdentifier = Identifier "b"})
+			  (ExprExprStmt
+			   (Apply
+			    (Iden
+				 (Name {
+				  path = [],
 				  getIdentifier = Identifier "boolMethod"})) []))),
-			 LocalVar 
+			 LocalVar
 			  (VarDecl {
-			   getIdentifier = Identifier "q", 
-			   getMods = [], 
-			   getType = PrimType Int, 
-			   getRHS = 
-			    Just 
-				 (PrimBinOp Add 
-				  (ExprExprStmt 
-				   (Apply 
-				    (Iden 
+			   getIdentifier = Identifier "q",
+			   getMods = [],
+			   getType = PrimType Int,
+			   getRHS =
+			    Just
+				 (PrimBinOp Add
+				  (ExprExprStmt
+				   (Apply
+				    (Iden
 					 (Name {
-					  path = [], 
-					  getIdentifier = Identifier "intMethod"})) [])) 
+					  path = [],
+					  getIdentifier = Identifier "intMethod"})) []))
 				  (Iden (Name {path = [], getIdentifier = Identifier "i"})))}),
-			 LocalVar 
+			 LocalVar
 			  (VarDecl {
-			   getIdentifier = Identifier "a", 
-			   getMods = [], 
-			   getType = PrimType Int, 
-			   getRHS = 
-			    Just 
-				 (PrimBinOp Add 
-				  (ExprExprStmt 
-				   (Apply 
-				    (Iden 
+			   getIdentifier = Identifier "a",
+			   getMods = [],
+			   getType = PrimType Int,
+			   getRHS =
+			    Just
+				 (PrimBinOp Add
+				  (ExprExprStmt
+				   (Apply
+				    (Iden
 					 (Name {
-					  path = [], 
-					  getIdentifier = Identifier "intMethod"})) [])) 
-				  (ExprExprStmt 
-				   (Apply 
-				    (Iden 
+					  path = [],
+					  getIdentifier = Identifier "intMethod"})) []))
+				  (ExprExprStmt
+				   (Apply
+				    (Iden
 					 (Name {
-					  path = [], 
+					  path = [],
 					  getIdentifier = Identifier "intMethod"})) [])))})])},
 			Method {
-			 getIdentifier = Identifier "intMethod", 
-			 getMods = [], 
-			 getReturnType = PrimType Int, 
-			 getParamList = [], 
-			 getBody = 
-			  Just 
-			   (Block 
+			 getIdentifier = Identifier "intMethod",
+			 getMods = [],
+			 getReturnType = PrimType Int,
+			 getParamList = [],
+			 getBody =
+			  Just
+			   (Block
 			    [Return (Just (Literal (IntegerL 1)))])},
 			Method {
-			 getIdentifier = Identifier "boolMethod", 
-			 getMods = [], 
-			 getReturnType = PrimType Boolean, 
-			 getParamList = [], 
-			 getBody = 
-			  Just 
-			   (Block 
+			 getIdentifier = Identifier "boolMethod",
+			 getMods = [],
+			 getReturnType = PrimType Boolean,
+			 getParamList = [],
+			 getBody =
+			  Just
+			   (Block
 			    [Return (Just (Literal (BooleanL True)))])},
 		    Method {
-			 getIdentifier = Identifier "charMethod", 
-			 getMods = [], 
-			 getReturnType = PrimType Char, 
-			 getParamList = [], 
-			 getBody = 
+			 getIdentifier = Identifier "charMethod",
+			 getMods = [],
+			 getReturnType = PrimType Char,
+			 getParamList = [],
+			 getBody =
 			  Just (Block [Return (Just (Literal (CharL 'Z')))])}]]
      it "a method that calls another method as return" $
 	   parseTestString "class RetMethod{    int retIntMeth(){return intMethod();}    int intMethod(){return 0;}}"
 	   `shouldBe`
-       Just 
-	    [Class 
-		 (Identifier "RetMethod") 
-		 [] 
+       Just
+	    [Class
+		 (Identifier "RetMethod")
+		 []
 		 [Method {
-		  getIdentifier = Identifier "retIntMeth", 
-		  getMods = [], 
-		  getReturnType = PrimType Int, 
-		  getParamList = [], 
-		  getBody = 
-		   Just 
-		   (Block 
-		    [Return 
-			 (Just 
-			  (ExprExprStmt 
-			   (Apply 
-			    (Iden 
+		  getIdentifier = Identifier "retIntMeth",
+		  getMods = [],
+		  getReturnType = PrimType Int,
+		  getParamList = [],
+		  getBody =
+		   Just
+		   (Block
+		    [Return
+			 (Just
+			  (ExprExprStmt
+			   (Apply
+			    (Iden
 				 (Name {
-				  path = [], 
+				  path = [],
 				  getIdentifier = Identifier "intMethod"})) [])))])},
 		  Method {
-		   getIdentifier = Identifier "intMethod", 
-		   getMods = [], 
-		   getReturnType = PrimType Int, 
-		   getParamList = [], 
-		   getBody = 
+		   getIdentifier = Identifier "intMethod",
+		   getMods = [],
+		   getReturnType = PrimType Int,
+		   getParamList = [],
+		   getBody =
 		    Just (Block [Return (Just (Literal (IntegerL 0)))])}]]
      it "some calculations + - * /" $
 	   parseTestString "class Calculations{Calculations(){int i = 0 + 5;i = 2 - 1;i = 5 / 2;i = 8 * 9;}}"
 	   `shouldBe`
-       Just 
-	    [Class 
-		 (Identifier "Calculations") 
-		 [] 
+       Just
+	    [Class
+		 (Identifier "Calculations")
+		 []
 		 [Constructor {
-		  getIdentifier = Identifier "Calculations", 
-		  getMods = [], 
-		  getParamList = [], 
-		  getBody = 
-		   Just 
-		    (Block 
-			 [LocalVar 
+		  getIdentifier = Identifier "Calculations",
+		  getMods = [],
+		  getParamList = [],
+		  getBody =
+		   Just
+		    (Block
+			 [LocalVar
 			  (VarDecl {
-			   getIdentifier = Identifier "i", 
-			   getMods = [], 
-			   getType = PrimType Int, 
-			   getRHS = 
-			    Just 
+			   getIdentifier = Identifier "i",
+			   getMods = [],
+			   getType = PrimType Int,
+			   getRHS =
+			    Just
 				 (PrimBinOp Add (Literal (IntegerL 0)) (Literal (IntegerL 5)))}),
-			 StmtExprStmt 
-			  (Assign NormalAssign 
+			 StmtExprStmt
+			  (Assign NormalAssign
 			   (Name {
-			    path = [], 
-				getIdentifier = Identifier "i"}) 
-			  (PrimBinOp Subtract 
-			   (Literal (IntegerL 2)) (Literal (IntegerL 1)))), 
-			 StmtExprStmt 
-			  (Assign NormalAssign 
+			    path = [],
+				getIdentifier = Identifier "i"})
+			  (PrimBinOp Subtract
+			   (Literal (IntegerL 2)) (Literal (IntegerL 1)))),
+			 StmtExprStmt
+			  (Assign NormalAssign
 			   (Name {
-			    path = [], 
-				getIdentifier = Identifier "i"}) 
-			   (PrimBinOp Divide 
-			    (Literal (IntegerL 5)) 
+			    path = [],
+				getIdentifier = Identifier "i"})
+			   (PrimBinOp Divide
+			    (Literal (IntegerL 5))
 			    (Literal (IntegerL 2)))),
-			 StmtExprStmt 
-			  (Assign NormalAssign 
+			 StmtExprStmt
+			  (Assign NormalAssign
 			   (Name {
-			    path = [], 
-				getIdentifier = Identifier "i"}) 
-			   (PrimBinOp Multiply 
-			    (Literal (IntegerL 8)) 
+			    path = [],
+				getIdentifier = Identifier "i"})
+			   (PrimBinOp Multiply
+			    (Literal (IntegerL 8))
 				(Literal (IntegerL 9))))])}]]
      it "a method that converts char to int" $
 	   parseTestString "class CtoI{int castToInt(char c){return (int)c;}}"
 	   `shouldBe`
-       Just 
-	    [Class 
-		 (Identifier "CtoI") 
-		 [] 
+       Just
+	    [Class
+		 (Identifier "CtoI")
+		 []
 		 [Method {
-		  getIdentifier = Identifier "castToInt", 
-		  getMods = [], 
-		  getReturnType = PrimType Int, 
-		  getParamList = [(PrimType Char,Identifier "c")], 
-		  getBody = Just 
-		   (Block 
-		    [Return 
-			 (Just 
-			  (Cast (PrimType Int) 
+		  getIdentifier = Identifier "castToInt",
+		  getMods = [],
+		  getReturnType = PrimType Int,
+		  getParamList = [(PrimType Char,Identifier "c")],
+		  getBody = Just
+		   (Block
+		    [Return
+			 (Just
+			  (Cast (PrimType Int)
 			   (Iden (Name {path = [], getIdentifier = Identifier "c"}))))])}]]
      it "a class with a while loop" $
 	   parseTestString "class WLoop{void whileLoop(){while(true){}}}"
 	   `shouldBe`
-       Just 
-	    [Class 
-		 (Identifier "WLoop") 
-		 [] 
+       Just
+	    [Class
+		 (Identifier "WLoop")
+		 []
 		 [Method {
-		  getIdentifier = Identifier "whileLoop", 
-		  getMods = [], 
-		  getReturnType = JVoid, 
-		  getParamList = [], 
-		  getBody = 
-		   Just (Block 
+		  getIdentifier = Identifier "whileLoop",
+		  getMods = [],
+		  getReturnType = JVoid,
+		  getParamList = [],
+		  getBody =
+		   Just (Block
 		    [While {
-			 getCond = Literal (BooleanL True), 
+			 getCond = Literal (BooleanL True),
 			 getBody = Just (Block [])}])}]]
      it "BouncyBall TestGame" $
 	   parseTestString "class BouncyBall{   int rng; char input;char gameState;int height;int chargedPower; int hitObjectChance;BouncyBall(){new BouncyBall(50).mainLoop();}BouncyBall(int startRNG){int i = startRNG; while(i > 0) {i--; nextRandomNumber();}gameState = 's';height = 50;chargedPower = 0;hitObjectChance = 65535/5;  input = 's';} void mainLoop(){boolean running = true;while(running){nextRandomNumber();if(rng < 65535/3)input = 's'; else if(rng < 65535*2/3)input = 'l'; else input = 'r';  if(gameState ==  's') {chargedPower += 10 + height/4;hitObjectChance = 65535/5; gameState = input;}else if(gameState == 'l') {chargedPower += 10 + height/10;hitObjectChance = 65535/10; height = height*5/6;gameState = input;}else if(gameState == 'r') {height += chargedPower;chargedPower = 0;hitObjectChance = 65535/5;  gameState = input;} if(chargedPower > 10000)gameState = 'r'; nextRandomNumber();if(rng < hitObjectChance){nextRandomNumber();if(rng < 65535/3)height = height * 5/6;  else if(rng < 65535*2/3)height = height  * 3/4; else height = height  * 1/2;  } nextRandomNumber();if(rng < 65535/150){running = false;}}}int nextRandomNumber(){rng = rngFunction(rng);return rng;}    int rngFunction(int input){int s0 = (input << 8); s0 ^= input;input = ((s0 & 255) << 8) | ((s0 & 65280) >>> 8);s0 = (s0 << 1) ^ input;int s1 = (s0 >>> 1) ^ 65408;if((s0 & 1) == 0){if(s1 == 43605) input = 0;else input = s1^8180;}else input = s1 ^33152;return input & 65535;}}"
@@ -818,7 +826,7 @@ spec = do
        parseTestString "class BinaryOperands{ void binaryMethod(){int i = 1 & 2; i = 1 | 2; i = 1 >> 2; i = 1 >>> 2; i = 1 << 2; i ^= 2;}}"
        `shouldBe`
        Just
-	    [Class 
+	    [Class
 		 (Identifier "BinaryOperands")
 		 []
 		 []]
