@@ -6,54 +6,39 @@ Abstr Syntax:
 Just [Class (Identifier "Emptyclass") [] []]
 
 Binary:
-ClassFile {
-magic = 0xCAFEBABE,
-minor_version = 0,
-major_version = 52,
-constant_pool = [
-CONSTANT_Methodref {class_index = 3, name_and_type_index = 10},
-CONSTANT_Class {constant_class_name_index = 11},
-CONSTANT_Class {constant_class_name_index = 12},
-CONSTANT_Utf8 {utf8_value = "<init>"},
-CONSTANT_Utf8 {utf8_value = "()V"},
-CONSTANT_Utf8 {utf8_value = "Code"},
-CONSTANT_Utf8 {utf8_value = "LineNumberTable"},
-CONSTANT_Utf8 {utf8_value = "emptyclass.java"},
-CONSTANT_NameAndType {constant_name_and_type_name_index = 4, constant_name_and_type_descriptor_name = 5},
-CONSTANT_Utf8 {utf8_value = "Emptyclass"},
-CONSTANT_Utf8 {utf8_value = "java/lang/Object"}
+ClassFile 
+Magic --constant magic wert
+MinorVersion --constant minor version
+MajorVersion -- constant major version
+[SUPER] -- class flags
+(ThisClass 2) -- thisclass
+(SuperClass 3) -- SuperClass
+[] --Interfaces Immer Leer
+[] -- Felder 
+[  -- constantpool
+CONSTANT_Methodref 3 10,
+CONSTANT_Class 11,
+CONSTANT_Class 12,
+CONSTANT_Utf8 "<init>",
+CONSTANT_Utf8 "()V",
+CONSTANT_Utf8 "Code",
+CONSTANT_Utf8 "LineNumberTable",
+CONSTANT_Utf8 "emptyclass.java",
+CONSTANT_NameAndType 4 5,
+CONSTANT_Utf8 "Emptyclass",
+CONSTANT_Utf8 "java/lang/Object"
 ]
-classFileAccessFlags = SUPER,
-this = ThisClass {this_class_index = 2},
-super = SuperClass {Maybe super_class_index = 3},
-interfaces = [],
-fields = [],
-methods = [Method {
-method_access_flags = 0,
-method_name_index = 4,
-method_descriptor_index = 5,
-method_attributes = [	
-	Atribute {
-	attribute_name_index = 6,
-	max_stack = 1,
-	max_locals = 1,
-	code = {
-		Aaload {aload_index = 0},
-		Invokespecial {invokespecial_indexbytes = <init> ()V},
-		return
-	},
-	exception_tables = [],
-	code_attributes = [
-		Attribute {
-			attribute_name_index = 7,
-			line_number_table = [line_number_start_pc = 0, line_number = 1]
-		}]
-	}]}],
-attributes = [
-		Attribute {
-		attribute_name_index = 8,
-		sourcefile_index = 9
-}]
+[  --Methoden
+Method [] 4  5
+	[ Code 6 1 1
+		[
+			Aload_0,
+			Invokespecial 1,
+			return
+		] [] []
+	]
+] 
+[] --Attribute
 
 JvmBinary:
 magic = 0xCAFEBABE
