@@ -1,5 +1,5 @@
 module Compiler.BytecodeGeneration.ToByteUtil where
-import Data.Int (Int16, Int32, Int64)
+import Data.Int (Int8,Int16, Int32, Int64)
 import Data.Word
 import Data.Bits
 import Data.ByteString as Bs hiding (foldr)
@@ -37,3 +37,6 @@ convertInt32ToListWord8 w = (convertWord16ToListWord8(fromIntegral $ shiftR w 16
 
 convertInt16ToListWord8 :: Int16 -> [Word8]
 convertInt16ToListWord8 = convertWord16ToListWord8 . fromIntegral
+
+convertInt8ToWort8 :: Int8 -> Word8
+convertInt8ToWort8 x = fromIntegral x

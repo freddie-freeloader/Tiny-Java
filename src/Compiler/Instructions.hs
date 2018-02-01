@@ -98,7 +98,7 @@ data Instruction =
     -}
     | Bipush
     {
-    bipush_byte :: Word8
+    bipush_byte :: Int8
     }
     {-
     OP: 0001 0000, 10
@@ -106,11 +106,14 @@ data Instruction =
     Stack: → value
     Description: <td>push a  onto the stack as an integer </td>
     -}
+    | Sipush{
+    sipush_value :: Int16
+    }
     | Checkcast
     {
     checkcast_indexbytes :: Word16
     }
-    {- NOTE: Do we need this?
+    {-
     OP: 1100 0000, c0
     Byte: 2: indexbyte1, indexbyte2
     Stack: objectref → objectref

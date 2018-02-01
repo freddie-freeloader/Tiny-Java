@@ -47,19 +47,24 @@ attributeToByte (SourceFile sourceFileNameIndex sourcefileIndex) =
   ++ [0x00,0x00,0x00,0x02]
   ++ (convertWord16ToListWord8 sourcefileIndex)
 
---TODO from here on
-
 attributeToByte (LineNumberTable lineNumberTableNameIndex lineNumberTable) =
   (convertWord16ToListWord8 lineNumberTableNameIndex)
-  -- ++ attributelength in bytes
-  -- ++ linenumbertable length numbers
-  ++ (convertListWord16ToListWord8 (lineNumberTableToByte lineNumberTable))
+  ++ (convertWord32ToListWord8 (((fromIntegral . length) lineNumberTableLength) :: Word32))
+  ++ lineNumberTableLength
+  where lineNumberTableLength = (convertWord16ToListWord8(((fromIntegral . length)lineNumberTable) :: Word16))
+                                ++ (convertListWord16ToListWord8 (lineNumberTableToByte lineNumberTable))
 
-{-
-attributeToByte (LocalVariableTable x localVariableTable) =
-  (convertListWord16ToListWord8 x) ++ (convertListWord16ToListWord8 (localvariableTableToByte localVariableTable))
-attributeToByte (Deprecated x) = (convertListWord16ToListWord8 x)
--}
+attributeToByte (LocalVariableTable localVariableTableNameIndex localVariableTable) =
+  (convertWord16ToListWord8 localVariableTableNameIndex)
+  ++ (convertWord32ToListWord8 (((fromIntegral . length) localVariableTableLength) :: Word32))
+  ++ localVariableTableLength
+  where localVariableTableLength = (convertWord16ToListWord8(((fromIntegral . length)localVariableTable) :: Word16))
+                                ++ (convertListWord16ToListWord8 (localVariableTableToByte localVariableTable))
+
+attributeToByte (Deprecated deprecatedNameIndex) =
+  (convertWord16ToListWord8 deprecatedNameIndex)
+  ++ [0x00,0x00,0x00,0x00]
+
 -- Maybe TODO from ExceptionTables(line 221) to VerificationType(line 268)
 
 --verificationTypeToByte :: VerificationType ->
@@ -68,12 +73,13 @@ classesToByte :: Classes -> [Word16]
 classesToByte = foldr (\x acc -> (classToByte x) ++ acc) []
 
 classToByte :: Class -> [Word16]
-classToByte x = (inner_class_info_index x)
-  : (f $ outer_class_info_index x)
-  : (f $ inner_name_index x)
-  : (innerClassAccessFlagsToByte $ inner_class_access_flags x)
-  : [] where f (Just t) = t
-             f Nothing = 0
+classToByte (Class innerClassInfoIndex
+                   outerClassInfoIndex
+                   innerNameIndex
+                   innerClassAccessFlags) = [innerClassInfoIndex]
+                                            ++ [outerClassInfoIndex]
+                                            ++ [innerNameIndex]
+                                            ++ [innerClassAccessFlagsToByte innerClassAccessFlags]
 
 innerClassAccessFlagsToByte :: InnerClassAccessFlags -> Word16
 innerClassAccessFlagsToByte = foldr (\x acc -> (innerClassAccessFlagToByte x) .|. acc) 0x0000
@@ -94,17 +100,18 @@ lineNumberTableToByte ::  LineNumberTable -> [Word16]
 lineNumberTableToByte = foldr (\x acc -> (lineNumberToByte x) ++ acc) []
 
 lineNumberToByte :: LineNumber -> [Word16]
-lineNumberToByte x = (line_number_start_pc x)
-  : (line_number x)
-  : []
+lineNumberToByte (LineNumber lineNumberStartPc lineNumber) =
+                                [lineNumberStartPc]
+                                ++ [lineNumber]
 
-localvariableTableToByte :: LocalVariableTable -> [Word16]
-localvariableTableToByte = foldr (\x acc -> (localVariableToByte x) ++ acc) []
+localVariableTableToByte :: LocalVariableTable -> [Word16]
+localVariableTableToByte = foldr (\x acc -> (localVariableToByte x) ++ acc) []
 
-localVariableToByte :: LocalVariable -> [Word16]
-localVariableToByte x = (local_variable_start_pc x)
-  -- add length FIXME
-  : (local_variable_name_index x)
-  : (local_variable_descriptor_index x)
-  : (local_variable_index x)
-  : []
+localVariableToByte :: LocalVariable -> [Word16] -- dummy implementation
+localVariableToByte (LocalVariable localVariableStartPc localVariableNameIndex
+                                   localVariableDescriptorIndex localVariableIndex) =
+                                        [localVariableStartPc]
+                                        ++ [0x00,0x00] -- add length FIXME
+                                        ++ [localVariableNameIndex]
+                                        ++ [localVariableDescriptorIndex]
+                                        ++ [localVariableIndex]

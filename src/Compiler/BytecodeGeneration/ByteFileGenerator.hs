@@ -14,24 +14,24 @@ generateByteFile ::  FilePath -> ClassFile -> IO()
 generateByteFile filePath classFile = Bs.writeFile filePath (packListWord8ToByteString (classFileToByte classFile))
 
 classFileToByte :: ClassFile -> [Word8]
-classFileToByte (ClassFile magic minver maxver countCP arrayCP
-  accessFlags this super countInterfaces arrayInterfaces countFields
-  arrayFields countMethods arrayMethods countAttributes arrayAttributes) =
+classFileToByte (ClassFile magic minver maxver arrayCP
+  accessFlags this super arrayInterfaces
+  arrayFields arrayMethods arrayAttributes) =
              (magicToByte magic)
              ++ (minverToByte minver)
              ++ (maxverToByte maxver)
-             ++ (countCPToByte countCP)
+             ++ convertWord16ToListWord8 ((((fromIntegral . length) arrayCP) :: Word16)+ 1)
              ++ (arrayCPToByte arrayCP)
              ++ (convertWord16ToListWord8  (classFileAccessFlagsToByte accessFlags))
              ++ (thisToByte this)
              ++ (superToByte super)
-             ++ (countInterfacesToByte countInterfaces)
+             ++ convertWord16ToListWord8 (((fromIntegral . length) arrayInterfaces) :: Word16)
              ++ (arrayInterfacesToByte arrayInterfaces)
-             ++ (countFieldsToByte countFields)
+             ++ convertWord16ToListWord8 (((fromIntegral . length) arrayFields) :: Word16)
              ++ (arrayFieldsToByte arrayFields)
-             ++ (countMethodsToByte countMethods)
+             ++ convertWord16ToListWord8 (((fromIntegral . length) arrayMethods) :: Word16)
              ++ (arrayMethodsToByte arrayMethods)
-             ++ (countAttributesToByte countAttributes)
+             ++ convertWord16ToListWord8 (((fromIntegral . length) arrayAttributes) :: Word16)
              ++ (arrayAttributesToByte arrayAttributes)
 
 magicToByte :: Magic -> [Word8]
@@ -42,9 +42,6 @@ minverToByte _ = [0x00,0x00]
 
 maxverToByte :: MajorVersion -> [Word8]
 maxverToByte _ = [0x00,0x34]
-
-countCPToByte :: ConstantPool_Count -> [Word8]
-countCPToByte countCP = convertWord16ToListWord8 countCP
 
 arrayCPToByte :: ConstantPool -> [Word8]
 arrayCPToByte arrayCP = constantPoolToByte arrayCP
@@ -68,27 +65,14 @@ thisToByte (ThisClass thisClassIndex) = convertWord16ToListWord8 thisClassIndex
 superToByte :: SuperClass -> [Word8]
 superToByte (SuperClass superClassIndex) = convertWord16ToListWord8 superClassIndex
 
-countInterfacesToByte :: Interfaces_Count -> [Word8]
-countInterfacesToByte _ = [0x00,0x00]
-
 arrayInterfacesToByte :: Interfaces -> [Word8]
-arrayInterfacesToByte _ = [] --[0x00,0x00]
-
-
-countFieldsToByte :: Fields_Count -> [Word8]
-countFieldsToByte countFields = convertWord16ToListWord8 countFields
+arrayInterfacesToByte _ = []
 
 arrayFieldsToByte :: Fields -> [Word8]
 arrayFieldsToByte arrayFields = fieldsToByte arrayFields
 
-countMethodsToByte :: Methods_Count -> [Word8]
-countMethodsToByte countMethodes = convertWord16ToListWord8 countMethodes
-
 arrayMethodsToByte :: Methods -> [Word8]
 arrayMethodsToByte arrayMethods = methodsToByte arrayMethods
-
-countAttributesToByte :: Attributes_Count -> [Word8]
-countAttributesToByte countAttributes = convertWord16ToListWord8 countAttributes
 
 arrayAttributesToByte :: Attributes -> [Word8]
 arrayAttributesToByte arrayAttributes = attributesToByte arrayAttributes

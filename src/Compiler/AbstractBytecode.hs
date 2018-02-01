@@ -4,22 +4,17 @@ import Data.Word (Word8,Word16,Word32,Word64)
 import Compiler.Instructions
 
 data ClassFile = ClassFile
-  { magic :: Magic -- CAFEBABE
-  , minver :: MinorVersion -- Versionen
-  , maxver :: MajorVersion
-  , count_cp :: ConstantPool_Count -- Anz. Eintr. Konst.pool
-  , array_cp :: ConstantPool -- Konstantenpool
-  , classFileAccessFlags :: ClassFileAccessFlags -- Berechtigungen
-  , this :: ThisClass -- This-Klasse
-  , super :: SuperClass -- Super-Klasse
-  , count_interfaces :: Interfaces_Count -- Anz. Interfaces
-  , array_interfaces :: Interfaces -- Interfaces
-  , count_fields :: Fields_Count -- Anzahl Fields
-  , array_fields :: Fields -- Fields
-  , count_methods :: Methods_Count -- Methoden
-  , array_methods :: Methods -- Methoden
-  , count_attributes :: Attributes_Count -- Anz. Attribute
-  , array_attributes :: Attributes -- Attribute
+  { magic :: Magic, -- CAFEBABE
+    minver :: MinorVersion, -- Versionen
+    maxver :: MajorVersion,
+    array_cp :: ConstantPool, -- Konstantenpool
+    classFileAccessFlags :: ClassFileAccessFlags, -- Berechtigungen
+    this :: ThisClass, -- This-Klasse
+    super :: SuperClass, -- Super-Klasse
+    array_interfaces :: Interfaces, -- Interfaces
+    array_fields :: Fields, -- Fields
+    array_methods :: Methods, -- Methoden
+    array_attributes :: Attributes -- Attribute
   } deriving (Eq, Show)
 
 data Magic = Magic
@@ -30,8 +25,6 @@ data MinorVersion = MinorVersion
 
 data MajorVersion = MajorVersion
  deriving (Eq, Show)
-
-type ConstantPool_Count = Word16
 
 type ConstantPool = [Constant]
 
@@ -123,14 +116,10 @@ data SuperClass = SuperClass{
                 super_class_index :: Index_Constant_Pool
                 }  deriving (Eq, Show)
 
-type Interfaces_Count = Word16
-
 type Interfaces = [Interface]
 
 data Interface = Interface -- Maybe TODO
   deriving (Eq, Show)
-
-type Fields_Count = Word16
 
 type Fields = [Field]
 
@@ -153,8 +142,6 @@ data FieldAccessFlag = F_PUBLIC
                     |F_SYNTHETIC
                     |F_ENUM
                      deriving (Eq, Show)
-
-type Methods_Count = Word16
 
 type Methods = [Method]
 
@@ -180,8 +167,6 @@ data MethodAccessFlag = M_PUBLIC
                       |M_STRICT
                       |M_SYNTHETIC
                       deriving (Eq, Show)
-
-type Attributes_Count = Word16
 
 type Attributes = [Attribute]
 
@@ -280,8 +265,8 @@ type Classes = [Class]
 
 data Class = Class {
                     inner_class_info_index :: Index_Constant_Pool
-                  , outer_class_info_index :: Maybe Index_Constant_Pool
-                  , inner_name_index :: Maybe Index_Constant_Pool
+                  , outer_class_info_index :: Index_Constant_Pool
+                  , inner_name_index :: Index_Constant_Pool
                   , inner_class_access_flags :: InnerClassAccessFlags
                   } deriving (Eq, Show)
 
