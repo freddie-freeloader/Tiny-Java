@@ -1,0 +1,58 @@
+class Ternary{
+	void ternary(){
+		int tern = 5 < 7 ? 1 : 2;
+	}
+}
+
+Ast:
+Just
+        [Class
+            (Identifier "Ternary")
+            []
+            [Method {
+		     getIdentifier = Identifier "ternary",
+		     getMods = [],
+		     getReturnType = JVoid,
+		     getParamList = [],
+		     getBody =
+		      Just
+		       (Block
+		        [LocalVar
+			     (VarDecl {
+			      getIdentifier = Identifier "tern",
+			      getMods = [],
+			      getType = PrimType Int,
+			      getRHS =
+			       Just
+			        (TernaryIf {
+					 getCond = PrimBinOp  Less (Literal (IntegerL 5)) (Literal (IntegerL 7)),
+					 getElseStmt = Literal (IntegerL 1),
+					 getThenStmt = Literal (IntegerL 2)
+					})})])}]]
+					
+Tast:
+	Just
+        [Class
+            (Identifier "Ternary")
+            []
+            [Method {
+		     getIdentifier = Identifier "ternary",
+		     getMods = [],
+		     getReturnType = JVoid,
+		     getParamList = [],
+		     getBody =
+		      Just
+		       (TypedStatement (Block
+		        [(TypedStatement LocalVar
+			     (VarDecl {
+			      getIdentifier = Identifier "tern",
+			      getMods = [],
+			      getType = PrimType Int,
+			      getRHS =
+			       Just
+			        (TypedExpression (TernaryIf {
+					 getCond = (TypedExpression PrimBinOp  Less (TypedExpression (Literal (IntegerL 5)), PrimType Int) (TypedExpression (Literal (IntegerL 7)), PrimType Int), PrimType Boolean),
+					 getElseStmt = (TypedExpression Literal (IntegerL 1), PrimType Int),
+					 getThenStmt = (TypedExpression Literal (IntegerL 2), PrimType Int)
+					}), PrimType Int)})
+				  , JVoid)]), JVoid)}]]
