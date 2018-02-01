@@ -802,14 +802,182 @@ spec = do
 		    [While {
 			 getCond = Literal (BooleanL True),
 			 getBody = Just (Block [])}])}]]
-     {-- it "BouncyBall TestGame" $
-	   parseTestString "class BouncyBall{   int rng; char input;char gameState;int height;int chargedPower; int hitObjectChance;BouncyBall(){new BouncyBall(50).mainLoop();}BouncyBall(int startRNG){int i = startRNG; while(i > 0) {i--; nextRandomNumber();}gameState = 's';height = 50;chargedPower = 0;hitObjectChance = 65535/5;  input = 's';} void mainLoop(){boolean running = true;while(running){nextRandomNumber();if(rng < 65535/3)input = 's'; else if(rng < 65535*2/3)input = 'l'; else input = 'r';  if(gameState ==  's') {chargedPower += 10 + height/4;hitObjectChance = 65535/5; gameState = input;}else if(gameState == 'l') {chargedPower += 10 + height/10;hitObjectChance = 65535/10; height = height*5/6;gameState = input;}else if(gameState == 'r') {height += chargedPower;chargedPower = 0;hitObjectChance = 65535/5;  gameState = input;} if(chargedPower > 10000)gameState = 'r'; nextRandomNumber();if(rng < hitObjectChance){nextRandomNumber();if(rng < 65535/3)height = height * 5/6;  else if(rng < 65535*2/3)height = height  * 3/4; else height = height  * 1/2;  } nextRandomNumber();if(rng < 65535/150){running = false;}}}int nextRandomNumber(){rng = rngFunction(rng);return rng;}    int rngFunction(int input){int s0 = (input << 8); s0 ^= input;input = ((s0 & 255) << 8) | ((s0 & 65280) >>> 8);s0 = (s0 << 1) ^ input;int s1 = (s0 >>> 1) ^ 65408;if((s0 & 1) == 0){if(s1 == 43605) input = 0;else input = s1^8180;}else input = s1 ^33152;return input & 65535;}}"
-	   `shouldBe`
-       Just
-        [Class
-            (Identifier "BouncyBall")
-            []
-            []] --}
+     it "BouncyBall TestGame" $
+       parseTestString "class BouncyBall{   int rng; char input;char gameState;int height;int chargedPower; int hitObjectChance;BouncyBall(){int i = 50; while(i > 0) {i = i - 1; nextRandomNumber();}gameState = 's';height = 50;chargedPower = 0;hitObjectChance = 65535/5;  input = 's'; mainLoop();} void mainLoop(){boolean running = true;while(running){nextRandomNumber();if(rng < 65535/3)input = 's'; else if(rng < 65535*2/3)input = 'l'; else input = 'r';  if(gameState ==  's') {chargedPower += 10 + height/4;hitObjectChance = 65535/5; gameState = input;}else if(gameState == 'l') {chargedPower += 10 + height/10;hitObjectChance = 65535/10; height = height*5/6;gameState = input;}else if(gameState == 'r') {height += chargedPower;chargedPower = 0;hitObjectChance = 65535/5;  gameState = input;} if(chargedPower > 10000)gameState = 'r'; nextRandomNumber();if(rng < hitObjectChance){nextRandomNumber();if(rng < 65535/3)height = height * 5/6;  else if(rng < 65535*2/3)height = height  * 3/4; else height = height  * 1/2;  } nextRandomNumber();if(rng < 65535/150){running = false;}}}int nextRandomNumber(){rng = rngFunction(rng);return rng;}    int rngFunction(int input){int s0 = (input << 8); s0 ^= input;input = ((s0 & 255) << 8) | ((s0 & 65280) >>> 8);s0 = (s0 << 1) ^ input;int s1 = (s0 >>> 1) ^ 65408;if((s0 & 1) == 0){if(s1 == 43605) input = 0;else input = s1^8180;}else input = s1 ^33152;return input & 65535;}}"
+       `shouldBe`
+       Just [
+			Class (Identifier "BouncyBall") 
+			[] 
+			[Field (
+				VarDecl {
+					getIdentifier = Identifier "rng", 
+					getMods = [], 
+					getType = PrimType Int, 
+					getRHS = Nothing}),
+			Field (
+				VarDecl {
+					getIdentifier = Identifier "input", 
+					getMods = [], 
+					getType = PrimType Char, 
+					getRHS = Nothing}),
+			Field (
+				VarDecl {
+					getIdentifier = Identifier "gameState", 
+					getMods = [], 
+					getType = PrimType Char, 
+					getRHS = Nothing}),
+			Field (
+				VarDecl {
+					getIdentifier = Identifier "height", 
+					getMods = [], 
+					getType = PrimType Int, 
+					getRHS = Nothing}),
+			Field (
+				VarDecl {
+					getIdentifier = Identifier "chargedPower", 
+					getMods = [], 
+					getType = PrimType Int, 
+					getRHS = Nothing}),
+			Field (
+				VarDecl {
+					getIdentifier = Identifier "hitObjectChance", 
+					getMods = [], 
+					getType = PrimType Int, 
+					getRHS = Nothing}),
+			Constructor {
+				getIdentifier = Identifier "BouncyBall", 
+				getMods = [], 
+				getParamList = [], 
+				getBody = Just 
+							(Block [
+								LocalVar (
+									VarDecl {
+										getIdentifier = Identifier "i", 
+										getMods = [], 
+										getType = PrimType Int, 
+										getRHS = Just (Literal (IntegerL 50))}),
+								While {
+									getCond = PrimBinOp Greater (Iden (Name {path = [], getIdentifier = Identifier "i"})) (Literal (IntegerL 0)), 
+									getBody = Just (Block [
+										StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "i"}) 
+														(PrimBinOp Subtract (Iden (Name {path = [], getIdentifier = Identifier "i"})) (Literal (IntegerL 1)))),
+										StmtExprStmt (Apply (Iden (Name {path = [], getIdentifier = Identifier "nextRandomNumber"})) [])])},
+								StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "gameState"}) (Literal (CharL 's'))),
+								StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "height"}) (Literal (IntegerL 50))),
+								StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "chargedPower"}) (Literal (IntegerL 0))),
+								StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "hitObjectChance"}) (PrimBinOp Divide (Literal (IntegerL 65535)) (Literal (IntegerL 5)))),
+								StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "input"}) (Literal (CharL 's'))),
+								StmtExprStmt (Apply (Iden (Name {path = [], getIdentifier = Identifier "mainLoop"})) [])])},
+			Method {
+				getIdentifier = Identifier "mainLoop", 
+				getMods = [], 
+				getReturnType = JVoid, 
+				getParamList = [], 
+				getBody = 
+					Just (
+						Block [
+							LocalVar (
+								VarDecl {
+									getIdentifier = Identifier "running", 
+									getMods = [], 
+									getType = PrimType Boolean, 
+									getRHS = Just (Literal (BooleanL True))}),
+							While {
+								getCond = Iden (Name {path = [], getIdentifier = Identifier "running"}), 
+								getBody = Just (Block [
+												StmtExprStmt (Apply (Iden (Name {path = [], getIdentifier = Identifier "nextRandomNumber"})) []),
+												If {
+													getCond = PrimBinOp Less (Iden (Name {path = [], getIdentifier = Identifier "rng"})) (PrimBinOp Divide (Literal (IntegerL 65535)) (Literal (IntegerL 3))), 
+													getThenStmt = Just (
+														StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "input"}) (Literal (CharL 's')))), 
+														getElseStmt = Just (
+															If {
+																getCond = PrimBinOp Less (Iden (Name {path = [], getIdentifier = Identifier "rng"})) (PrimBinOp Divide (PrimBinOp Multiply (Literal (IntegerL 65535)) (Literal (IntegerL 2))) (Literal (IntegerL 3))), 
+																getThenStmt = Just (StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "input"}) (Literal (CharL 'l')))), 
+																getElseStmt = Just (StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "input"}) (Literal (CharL 'r'))))})},
+												If {
+													getCond = PrimBinOp Eq (Iden (Name {path = [], getIdentifier = Identifier "gameState"})) (Literal (CharL 's')), 
+													getThenStmt = Just (Block [
+														StmtExprStmt (Assign PlusAssign (Name {path = [], getIdentifier = Identifier "chargedPower"}) (PrimBinOp Add (Literal (IntegerL 10)) (PrimBinOp Divide (Iden (Name {path = [], getIdentifier = Identifier "height"})) (Literal (IntegerL 4))))),
+														StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "hitObjectChance"}) (PrimBinOp Divide (Literal (IntegerL 65535)) (Literal (IntegerL 5)))),
+														StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "gameState"}) (Iden (Name {path = [], getIdentifier = Identifier "input"})))]), 
+													getElseStmt = Just (
+														If {
+															getCond = PrimBinOp Eq (Iden (Name {path = [], getIdentifier = Identifier "gameState"})) (Literal (CharL 'l')), 
+															getThenStmt = Just (Block [
+																StmtExprStmt (Assign PlusAssign (Name {path = [], getIdentifier = Identifier "chargedPower"}) (PrimBinOp Add (Literal (IntegerL 10)) (PrimBinOp Divide (Iden (Name {path = [], getIdentifier = Identifier "height"})) (Literal (IntegerL 10))))),
+																StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "hitObjectChance"}) (PrimBinOp Divide (Literal (IntegerL 65535)) (Literal (IntegerL 10)))),
+																StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "height"}) (PrimBinOp Divide (PrimBinOp Multiply (Iden (Name {path = [], getIdentifier = Identifier "height"})) (Literal (IntegerL 5))) (Literal (IntegerL 6)))),
+																StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "gameState"}) (Iden (Name {path = [], getIdentifier = Identifier "input"})))]), 
+															getElseStmt = Just (
+																If {
+																	getCond = PrimBinOp Eq (Iden (Name {path = [], getIdentifier = Identifier "gameState"})) (Literal (CharL 'r')), 
+																	getThenStmt = Just (Block [
+																		StmtExprStmt (Assign PlusAssign (Name {path = [], getIdentifier = Identifier "height"}) (Iden (Name {path = [], getIdentifier = Identifier "chargedPower"}))),
+																		StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "chargedPower"}) (Literal (IntegerL 0))),
+																		StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "hitObjectChance"}) (PrimBinOp Divide (Literal (IntegerL 65535)) (Literal (IntegerL 5)))),
+																		StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "gameState"}) (Iden (Name {path = [], getIdentifier = Identifier "input"})))]), 
+																	getElseStmt = Nothing})})},
+												If {
+													getCond = PrimBinOp Greater (Iden (Name {path = [], getIdentifier = Identifier "chargedPower"})) (Literal (IntegerL 10000)), 
+													getThenStmt = Just (StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "gameState"}) (Literal (CharL 'r')))), 
+													getElseStmt = Nothing},
+												StmtExprStmt (Apply (Iden (Name {path = [], getIdentifier = Identifier "nextRandomNumber"})) []),
+												If {
+													getCond = PrimBinOp Less (Iden (Name {path = [], getIdentifier = Identifier "rng"})) (Iden (Name {path = [], getIdentifier = Identifier "hitObjectChance"})), 
+													getThenStmt = Just (Block [
+														StmtExprStmt (Apply (Iden (Name {path = [], getIdentifier = Identifier "nextRandomNumber"})) []),
+														If {
+															getCond = PrimBinOp Less (Iden (Name {path = [], getIdentifier = Identifier "rng"})) (PrimBinOp Divide (Literal (IntegerL 65535)) (Literal (IntegerL 3))), 
+															getThenStmt = Just (StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "height"}) (PrimBinOp Divide (PrimBinOp Multiply (Iden (Name {path = [], getIdentifier = Identifier "height"})) (Literal (IntegerL 5))) (Literal (IntegerL 6))))), 
+															getElseStmt = Just (If {
+																getCond = PrimBinOp Less (Iden (Name {path = [], getIdentifier = Identifier "rng"})) (PrimBinOp Divide (PrimBinOp Multiply (Literal (IntegerL 65535)) (Literal (IntegerL 2))) (Literal (IntegerL 3))), 
+																getThenStmt = Just (StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "height"}) (PrimBinOp Divide (PrimBinOp Multiply (Iden (Name {path = [], getIdentifier = Identifier "height"})) (Literal (IntegerL 3))) (Literal (IntegerL 4))))), 
+																getElseStmt = Just (StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "height"}) (PrimBinOp Divide (PrimBinOp Multiply (Iden (Name {path = [], getIdentifier = Identifier "height"})) (Literal (IntegerL 1))) (Literal (IntegerL 2)))))})}]), 
+													getElseStmt = Nothing},
+												StmtExprStmt (Apply (Iden (Name {path = [], getIdentifier = Identifier "nextRandomNumber"})) []),
+												If {
+													getCond = PrimBinOp Less (Iden (Name {path = [], getIdentifier = Identifier "rng"})) (PrimBinOp Divide (Literal (IntegerL 65535)) (Literal (IntegerL 150))), 
+													getThenStmt = Just (Block [StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "running"}) (Literal (BooleanL False)))]), 
+													getElseStmt = Nothing}])}])},
+			Method {
+				getIdentifier = Identifier "nextRandomNumber", 
+				getMods = [], 
+				getReturnType = PrimType Int, 
+				getParamList = [], 
+				getBody = Just (Block [
+					StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "rng"}) (ExprExprStmt (Apply (Iden (Name {path = [], getIdentifier = Identifier "rngFunction"})) [Iden (Name {path = [], getIdentifier = Identifier "rng"})]))),
+					Return (Just (Iden (Name {path = [], getIdentifier = Identifier "rng"})))])},
+			Method {
+				getIdentifier = Identifier "rngFunction", 
+				getMods = [], 
+				getReturnType = PrimType Int, 
+				getParamList = [(PrimType Int,Identifier "input")], 
+				getBody = Just (Block [
+					LocalVar (
+						VarDecl {
+							getIdentifier = Identifier "s0", 
+							getMods = [], 
+							getType = PrimType Int, 
+							getRHS = Just (PrimBinOp ShiftLeft (Iden (Name {path = [], getIdentifier = Identifier "input"})) (Literal (IntegerL 8)))}),
+					StmtExprStmt (Assign BitXOrAssign (Name {path = [], getIdentifier = Identifier "s0"}) (Iden (Name {path = [], getIdentifier = Identifier "input"}))),
+					StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "input"}) (PrimBinOp BitOr (PrimBinOp ShiftLeft (PrimBinOp BitAnd (Iden (Name {path = [], getIdentifier = Identifier "s0"})) (Literal (IntegerL 255))) (Literal (IntegerL 8))) (PrimBinOp UnsignedShiftRight (PrimBinOp BitAnd (Iden (Name {path = [], getIdentifier = Identifier "s0"})) (Literal (IntegerL 65280))) (Literal (IntegerL 8))))),
+					StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "s0"}) (PrimBinOp BitXOr (PrimBinOp ShiftLeft (Iden (Name {path = [], getIdentifier = Identifier "s0"})) (Literal (IntegerL 1))) (Iden (Name {path = [], getIdentifier = Identifier "input"})))),
+					LocalVar (
+						VarDecl {
+							getIdentifier = Identifier "s1", 
+							getMods = [], 
+							getType = PrimType Int, 
+							getRHS = Just (PrimBinOp BitXOr (PrimBinOp UnsignedShiftRight (Iden (Name {path = [], getIdentifier = Identifier "s0"})) (Literal (IntegerL 1))) (Literal (IntegerL 65408)))}),
+					If {
+						getCond = PrimBinOp Eq (PrimBinOp BitAnd (Iden (Name {path = [], getIdentifier = Identifier "s0"})) (Literal (IntegerL 1))) (Literal (IntegerL 0)), 
+						getThenStmt = Just (Block [
+							If {
+								getCond = PrimBinOp Eq (Iden (Name {path = [], getIdentifier = Identifier "s1"})) (Literal (IntegerL 43605)), 
+								getThenStmt = Just (StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "input"}) (Literal (IntegerL 0)))), 
+								getElseStmt = Just (StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "input"}) (PrimBinOp BitXOr (Iden (Name {path = [], getIdentifier = Identifier "s1"})) (Literal (IntegerL 8180)))))}]), 
+						getElseStmt = Just (StmtExprStmt (Assign NormalAssign (Name {path = [], getIdentifier = Identifier "input"}) (PrimBinOp BitXOr (Iden (Name {path = [], getIdentifier = Identifier "s1"})) (Literal (IntegerL 33152)))))},
+					Return (Just (PrimBinOp BitAnd (Iden (Name {path = [], getIdentifier = Identifier "input"})) (Literal (IntegerL 65535))))])}]]
      it "a class with comments" $ do
        parseTestString "class Comments{/*Multiline Comment*/ Comments(){/*int ignoreMe;*/}}"
        `shouldBe`

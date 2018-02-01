@@ -53,3 +53,113 @@ Just [Class (Identifier "Objectclass") []
             })
     , JVoid)]), JVoid)
 }]]
+
+jvmabyte:
+magic = 0x CAFEBABE
+minor_version = 0
+major_version = 52
+constant_pool_count = 15
+constant_pool =
+{
+1| tag = CONSTANT_Methodref, class_index = 4, name_and_type_index = 12
+2| tag = CONSTANT_Class, name_index = 13
+3| tag = CONSTANT_Methodref, class_index = 2, name_and_type_index = 12
+4| tag = CONSTANT_Class, name_index = 14
+5| tag = CONSTANT_Utf8, length = 6, bytes = <init>
+6| tag = CONSTANT_Utf8, length = 3, bytes = ()V
+7| tag = CONSTANT_Utf8, length = 4, bytes = Code
+8| tag = CONSTANT_Utf8, length = 15, bytes = LineNumberTable
+9| tag = CONSTANT_Utf8, length = 12, bytes = objectMethod
+10| tag = CONSTANT_Utf8, length = 10, bytes = SourceFile
+11| tag = CONSTANT_Utf8, length = 16, bytes = objectclass.java
+12| tag = CONSTANT_NameAndType, name_index = 5, descriptor_index = 6
+13| tag = CONSTANT_Utf8, length = 11, bytes = Objectclass
+14| tag = CONSTANT_Utf8, length = 16, bytes = java/lang/Object
+}
+access_flags = 32  // ACC_SUPER
+this_class = #2  // Objectclass
+super_class = #4  // java/lang/Object
+interfaces_count = 0
+interfaces = {}
+fields_count = 0
+fields = {}
+methods_count = 2
+methods [0] =
+{
+access_flags = 0
+name_index = #5  // <init>
+descriptor_index = #6  // ()V
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #7  // Code
+attribute_length = 33
+max_stack = 1, max_locals = 1
+code_length = 5
+code =
+{
+    0  aload_0
+    1  invokespecial #1  // java/lang/Object.<init> ()V
+    4  return
+}
+exception_table_length = 0
+exception_table = {}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #8  // LineNumberTable
+attribute_length = 10
+line_number_table_length = 2
+line_number_table =
+{
+start_pc, line_number
+0| 0, 3
+1| 4, 5
+}
+}
+}
+}
+methods [1] =
+{
+access_flags = 0
+name_index = #9  // objectMethod
+descriptor_index = #6  // ()V
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #7  // Code
+attribute_length = 37
+max_stack = 2, max_locals = 2
+code_length = 9
+code =
+{
+    0  new #2  // Objectclass
+    3  dup
+    4  invokespecial #3  // Objectclass.<init> ()V
+    7  astore_1
+    8  return
+}
+exception_table_length = 0
+exception_table = {}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #8  // LineNumberTable
+attribute_length = 10
+line_number_table_length = 2
+line_number_table =
+{
+start_pc, line_number
+0| 0, 8
+1| 8, 9
+}
+}
+}
+}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #10  // SourceFile
+attribute_length = 2
+sourcefile_index = #11  // objectclass.java
+}

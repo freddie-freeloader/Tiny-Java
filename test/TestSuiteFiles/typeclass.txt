@@ -39,3 +39,102 @@ Field (VarDecl {
     getType = PrimType Boolean,
     getRHS = Nothing})
 ]]
+
+jvmabyte:
+magic = 0x CAFEBABE
+minor_version = 0
+major_version = 52
+constant_pool_count = 19
+constant_pool =
+{
+1| tag = CONSTANT_Methodref, class_index = 3, name_and_type_index = 16
+2| tag = CONSTANT_Class, name_index = 17
+3| tag = CONSTANT_Class, name_index = 18
+4| tag = CONSTANT_Utf8, length = 8, bytes = intField
+5| tag = CONSTANT_Utf8, length = 1, bytes = I
+6| tag = CONSTANT_Utf8, length = 9, bytes = charField
+7| tag = CONSTANT_Utf8, length = 1, bytes = C
+8| tag = CONSTANT_Utf8, length = 10, bytes = floatField
+9| tag = CONSTANT_Utf8, length = 1, bytes = Z
+10| tag = CONSTANT_Utf8, length = 6, bytes = <init>
+11| tag = CONSTANT_Utf8, length = 3, bytes = ()V
+12| tag = CONSTANT_Utf8, length = 4, bytes = Code
+13| tag = CONSTANT_Utf8, length = 15, bytes = LineNumberTable
+14| tag = CONSTANT_Utf8, length = 10, bytes = SourceFile
+15| tag = CONSTANT_Utf8, length = 14, bytes = typeclass.java
+16| tag = CONSTANT_NameAndType, name_index = 10, descriptor_index = 11
+17| tag = CONSTANT_Utf8, length = 9, bytes = Typeclass
+18| tag = CONSTANT_Utf8, length = 16, bytes = java/lang/Object
+}
+access_flags = 32  // ACC_SUPER
+this_class = #2  // Typeclass
+super_class = #3  // java/lang/Object
+interfaces_count = 0
+interfaces = {}
+fields_count = 3
+fields [0] =
+{
+access_flags = 0
+name_index = #4  // intField
+descriptor_index = #5  // I
+attributes_count = 0
+attributes = {}
+}
+fields [1] =
+{
+access_flags = 0
+name_index = #6  // charField
+descriptor_index = #7  // C
+attributes_count = 0
+attributes = {}
+}
+fields [2] =
+{
+access_flags = 0
+name_index = #8  // floatField
+descriptor_index = #9  // Z
+attributes_count = 0
+attributes = {}
+}
+methods_count = 1
+methods [0] =
+{
+access_flags = 0
+name_index = #10  // <init>
+descriptor_index = #11  // ()V
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #12  // Code
+attribute_length = 29
+max_stack = 1, max_locals = 1
+code_length = 5
+code =
+{
+    0  aload_0
+    1  invokespecial #1  // java/lang/Object.<init> ()V
+    4  return
+}
+exception_table_length = 0
+exception_table = {}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #13  // LineNumberTable
+attribute_length = 6
+line_number_table_length = 1
+line_number_table =
+{
+start_pc, line_number
+0| 0, 1
+}
+}
+}
+}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #14  // SourceFile
+attribute_length = 2
+sourcefile_index = #15  // typeclass.java
+}

@@ -25,3 +25,74 @@ Ast:
             getMods = [],
             getParamList = [],
             getBody = Just (TypedStatement (Block[]), JVoid)}]]
+			
+jvmabyte:
+magic = 0x CAFEBABE
+minor_version = 0
+major_version = 52
+constant_pool_count = 13
+constant_pool =
+{
+1| tag = CONSTANT_Methodref, class_index = 3, name_and_type_index = 10
+2| tag = CONSTANT_Class, name_index = 11
+3| tag = CONSTANT_Class, name_index = 12
+4| tag = CONSTANT_Utf8, length = 6, bytes = <init>
+5| tag = CONSTANT_Utf8, length = 3, bytes = ()V
+6| tag = CONSTANT_Utf8, length = 4, bytes = Code
+7| tag = CONSTANT_Utf8, length = 15, bytes = LineNumberTable
+8| tag = CONSTANT_Utf8, length = 10, bytes = SourceFile
+9| tag = CONSTANT_Utf8, length = 13, bytes = Comments.java
+10| tag = CONSTANT_NameAndType, name_index = 4, descriptor_index = 5
+11| tag = CONSTANT_Utf8, length = 8, bytes = Comments
+12| tag = CONSTANT_Utf8, length = 16, bytes = java/lang/Object
+}
+access_flags = 32  // ACC_SUPER
+this_class = #2  // Comments
+super_class = #3  // java/lang/Object
+interfaces_count = 0
+interfaces = {}
+fields_count = 0
+fields = {}
+methods_count = 1
+methods [0] =
+{
+access_flags = 0
+name_index = #4  // <init>
+descriptor_index = #5  // ()V
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #6  // Code
+attribute_length = 33
+max_stack = 1, max_locals = 1
+code_length = 5
+code =
+{
+    0  aload_0
+    1  invokespecial #1  // java/lang/Object.<init> ()V
+    4  return
+}
+exception_table_length = 0
+exception_table = {}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #7  // LineNumberTable
+attribute_length = 10
+line_number_table_length = 2
+line_number_table =
+{
+start_pc, line_number
+0| 0, 3
+1| 4, 5
+}
+}
+}
+}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #8  // SourceFile
+attribute_length = 2
+sourcefile_index = #9  // Comments.java
+}

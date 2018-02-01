@@ -97,3 +97,152 @@ TAst:
 		    [(RefType (Name {path = [], getIdentifier = Identifier "ObjParamCall"}),
 			 Identifier "oPC")], 
 		   getBody = Just (TypedStatemetn (Block []), JVoid)}]]
+
+jvmabyte:
+magic = 0x CAFEBABE
+minor_version = 0
+major_version = 52
+constant_pool_count = 19
+constant_pool =
+{
+1| tag = CONSTANT_Methodref, class_index = 5, name_and_type_index = 15
+2| tag = CONSTANT_Class, name_index = 16
+3| tag = CONSTANT_Methodref, class_index = 2, name_and_type_index = 15
+4| tag = CONSTANT_Methodref, class_index = 2, name_and_type_index = 17
+5| tag = CONSTANT_Class, name_index = 18
+6| tag = CONSTANT_Utf8, length = 6, bytes = <init>
+7| tag = CONSTANT_Utf8, length = 3, bytes = ()V
+8| tag = CONSTANT_Utf8, length = 4, bytes = Code
+9| tag = CONSTANT_Utf8, length = 15, bytes = LineNumberTable
+10| tag = CONSTANT_Utf8, length = 15, bytes = CallParamMethod
+11| tag = CONSTANT_Utf8, length = 6, bytes = CallMe
+12| tag = CONSTANT_Utf8, length = 17, bytes = (LObjParamCall;)V
+13| tag = CONSTANT_Utf8, length = 10, bytes = SourceFile
+14| tag = CONSTANT_Utf8, length = 17, bytes = ObjParamCall.java
+15| tag = CONSTANT_NameAndType, name_index = 6, descriptor_index = 7
+16| tag = CONSTANT_Utf8, length = 12, bytes = ObjParamCall
+17| tag = CONSTANT_NameAndType, name_index = 11, descriptor_index = 12
+18| tag = CONSTANT_Utf8, length = 16, bytes = java/lang/Object
+}
+access_flags = 32  // ACC_SUPER
+this_class = #2  // ObjParamCall
+super_class = #5  // java/lang/Object
+interfaces_count = 0
+interfaces = {}
+fields_count = 0
+fields = {}
+methods_count = 3
+methods [0] =
+{
+access_flags = 0
+name_index = #6  // <init>
+descriptor_index = #7  // ()V
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #8  // Code
+attribute_length = 29
+max_stack = 1, max_locals = 1
+code_length = 5
+code =
+{
+    0  aload_0
+    1  invokespecial #1  // java/lang/Object.<init> ()V
+    4  return
+}
+exception_table_length = 0
+exception_table = {}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #9  // LineNumberTable
+attribute_length = 6
+line_number_table_length = 1
+line_number_table =
+{
+start_pc, line_number
+0| 0, 1
+}
+}
+}
+}
+methods [1] =
+{
+access_flags = 0
+name_index = #10  // CallParamMethod
+descriptor_index = #7  // ()V
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #8  // Code
+attribute_length = 46
+max_stack = 2, max_locals = 2
+code_length = 14
+code =
+{
+    0  new #2  // ObjParamCall
+    3  dup
+    4  invokespecial #3  // ObjParamCall.<init> ()V
+    7  astore_1
+    8  aload_1
+    9  aload_1
+   10  invokevirtual #4  // ObjParamCall.CallMe (LObjParamCall;)V
+   13  return
+}
+exception_table_length = 0
+exception_table = {}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #9  // LineNumberTable
+attribute_length = 14
+line_number_table_length = 3
+line_number_table =
+{
+start_pc, line_number
+0| 0, 4
+1| 8, 5
+2| 13, 6
+}
+}
+}
+}
+methods [2] =
+{
+access_flags = 1  // ACC_PUBLIC
+name_index = #11  // CallMe
+descriptor_index = #12  // (LObjParamCall;)V
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #8  // Code
+attribute_length = 25
+max_stack = 0, max_locals = 2
+code_length = 1
+code =
+{
+    0  return
+}
+exception_table_length = 0
+exception_table = {}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #9  // LineNumberTable
+attribute_length = 6
+line_number_table_length = 1
+line_number_table =
+{
+start_pc, line_number
+0| 0, 8
+}
+}
+}
+}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #13  // SourceFile
+attribute_length = 2
+sourcefile_index = #14  // ObjParamCall.java
+}

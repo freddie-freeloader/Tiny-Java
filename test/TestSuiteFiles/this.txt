@@ -53,3 +53,121 @@ TAst:
 				   getIdentifier = Identifier "hand"})
 				  (TypedExpression (Literal (IntegerL 2)), PrimType Int)), PrimType Int),PrimType Int)]),PrimType Int)}
 			]]
+
+jvmabyte:
+magic = 0x CAFEBABE
+minor_version = 0
+major_version = 52
+constant_pool_count = 18
+constant_pool =
+{
+1| tag = CONSTANT_Methodref, class_index = 4, name_and_type_index = 14
+2| tag = CONSTANT_Fieldref, class_index = 3, name_and_type_index = 15
+3| tag = CONSTANT_Class, name_index = 16
+4| tag = CONSTANT_Class, name_index = 17
+5| tag = CONSTANT_Utf8, length = 4, bytes = hand
+6| tag = CONSTANT_Utf8, length = 1, bytes = I
+7| tag = CONSTANT_Utf8, length = 6, bytes = <init>
+8| tag = CONSTANT_Utf8, length = 3, bytes = ()V
+9| tag = CONSTANT_Utf8, length = 4, bytes = Code
+10| tag = CONSTANT_Utf8, length = 15, bytes = LineNumberTable
+11| tag = CONSTANT_Utf8, length = 10, bytes = thisMethod
+12| tag = CONSTANT_Utf8, length = 10, bytes = SourceFile
+13| tag = CONSTANT_Utf8, length = 9, bytes = this.java
+14| tag = CONSTANT_NameAndType, name_index = 7, descriptor_index = 8
+15| tag = CONSTANT_NameAndType, name_index = 5, descriptor_index = 6
+16| tag = CONSTANT_Utf8, length = 7, bytes = UseThis
+17| tag = CONSTANT_Utf8, length = 16, bytes = java/lang/Object
+}
+access_flags = 32  // ACC_SUPER
+this_class = #3  // UseThis
+super_class = #4  // java/lang/Object
+interfaces_count = 0
+interfaces = {}
+fields_count = 1
+fields [0] =
+{
+access_flags = 0
+name_index = #5  // hand
+descriptor_index = #6  // I
+attributes_count = 0
+attributes = {}
+}
+methods_count = 2
+methods [0] =
+{
+access_flags = 0
+name_index = #7  // <init>
+descriptor_index = #8  // ()V
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #9  // Code
+attribute_length = 29
+max_stack = 1, max_locals = 1
+code_length = 5
+code =
+{
+    0  aload_0
+    1  invokespecial #1  // java/lang/Object.<init> ()V
+    4  return
+}
+exception_table_length = 0
+exception_table = {}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #10  // LineNumberTable
+attribute_length = 6
+line_number_table_length = 1
+line_number_table =
+{
+start_pc, line_number
+0| 0, 1
+}
+}
+}
+}
+methods [1] =
+{
+access_flags = 0
+name_index = #11  // thisMethod
+descriptor_index = #8  // ()V
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #9  // Code
+attribute_length = 34
+max_stack = 2, max_locals = 1
+code_length = 6
+code =
+{
+    0  aload_0
+    1  iconst_2
+    2  putfield #2  // UseThis.hand I
+    5  return
+}
+exception_table_length = 0
+exception_table = {}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #10  // LineNumberTable
+attribute_length = 10
+line_number_table_length = 2
+line_number_table =
+{
+start_pc, line_number
+0| 0, 4
+1| 5, 5
+}
+}
+}
+}
+attributes_count = 1
+attributes [0] =
+{
+attribute_name_index = #12  // SourceFile
+attribute_length = 2
+sourcefile_index = #13  // this.java
+}
