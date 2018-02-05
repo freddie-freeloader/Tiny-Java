@@ -17,30 +17,32 @@ tcerror = TypecheckError "A typecheck error occurred"
 
 
 
-typecheckteststring :: String -> [Either Error Class]
+typecheckteststring :: String -> Either Error [Class]
 typecheckteststring str = 
   case parseTestString str of
-    Nothing  -> [Left (MiscError "The test string could not be parsed.")]
-    Just cls -> typecheckprogram cls 
+    Nothing  -> Left (MiscError "The test string could not be parsed.")
+    Just cls -> (reduceErrors . typecheckprogram) cls 
 
 typecheckprogram :: [Class] -> [Either Error Class]
 typecheckprogram cls = map (typecheckclass cls) cls
 
+-- todo check for duplications
 typecheckclass :: [Class] -> Class -> Either Error Class
-typecheckclass cls (Class ident mods decls) = 
-  case typecheckdecls cls decls of 
+typecheckclass cls (Class ident mods decls) = if notElem Private mods then 
+  case typecheckdecls ident cls decls of 
     Left err      -> Left err
     Right typeddecls  -> Right (Class ident mods (snd typeddecls))
+  else Left tcerror
 
-typecheckdecls :: [Class] -> [Decl] -> Either Error (Symtab, [Decl])
-typecheckdecls cls = foldl (tchelper cls) (Right ([], []))
+typecheckdecls :: Identifier -> [Class] -> [Decl] -> Either Error (Symtab, [Decl])
+typecheckdecls ident cls = foldl (tchelper ident cls) (Right ([(This, RefType (Name [] ident))], []))
   where
-    tchelper _ (Left err) _ = Left err
-    tchelper cls (Right tuple) decl = typecheckdecl cls tuple decl 
+    tchelper _ _ (Left err) _ = Left err
+    tchelper ident cls (Right tuple) decl = typecheckdecl ident cls tuple decl 
 
-typecheckdecl :: [Class] -> (Symtab, [Decl]) -> Decl -> Either Error (Symtab , [Decl]) 
+typecheckdecl :: Identifier -> [Class] -> (Symtab, [Decl]) -> Decl -> Either Error (Symtab , [Decl]) 
 
-typecheckdecl cls (symtab, ast) decl@(Field (VarDecl ident mods typ rhs)) = 
+typecheckdecl _ cls (symtab, ast) decl@(Field (VarDecl ident mods typ rhs)) = 
   case rhs of
     Nothing -> Right ((ident, typ) : symtab, ast ++ [decl])
     Just expr -> 
@@ -51,12 +53,22 @@ typecheckdecl cls (symtab, ast) decl@(Field (VarDecl ident mods typ rhs)) =
                      Right ((ident, typ) : symtab, ast ++ [(Field (VarDecl ident mods typ (Just exp)))])
            else 
                      Left tcerror
-    
-typecheckdecl cls (symtab, ast) constr@(Constructor _ _ _ _) = undefined
 
-typecheckdecl cls (symtab, ast) method@(Method ident mods rettype paramlist body) = 
+typecheckdecl clident cls (symtab, ast) constr@(Constructor ident mods paramlist body)  
+ | clident /= ident = Left tcerror
+ | elem Private mods = Left tcerror
+ | otherwise = 
+  case body of 
+    Nothing   -> Right (symtab, ast ++ [constr])
+    Just stmt -> if returningstmt stmt then Left tcerror 
+      else case typecheckstmt cls ((map swap paramlist) ++ symtab) stmt of
+        Left err -> Left err
+        Right stmt@(TypedStatement(_, JVoid)) -> Right (symtab, ast ++ [Constructor ident mods paramlist (Just stmt)])
+        otherwise -> Left tcerror
+
+typecheckdecl _ cls (symtab, ast) method@(Method ident mods rettype paramlist body) = 
   case body of
-    Nothing   -> Right ((ident, rettype) : symtab, ast ++ [method]) --is this true?
+    Nothing   -> Right (symtab, ast ++ [method]) 
     Just stmt ->
       case typecheckstmt cls ((map swap paramlist) ++ symtab) stmt of
         Left err -> Left err
@@ -65,9 +77,6 @@ typecheckdecl cls (symtab, ast) method@(Method ident mods rettype paramlist body
                     Right (symtab, ast ++ [(Method ident mods rettype paramlist (Just stm))])
           else
                     Left tcerror                    
-
-
-
 
 
 
@@ -120,10 +129,18 @@ typecheckexpr cls symtab (PrimUnOp unop expr) =
 	otherwise -> Left tcerror 
   
 typecheckexpr cls symtab expr@(Iden name) = 
-  case lookupname cls symtab name of
-    Nothing   -> Left tcerror
-    Just texp-> Right (TypedExpression(expr, texp))
-      
+  case name of
+    (Name [] ident) -> case lookup ident symtab of 
+            Nothing    -> Left tcerror
+            (Just typ) -> Right (TypedExpression(expr, typ)) 
+    (Name (x:xs) ident) -> case lookup x symtab of
+            Nothing -> Left tcerror
+            (Just (RefType (Name [] c))) -> case findclass c cls of
+               Nothing   -> Left tcerror
+               (Just cl) -> case lookupnametype cls cl (Name xs ident) of 
+                 Left err   -> Left err
+                 Right typ  -> Right (TypedExpression(expr, typ)) 
+
 typecheckexpr _ _ expr@(Literal lit) = case lit of 
    (IntegerL _) -> Right (TypedExpression(expr, PrimType Int))
    (BooleanL _) -> Right (TypedExpression(expr, PrimType Boolean))
@@ -131,7 +148,19 @@ typecheckexpr _ _ expr@(Literal lit) = case lit of
    (StringL _)  -> Right (TypedExpression(expr, RefType (Name [] (Identifier "String")))) 
    Null         -> Right (TypedExpression(expr, JVoid))
  
+
+typecheckexpr cls symtab (ExprExprStmt stmtexpr) =
+  case typecheckstmtexpr cls symtab stmtexpr of
+    Left err -> Left err
+    Right (stex@(TypedStmtExpr(_, typ))) -> Right (TypedExpression(ExprExprStmt stex, typ))
+
+
+typecheckexpr cls symtab (Cast typ expr) = case typecheckexpr cls symtab expr of
+  Left err    -> Left err
+  Right texpr -> Right (TypedExpression(Cast typ texpr, typ))
+
 typecheckexpr _ _ expr@(TypedExpression(_, _)) = Right expr 
+
 
 typecheckexpr _ _ _ = undefined
 
@@ -199,29 +228,159 @@ typecheckstmt cls symtab (LocalVar (VarDecl ident mods typ (Just expr))) =
 typecheckstmt cls symtab (StmtExprStmt stmtexpr) = 
   case typecheckstmtexpr cls symtab stmtexpr of
     Left err -> Left err
-    Right stmexp@(TypedStmtExpr(_, stmexptype)) -> Right (TypedStatement(StmtExprStmt stmexp, stmexptype))
+    Right stmexp@(TypedStmtExpr(_, _)) -> Right (TypedStatement(StmtExprStmt stmexp, JVoid))
 
 typecheckstmt _ _ stmt@(TypedStatement _) = Right stmt
 
 
 typecheckstmtexpr :: [Class] -> Symtab -> StmtExpr -> Either Error StmtExpr
-typecheckstmtexpr = undefined
+
+-- todo correct op assignments? 
+typecheckstmtexpr cls symtab (Assign assignop name expr) = 
+  case typecheckexpr cls symtab (Iden name) of 
+   Left err -> Left err
+   Right (TypedExpression(_, vartype)) -> 
+     case typecheckexpr cls symtab expr of 
+       Left err -> Left err
+       Right texpr@(TypedExpression(_, exprtype)) -> 
+         case (vartype, exprtype) of
+           (PrimType Int, PrimType Int) -> if elem assignop inttoint 
+                                           then Right (TypedStmtExpr(Assign assignop name texpr, PrimType Int)) 
+                                           else Left tcerror
+           (PrimType Boolean, PrimType Boolean) 
+                                        -> if elem assignop booltobool
+                                           then Right (TypedStmtExpr(Assign assignop name texpr, PrimType Boolean))
+                                           else Left tcerror
+           otherwise -> Left tcerror
+  where
+   inttoint = [NormalAssign, MultiplyAssign, DivideAssign, ModuloAssign, PlusAssign, MinusAssign, LeftShiftAssign, ShiftRightAssign, UnsignedShiftRightAssign, BitXOrAssign]
+   booltobool = [NormalAssign, AndAssign, BitXOrAssign, OrAssign]
+
+
+typecheckstmtexpr cls symtab inst@(Instantiation typ@(Name [] c) exprs) = 
+  case reduceErrors $ (map (typecheckexpr cls symtab)) exprs of
+    Left err -> Left err
+    Right exprlist -> 
+      case findclass c cls of 
+        Nothing -> Left tcerror
+        Just cl -> 
+          let 
+            constrtypes = getconstrtypes cl
+            exprtypes = map typeofexpr exprlist
+          in 
+            if (or $ map ((==) exprtypes) constrtypes) || (constrtypes == [] && exprtypes == [])
+	      then Right (TypedStmtExpr(inst, RefType typ)) 
+	      else Left tcerror 
+	     
+typecheckstmtexpr cls symtab (Apply iden@(Iden (Name path ident)) params) = 
+  case reduceErrors $ (map (typecheckexpr cls symtab)) params of
+   Left err -> Left err
+   Right exprlist ->
+    case path of
+      []     -> typecheckstmtexpr cls symtab (Apply (Iden (Name [This] ident)) params)    
+      (p:ps) -> case lookup p symtab of 
+                  Nothing -> Left tcerror
+                  Just (RefType (Name [] clid)) -> case findclass clid cls of
+                    Nothing -> Left tcerror
+                    Just cl -> case lookupmethods cls cl (Name ps ident) of
+                      [] -> Left tcerror
+                      decls@(decl:_) -> if or $ map ((==) (map typeofexpr exprlist)) (map ((map fst) . getParamList) decls)  
+                        then Right (TypedStmtExpr(Apply iden exprlist, getReturnType decl))
+                        else Left tcerror
+
+
+typedcheckstmtexpr _ _ stmtexpr@(TypedStmtExpr(_)) = stmtexpr
+        
+
+
+
+
+reduceErrors :: [Either Error a] -> Either Error [a]  
+reduceErrors = foldl helper (Right [])
+  where
+    helper (Left err) _ = Left err
+    helper _ (Left err) = Left err
+    helper (Right ls) (Right x) = Right (ls ++ [x])
 
 
 
 
 
--- better Either Error Type ?
+
+emptyOr :: [Bool] -> Bool
+emptyOr [] = True
+emptyOr ls = or ls
+
+typeofexpr :: Expression -> Type
+typeofexpr (TypedExpression(_, typ)) = typ
+
+
+
+findclass :: Identifier -> [Class] -> Maybe Class
+findclass _ [] = Nothing
+findclass ident ((c@(Class id _ _)):cs) = if ident == id then Just c else findclass ident cs 
+
+
+lookupmethods :: [Class] -> Class -> Name -> [Decl] 
+lookupmethods _ (Class _ _ decls) (Name [] ident) =  filter method decls 
+  where
+    method (Method id _ _ _ _) = id == ident 
+    method _ = False
+lookupmethods cls c (Name (p:ps) ident) = undefined
+         
+lookupnametype :: [Class] -> Class -> Name -> Either Error Type
+lookupnametype _ c (Name [] ident) = lookupidenttype c ident
+lookupnametype cls c (Name (p:ps) ident) = case lookupidenttype c p of
+   Left err -> Left err
+   Right (RefType (Name [] classname)) -> case findclass classname cls of
+     Nothing -> Left tcerror
+     (Just cl) -> lookupnametype cls cl (Name ps ident)
+   otherwise -> Left tcerror 
+                      
+lookupidenttype :: Class ->  Identifier -> Either Error Type
+lookupidenttype (Class _ mods decls) ident = if elem Private mods 
+   then Left tcerror 
+   else finddecltype ident decls 
+
+finddecltype :: Identifier -> [Decl] -> Either Error Type 
+finddecltype ident [] = Left tcerror
+finddecltype ident ((Field (VarDecl id mods typ _)):decls) = if id == ident then
+      if elem Private mods 
+        then Left tcerror 
+        else Right typ 
+   else finddecltype ident decls
+finddecltype ident (_:decls) = finddecltype ident decls
+  
+    
+getconstrtypes :: Class -> [[Type]]
+getconstrtypes (Class _ _ decls) = map extrtypes $ filter isconstr decls
+  where
+    extrtypes (Constructor _ _ pls _) = map fst pls
+    isconstr (Constructor _ _ _ _)    = True
+    isconstr _                        = False
+     
+
+
+
+returningstmt :: Statement -> Bool
+returningstmt (Return _) = True
+returningstmt (While _ (Just stmt)) = returningstmt stmt
+returningstmt (If _ (Just stmt) _) = returningstmt stmt 
+returningstmt (If _ _ (Just stmt)) = returningstmt stmt
+returningstmt (Block stmts) = or (map returningstmt stmts)
+returningstmt (TypedStatement(stmt, _)) = returningstmt stmt
+returningstmt _ = False
+
+
+
+
+
+
+--todo better Either Error Type, primtypes are no objects
 upperbound :: Type -> Type -> Type 
 upperbound typ JVoid = typ
 upperbound JVoid typ = typ 
 upperbound typ1 typ2  = if typ1 == typ2 then typ1 else RefType (Name [] (Identifier "Object"))
-
--- must be implemented + lookup check
-lookupname :: [Class] -> Symtab -> Name -> Maybe Type 
-lookupname _ symtab (Name [] ident) = lookup ident symtab
-lookupname _ _ _ = undefined 
-
 
 
 blockhlp :: [Class] -> Symtab -> [Statement] -> Either Error ([Statement], Type)
