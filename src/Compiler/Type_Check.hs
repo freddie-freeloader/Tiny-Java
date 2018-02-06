@@ -4,6 +4,7 @@ import Compiler.Ast
 import Compiler.Parser 
 import Data.List(lookup)
 import Data.Tuple(swap)
+import Data.Maybe(fromJust)
 
 
 data Error = TypecheckError String
@@ -14,9 +15,6 @@ type Symtab = [(Identifier, Type)]
 
 tcerror = TypecheckError "A typecheck error occurred"
 
--- upperbound
--- duplication
--- handle modifier
 -- remaining cases
 -- ops
 -- exporting
@@ -33,13 +31,17 @@ typecheckteststring str =
 typecheckprogram :: [Class] -> [Either Error Class]
 typecheckprogram cls = map (typecheckclass cls) cls
 
--- todo check for duplications
 typecheckclass :: [Class] -> Class -> Either Error Class
-typecheckclass cls (Class ident mods decls) = if notElem Private mods then 
-  case typecheckdecls ident cls decls of 
+typecheckclass cls (Class ident mods decls) 
+ | not (validconstructors decls) =  Left tcerror
+ | not (validmethods decls) = Left tcerror
+ | not (modsOk mods) = Left tcerror
+ | elem Protected mods = Left tcerror
+ | elem Private mods = Left tcerror
+ | elem Static mods = Left tcerror
+ | otherwise = case typecheckdecls ident cls decls of 
     Left err      -> Left err
     Right typeddecls  -> Right (Class ident mods (snd typeddecls))
-  else Left tcerror
 
 typecheckdecls :: Identifier -> [Class] -> [Decl] -> Either Error (Symtab, [Decl])
 typecheckdecls ident cls = foldl (tchelper ident cls) (Right ([(This, RefType (Name [] ident))], []))
@@ -47,13 +49,19 @@ typecheckdecls ident cls = foldl (tchelper ident cls) (Right ([(This, RefType (N
     tchelper _ _ (Left err) _ = Left err
     tchelper ident cls (Right tuple) decl = typecheckdecl ident cls tuple decl 
 
+
 typecheckdecl :: Identifier -> [Class] -> (Symtab, [Decl]) -> Decl -> Either Error (Symtab , [Decl]) 
 
-typecheckdecl _ cls (symtab, ast) decl@(Field (VarDecl ident mods typ rhs)) = 
-  case rhs of
-    Nothing -> Right ((ident, typ) : symtab, ast ++ [decl])
-    Just expr -> 
-      case typecheckexpr cls symtab expr of
+typecheckdecl _ cls (symtab, ast) decl@(Field (VarDecl ident mods typ rhs)) 
+ | not (modsOk mods) = Left tcerror
+ | otherwise = 
+  case lookup ident symtab of
+   (Just _) -> Left tcerror
+   Nothing -> 
+    case rhs of
+      Nothing -> Right ((ident, typ) : symtab, ast ++ [decl])
+      Just expr -> 
+        case typecheckexpr cls symtab expr of
          Left err -> Left err
          Right exp@(TypedExpression(_, exptype)) -> 
            if typ == exptype then
@@ -63,7 +71,9 @@ typecheckdecl _ cls (symtab, ast) decl@(Field (VarDecl ident mods typ rhs)) =
 
 typecheckdecl clident cls (symtab, ast) constr@(Constructor ident mods paramlist body)  
  | clident /= ident = Left tcerror
- | elem Private mods = Left tcerror
+ | not (modsOk mods) = Left tcerror
+ | elem Static mods = Left tcerror
+ | elem Abstract mods = Left tcerror
  | otherwise = 
   case body of 
     Nothing   -> Right (symtab, ast ++ [constr])
@@ -73,11 +83,14 @@ typecheckdecl clident cls (symtab, ast) constr@(Constructor ident mods paramlist
         Right stmt@(TypedStatement(_, JVoid)) -> Right (symtab, ast ++ [Constructor ident mods paramlist (Just stmt)])
         otherwise -> Left tcerror
 
-typecheckdecl _ cls (symtab, ast) method@(Method ident mods rettype paramlist body) = 
+typecheckdecl _ cls (symtab, ast) method@(Method ident mods rettype paramlist body) 
+ | not (modsOk mods) = Left tcerror
+ | elem Abstract mods = Left tcerror
+ | otherwise = 
   case body of
     Nothing   -> Right (symtab, ast ++ [method]) 
-    Just stmt ->
-      case typecheckstmt cls ((map swap paramlist) ++ symtab) stmt of
+    Just stmt -> let symt = if elem Static mods then map swap paramlist else ((map swap paramlist) ++ symtab) in
+      case typecheckstmt cls symt stmt of
         Left err -> Left err
         Right stm@(TypedStatement(_, stmtype)) ->
           if rettype == stmtype then
@@ -208,7 +221,10 @@ typecheckstmt cls symtab (If cond ifthen ifelse) =
           (Left err, _) -> Left err
           (_, Left err) -> Left err
           (Right stm1@(TypedStatement(_, stm1type)), Right stm2@(TypedStatement(_, stm2type))) ->
-                           Right (TypedStatement(If condexp (Just stm1) (Just stm2), upperbound stm1type stm2type)) 
+                 let uppertype = upperbound stm1type stm2type in
+                   if uppertype == Nothing 
+                   then Left tcerror  
+                   else Right (TypedStatement(If condexp (Just stm1) (Just stm2), fromJust uppertype)) 
     otherwise -> Left tcerror 
                         
 typecheckstmt cls symtab (Block stmts) = 
@@ -275,7 +291,7 @@ typecheckstmtexpr cls symtab (Instantiation typ@(Name [] c) exprs) =
             constrtypes = getconstrtypes cl
             exprtypes = map typeofexpr exprlist
           in 
-            if (or $ map ((==) exprtypes) constrtypes) || (constrtypes == [] && exprtypes == [])
+            if (or $ map ((==) exprtypes) constrtypes) || (null constrtypes && null exprtypes)
 	      then Right (TypedStmtExpr(Instantiation typ exprlist, RefType typ)) 
 	      else Left tcerror 
 	     
@@ -360,12 +376,30 @@ finddecltype ident (_:decls) = finddecltype ident decls
   
     
 getconstrtypes :: Class -> [[Type]]
-getconstrtypes (Class _ _ decls) = map extrtypes $ filter isconstr decls
+getconstrtypes (Class _ _ decls) = getconstrtypesfromdecls decls
+getconstrtypesfromdecls decls = map extrtypes $ filter isconstr decls
   where
     extrtypes (Constructor _ _ pls _) = map fst pls
     isconstr (Constructor _ _ _ _)    = True
     isconstr _                        = False
      
+validconstructors :: [Decl] -> Bool
+validconstructors decls = not (withdupllists (getconstrtypesfromdecls decls)) 
+
+validmethods :: [Decl] -> Bool
+validmethods decls =
+  let
+    ismethod (Method _ _ _ _ _) = True
+    ismethod _ = False
+    pt (Method _ _ _ pl _) = map fst pl
+    methods = filter ismethod decls 
+    types = map getReturnType methods
+    paramtypes = map pt methods
+  in null methods || ((all (== head types) (tail types)) && not (withdupllists paramtypes))
+  
+withdupllists :: Eq a => [[a]] -> Bool
+withdupllists [] = False
+withdupllists (x:xs) = if or (map ((==) x) xs) then True else withdupllists xs
 
 
 
@@ -379,15 +413,19 @@ returningstmt (TypedStatement(stmt, _)) = returningstmt stmt
 returningstmt _ = False
 
 
+modsOk :: [Mod] -> Bool
+modsOk [] = True
+modsOk (Static:mods) = if elem Abstract mods || elem Static mods then False else modsOk mods
+modsOk (Abstract:mods) = if elem Abstract mods || elem Static mods then False else modsOk mods
+modsOk (pubpropri:mods) = if elem Public mods || elem Protected mods || elem Private mods then False else modsOk mods
 
 
-
-
---todo better Either Error Type, primtypes are no objects
-upperbound :: Type -> Type -> Type 
-upperbound typ JVoid = typ
-upperbound JVoid typ = typ 
-upperbound typ1 typ2  = if typ1 == typ2 then typ1 else RefType (Name [] (Identifier "Object"))
+upperbound :: Type -> Type -> Maybe Type
+upperbound typ JVoid = Just typ
+upperbound JVoid typ = Just typ
+upperbound typ1@(PrimType _) typ2@(PrimType _) = if typ1 == typ2 then Just typ1 else Nothing
+upperbound typ1@(RefType _) typ2@(RefType _) = if typ1 == typ2 then Just typ1 else Just (RefType (Name [] (Identifier "Object")))
+upperbound _ _ = Nothing
 
 
 blockhlp :: [Class] -> Symtab -> [Statement] -> Either Error ([Statement], Type)
@@ -404,6 +442,8 @@ blockhlp cls symtab (stmt:stmts) =
       case blockhlp cls symtab stmts of
         Left err -> Left err
         Right (stmlist, typestmts)
-                 -> Right (stm:stmlist, upperbound stmtype typestmts)
+                 -> let uppertype = upperbound stmtype typestmts in
+                     if uppertype == Nothing then Left tcerror 
+                     else Right (stm:stmlist, fromJust uppertype)
                  
 
