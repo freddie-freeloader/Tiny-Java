@@ -14,7 +14,14 @@ type Symtab = [(Identifier, Type)]
 
 tcerror = TypecheckError "A typecheck error occurred"
 
-
+-- upperbound
+-- duplication
+-- handle modifier
+-- remaining cases
+-- ops
+-- exporting
+-- warnings
+-- error messages
 
 
 typecheckteststring :: String -> Either Error [Class]
@@ -257,7 +264,7 @@ typecheckstmtexpr cls symtab (Assign assignop name expr) =
    booltobool = [NormalAssign, AndAssign, BitXOrAssign, OrAssign]
 
 
-typecheckstmtexpr cls symtab inst@(Instantiation typ@(Name [] c) exprs) = 
+typecheckstmtexpr cls symtab (Instantiation typ@(Name [] c) exprs) = 
   case reduceErrors $ (map (typecheckexpr cls symtab)) exprs of
     Left err -> Left err
     Right exprlist -> 
@@ -269,7 +276,7 @@ typecheckstmtexpr cls symtab inst@(Instantiation typ@(Name [] c) exprs) =
             exprtypes = map typeofexpr exprlist
           in 
             if (or $ map ((==) exprtypes) constrtypes) || (constrtypes == [] && exprtypes == [])
-	      then Right (TypedStmtExpr(inst, RefType typ)) 
+	      then Right (TypedStmtExpr(Instantiation typ exprlist, RefType typ)) 
 	      else Left tcerror 
 	     
 typecheckstmtexpr cls symtab (Apply iden@(Iden (Name path ident)) params) = 
