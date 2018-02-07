@@ -15,11 +15,11 @@ type Symtab = [(Identifier, Type)]
 
 tcerror = TypecheckError "A typecheck error occurred"
 
--- remaining cases
 -- ops
 -- exporting
 -- warnings
 -- error messages
+
 
 
 typecheckteststring :: String -> Either Error [Class]
@@ -108,7 +108,18 @@ typecheckdecl _ cls (symtab, ast) method@(Method ident mods rettype paramlist bo
  
 typecheckexpr :: [Class] -> Symtab -> Expression -> Either Error Expression 
 
-typecheckexpr cls symtab (TernaryIf cond elseexpr thenexpr) = undefined
+typecheckexpr cls symtab (TernaryIf cond elseexpr thenexpr) = 
+ case typecheckexpr cls symtab cond of
+   Left err -> Left err
+   Right (condt@(TypedExpression(_, condtype))) -> if not (condtype == PrimType Boolean) 
+     then Left tcerror
+     else case (typecheckexpr cls symtab elseexpr, typecheckexpr cls symtab thenexpr) of
+       (Left err, _) -> Left err
+       (_, Left err) -> Left err
+       (Right telse@(TypedExpression(_, elsetype)), Right tthen@(TypedExpression(_, thentype))) ->
+          case upperbound elsetype thentype of
+            Nothing  -> Left tcerror
+            Just typ -> Right (TypedExpression(TernaryIf condt telse tthen, typ))
   
 -- todo adapt to new binops from AST
 typecheckexpr cls symtab (PrimBinOp binop expr1 expr2) =
@@ -161,6 +172,9 @@ typecheckexpr cls symtab expr@(Iden name) =
                  Left err   -> Left err
                  Right typ  -> Right (TypedExpression(expr, typ)) 
 
+--typecheckexpr cls symtab (Select expr ident) = undefined
+
+
 typecheckexpr _ _ expr@(Literal lit) = case lit of 
    (IntegerL _) -> Right (TypedExpression(expr, PrimType Int))
    (BooleanL _) -> Right (TypedExpression(expr, PrimType Boolean))
@@ -182,7 +196,6 @@ typecheckexpr cls symtab (Cast typ expr) = case typecheckexpr cls symtab expr of
 typecheckexpr _ _ expr@(TypedExpression(_, _)) = Right expr 
 
 
-typecheckexpr _ _ _ = undefined
 
 
 
@@ -255,6 +268,9 @@ typecheckstmt cls symtab (StmtExprStmt stmtexpr) =
 
 typecheckstmt _ _ stmt@(TypedStatement _) = Right stmt
 
+typecheckstmt _ _ Break = Right (TypedStatement(Break, JVoid))
+typecheckstmt _ _ Continue = Right (TypedStatement(Continue, JVoid))
+
 
 typecheckstmtexpr :: [Class] -> Symtab -> StmtExpr -> Either Error StmtExpr
 
@@ -312,7 +328,14 @@ typecheckstmtexpr cls symtab (Apply iden@(Iden (Name path ident)) params) =
                         else Left tcerror
 
 
-typedcheckstmtexpr _ _ stmtexpr@(TypedStmtExpr(_)) = stmtexpr
+typecheckstmtexpr cls symtab  (SEUnOp op expr) = 
+  case typecheckexpr cls symtab expr of
+    Left err -> Left err
+    Right (texpr@(TypedExpression(_, exprtype))) -> if exprtype == PrimType Int 
+      then Right (TypedStmtExpr(SEUnOp op texpr, exprtype))
+      else Left tcerror
+
+typecheckstmtexpr _ _ stmtexpr@(TypedStmtExpr(_)) = Right stmtexpr
         
 
 
