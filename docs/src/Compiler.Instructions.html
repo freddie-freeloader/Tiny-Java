@@ -1,0 +1,813 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Compiler</span><span class="hs-operator">.</span><span class="hs-identifier">Instructions</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-2"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Int</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Int8</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Int16</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Int32</span><span class="hs-special">)</span><span>
+</span><a name="line-3"></a><span class="hs-keyword">import</span><span> </span><span class="hs-identifier">Data</span><span class="hs-operator">.</span><span class="hs-identifier">Word</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Word8</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Word16</span><span class="hs-special">)</span><span>
+</span><a name="line-4"></a><span>
+</span><a name="line-5"></a><span>
+</span><a name="line-6"></a><span class="hs-keyword">type</span><span> </span><a name="Instructions"><a href="Compiler.Instructions.html#Instructions"><span class="hs-identifier">Instructions</span></a></a><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><a href="Compiler.Instructions.html#Instruction"><span class="hs-identifier hs-type">Instruction</span></a><span class="hs-special">]</span><span>
+</span><a name="line-7"></a><span>
+</span><a name="line-8"></a><span class="hs-keyword">data</span><span> </span><a name="Instruction"><a href="Compiler.Instructions.html#Instruction"><span class="hs-identifier">Instruction</span></a></a><span> </span><span class="hs-glyph">=</span><span>
+</span><a name="line-9"></a><span>    </span><a name="Aconst_Null"><a href="Compiler.Instructions.html#Aconst_Null"><span class="hs-identifier">Aconst_Null</span></a></a><span>
+</span><a name="line-10"></a><span>    </span><span class="hs-comment">{-
+    OP: 0000 0001, 01
+    Byte: None
+    Stack: &#8594; null
+    Description: &lt;td&gt;push a  reference onto the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-16"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Aload"><a href="Compiler.Instructions.html#Aload"><span class="hs-identifier">Aload</span></a></a><span>
+</span><a name="line-17"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-18"></a><span>    </span><a name="%24sel%3Aaload_index%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aaload_index%3AAconst_Null"><span class="hs-identifier">aload_index</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word8</span><span>
+</span><a name="line-19"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-20"></a><span>    </span><span class="hs-comment">{-
+    OP: 0001 1001, 19
+    Byte: 1: index
+    Stack: &#8594; objectref
+    Description: &lt;td&gt;load a reference onto the stack from a local variable &lt;/td&gt;
+    -}</span><span>
+</span><a name="line-26"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Aload_0"><a href="Compiler.Instructions.html#Aload_0"><span class="hs-identifier">Aload_0</span></a></a><span>
+</span><a name="line-27"></a><span>    </span><span class="hs-comment">{-
+    OP: 0010 1010, 2a
+    Byte: None
+    Stack: &#8594; objectref
+    Description: &lt;td&gt;load a reference onto the stack from local variable 0&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-33"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Aload_1"><a href="Compiler.Instructions.html#Aload_1"><span class="hs-identifier">Aload_1</span></a></a><span>
+</span><a name="line-34"></a><span>    </span><span class="hs-comment">{-
+    OP: 0010 1011, 2b
+    Byte: None
+    Stack: &#8594; objectref
+    Description: &lt;td&gt;load a reference onto the stack from local variable 1&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-40"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Aload_2"><a href="Compiler.Instructions.html#Aload_2"><span class="hs-identifier">Aload_2</span></a></a><span>
+</span><a name="line-41"></a><span>    </span><span class="hs-comment">{-
+    OP: 0010 1100, 2c
+    Byte: None
+    Stack: &#8594; objectref
+    Description: &lt;td&gt;load a reference onto the stack from local variable 2&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-47"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Aload_3"><a href="Compiler.Instructions.html#Aload_3"><span class="hs-identifier">Aload_3</span></a></a><span>
+</span><a name="line-48"></a><span>    </span><span class="hs-comment">{-
+    OP: 0010 1101, 2d
+    Byte: None
+    Stack: &#8594; objectref
+    Description: &lt;td&gt;load a reference onto the stack from local variable 3&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-54"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Areturn"><a href="Compiler.Instructions.html#Areturn"><span class="hs-identifier">Areturn</span></a></a><span>
+</span><a name="line-55"></a><span>    </span><span class="hs-comment">{-
+    OP: 1011 0000, b0
+    Byte: None
+    Stack: objectref &#8594; [empty]
+    Description: &lt;td&gt;return a reference from a method&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-61"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Astore"><a href="Compiler.Instructions.html#Astore"><span class="hs-identifier">Astore</span></a></a><span>
+</span><a name="line-62"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-63"></a><span>    </span><a name="%24sel%3Aastore_index%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aastore_index%3AAconst_Null"><span class="hs-identifier">astore_index</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word8</span><span>
+</span><a name="line-64"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-65"></a><span>    </span><span class="hs-comment">{-
+    OP: 0011 1010, 3a
+    Byte: 1: index
+    Stack: objectref &#8594;
+    Description: &lt;td&gt;store a reference into a local variable &lt;/td&gt;
+    -}</span><span>
+</span><a name="line-71"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Astore_0"><a href="Compiler.Instructions.html#Astore_0"><span class="hs-identifier">Astore_0</span></a></a><span>
+</span><a name="line-72"></a><span>    </span><span class="hs-comment">{-
+    OP: 0100 1011, 4b
+    Byte: None
+    Stack: objectref &#8594;
+    Description: &lt;td&gt;store a reference into local variable 0&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-78"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Astore_1"><a href="Compiler.Instructions.html#Astore_1"><span class="hs-identifier">Astore_1</span></a></a><span>
+</span><a name="line-79"></a><span>    </span><span class="hs-comment">{-
+    OP: 0100 1100, 4c
+    Byte: None
+    Stack: objectref &#8594;
+    Description: &lt;td&gt;store a reference into local variable 1&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-85"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Astore_2"><a href="Compiler.Instructions.html#Astore_2"><span class="hs-identifier">Astore_2</span></a></a><span>
+</span><a name="line-86"></a><span>    </span><span class="hs-comment">{-
+    OP: 0100 1101, 4d
+    Byte: None
+    Stack: objectref &#8594;
+    Description: &lt;td&gt;store a reference into local variable 2&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-92"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Astore_3"><a href="Compiler.Instructions.html#Astore_3"><span class="hs-identifier">Astore_3</span></a></a><span>
+</span><a name="line-93"></a><span>    </span><span class="hs-comment">{-
+    OP: 0100 1110, 4e
+    Byte: None
+    Stack: objectref &#8594;
+    Description: &lt;td&gt;store a reference into local variable 3&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-99"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Bipush"><a href="Compiler.Instructions.html#Bipush"><span class="hs-identifier">Bipush</span></a></a><span>
+</span><a name="line-100"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-101"></a><span>    </span><a name="%24sel%3Abipush_byte%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Abipush_byte%3AAconst_Null"><span class="hs-identifier">bipush_byte</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int8</span><span>
+</span><a name="line-102"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-103"></a><span>    </span><span class="hs-comment">{-
+    OP: 0001 0000, 10
+    Byte: 1: byte
+    Stack: &#8594; value
+    Description: &lt;td&gt;push a  onto the stack as an integer &lt;/td&gt;
+    -}</span><span>
+</span><a name="line-109"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Sipush"><a href="Compiler.Instructions.html#Sipush"><span class="hs-identifier">Sipush</span></a></a><span class="hs-special">{</span><span>
+</span><a name="line-110"></a><span>    </span><a name="%24sel%3Asipush_value%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Asipush_value%3AAconst_Null"><span class="hs-identifier">sipush_value</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-111"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-112"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Checkcast"><a href="Compiler.Instructions.html#Checkcast"><span class="hs-identifier">Checkcast</span></a></a><span>
+</span><a name="line-113"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-114"></a><span>    </span><a name="%24sel%3Acheckcast_indexbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Acheckcast_indexbytes%3AAconst_Null"><span class="hs-identifier">checkcast_indexbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span>
+</span><a name="line-115"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-116"></a><span>    </span><span class="hs-comment">{-
+    OP: 1100 0000, c0
+    Byte: 2: indexbyte1, indexbyte2
+    Stack: objectref &#8594; objectref
+    Description: &lt;td&gt;checks whether an  is of a certain type, the class reference of which is in the constant pool at  (&lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;indexbyte1 &amp;lt;&amp;lt; 8 + indexbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-122"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Dup"><a href="Compiler.Instructions.html#Dup"><span class="hs-identifier">Dup</span></a></a><span>
+</span><a name="line-123"></a><span>    </span><span class="hs-comment">{-
+    OP: 0101 1001, 59
+    Byte: None
+    Stack: value &#8594; value, value
+    Description: &lt;td&gt;duplicate the value on top of the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-129"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Dup_X1"><a href="Compiler.Instructions.html#Dup_X1"><span class="hs-identifier">Dup_X1</span></a></a><span>
+</span><a name="line-130"></a><span>    </span><span class="hs-comment">{-
+    OP: 0101 1010, 5a
+    Byte: None
+    Stack: value2, value1 &#8594; value1, value2, value1
+    Description: &lt;td&gt;insert a copy of the top value into the stack two values from the top. value1 and value2 must not be of the type double or long.&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-136"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Dup_X2"><a href="Compiler.Instructions.html#Dup_X2"><span class="hs-identifier">Dup_X2</span></a></a><span>
+</span><a name="line-137"></a><span>    </span><span class="hs-comment">{-
+    OP: 0101 1011, 5b
+    Byte: None
+    Stack: value3, value2, value1 &#8594; value1, value3, value2, value1
+    Description: &lt;td&gt;insert a copy of the top value into the stack two (if value2 is double or long it takes up the entry of value3, too) or three values (if value2 is neither double nor long) from the top&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-143"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Dup2"><a href="Compiler.Instructions.html#Dup2"><span class="hs-identifier">Dup2</span></a></a><span>
+</span><a name="line-144"></a><span>    </span><span class="hs-comment">{-
+    OP: 0101 1100, 5c
+    Byte: None
+    Stack: {value2, value1} &#8594; {value2, value1}, {value2, value1}
+    Description: &lt;td&gt;duplicate top two stack words (two values, if value1 is not double nor long; a single value, if value1 is double or long)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-150"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Dup2_X1"><a href="Compiler.Instructions.html#Dup2_X1"><span class="hs-identifier">Dup2_X1</span></a></a><span>
+</span><a name="line-151"></a><span>    </span><span class="hs-comment">{-
+    OP: 0101 1101, 5d
+    Byte: None
+    Stack: value3, {value2, value1} &#8594; {value2, value1}, value3, {value2, value1}
+    Description: &lt;td&gt;duplicate two words and insert beneath third word (see explanation above)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-157"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Dup2_X2"><a href="Compiler.Instructions.html#Dup2_X2"><span class="hs-identifier">Dup2_X2</span></a></a><span>
+</span><a name="line-158"></a><span>    </span><span class="hs-comment">{-
+    OP: 0101 1110, 5e
+    Byte: None
+    Stack: {value4, value3}, {value2, value1} &#8594; {value2, value1}, {value4, value3}, {value2, value1}
+    Description: &lt;td&gt;duplicate two words and insert beneath fourth word&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-164"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Getfield"><a href="Compiler.Instructions.html#Getfield"><span class="hs-identifier">Getfield</span></a></a><span>
+</span><a name="line-165"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-166"></a><span>    </span><a name="%24sel%3Agetfield_indexbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Agetfield_indexbytes%3AAconst_Null"><span class="hs-identifier">getfield_indexbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span>
+</span><a name="line-167"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-168"></a><span>    </span><span class="hs-comment">{-
+    OP: 1011 0100, b4
+    Byte: 2: indexbyte1, indexbyte2
+    Stack: objectref &#8594; value
+    Description: &lt;td&gt;get a field  of an object , where the field is identified by field reference in the constant pool  (&lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;indexbyte1 &amp;lt;&amp;lt; 8 + indexbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-174"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Getstatic"><a href="Compiler.Instructions.html#Getstatic"><span class="hs-identifier">Getstatic</span></a></a><span>
+</span><a name="line-175"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-176"></a><span>    </span><a name="%24sel%3Agetstatic_indexbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Agetstatic_indexbytes%3AAconst_Null"><span class="hs-identifier">getstatic_indexbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span>
+</span><a name="line-177"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-178"></a><span>    </span><span class="hs-comment">{-
+    OP: 1011 0010, b2
+    Byte: 2: indexbyte1, indexbyte2
+    Stack: &#8594; value
+    Description: &lt;td&gt;get a static field  of a class, where the field is identified by field reference in the constant pool  (&lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;indexbyte1 &amp;lt;&amp;lt; 8 + indexbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-184"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Goto"><a href="Compiler.Instructions.html#Goto"><span class="hs-identifier">Goto</span></a></a><span>
+</span><a name="line-185"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-186"></a><span>    </span><a name="%24sel%3Agoto_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Agoto_branchbytes%3AAconst_Null"><span class="hs-identifier">goto_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-187"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-188"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 0111, a7
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: [no change]
+    Description: &lt;td&gt;goes to another instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-194"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Goto_W"><a href="Compiler.Instructions.html#Goto_W"><span class="hs-identifier">Goto_W</span></a></a><span>
+</span><a name="line-195"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-196"></a><span>    </span><a name="%24sel%3Agoto_w_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Agoto_w_branchbytes%3AAconst_Null"><span class="hs-identifier">goto_w_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int32</span><span>
+</span><a name="line-197"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-198"></a><span>    </span><span class="hs-comment">{-
+    OP: 1100 1000, c8
+    Byte: 4: branchbyte1, branchbyte2, branchbyte3, branchbyte4
+    Stack: [no change]
+    Description: &lt;td&gt;goes to another instruction at  (signed int constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 24 + branchbyte2 &amp;lt;&amp;lt; 16 + branchbyte3 &amp;lt;&amp;lt; 8 + branchbyte4&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-204"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="I2C"><a href="Compiler.Instructions.html#I2C"><span class="hs-identifier">I2C</span></a></a><span>
+</span><a name="line-205"></a><span>    </span><span class="hs-comment">{-
+    OP: 1001 0010, 92
+    Byte: None
+    Stack: value &#8594; result
+    Description: &lt;td&gt;convert an int into a character&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-211"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iadd"><a href="Compiler.Instructions.html#Iadd"><span class="hs-identifier">Iadd</span></a></a><span>
+</span><a name="line-212"></a><span>    </span><span class="hs-comment">{-
+    OP: 0110 0000, 60
+    Byte: None
+    Stack: value1, value2 &#8594; result
+    Description: &lt;td&gt;add two ints&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-218"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iand"><a href="Compiler.Instructions.html#Iand"><span class="hs-identifier">Iand</span></a></a><span>
+</span><a name="line-219"></a><span>    </span><span class="hs-comment">{-
+    OP: 0111 1110, 7e
+    Byte: None
+    Stack: value1, value2 &#8594; result
+    Description: &lt;td&gt;perform a bitwise AND on two integers&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-225"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iconst_M1"><a href="Compiler.Instructions.html#Iconst_M1"><span class="hs-identifier">Iconst_M1</span></a></a><span>
+</span><a name="line-226"></a><span>    </span><span class="hs-comment">{-
+    OP: 0000 0010, 02
+    Byte: None
+    Stack: &#8594; -1
+    Description: &lt;td&gt;load the int value &#8722;1 onto the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-232"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iconst_0"><a href="Compiler.Instructions.html#Iconst_0"><span class="hs-identifier">Iconst_0</span></a></a><span>
+</span><a name="line-233"></a><span>    </span><span class="hs-comment">{-
+    OP: 0000 0011, 03
+    Byte: None
+    Stack: &#8594; 0
+    Description: &lt;td&gt;load the int value 0 onto the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-239"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iconst_1"><a href="Compiler.Instructions.html#Iconst_1"><span class="hs-identifier">Iconst_1</span></a></a><span>
+</span><a name="line-240"></a><span>    </span><span class="hs-comment">{-
+    OP: 0000 0100, 04
+    Byte: None
+    Stack: &#8594; 1
+    Description: &lt;td&gt;load the int value 1 onto the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-246"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iconst_2"><a href="Compiler.Instructions.html#Iconst_2"><span class="hs-identifier">Iconst_2</span></a></a><span>
+</span><a name="line-247"></a><span>    </span><span class="hs-comment">{-
+    OP: 0000 0101, 05
+    Byte: None
+    Stack: &#8594; 2
+    Description: &lt;td&gt;load the int value 2 onto the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-253"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iconst_3"><a href="Compiler.Instructions.html#Iconst_3"><span class="hs-identifier">Iconst_3</span></a></a><span>
+</span><a name="line-254"></a><span>    </span><span class="hs-comment">{-
+    OP: 0000 0110, 06
+    Byte: None
+    Stack: &#8594; 3
+    Description: &lt;td&gt;load the int value 3 onto the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-260"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iconst_4"><a href="Compiler.Instructions.html#Iconst_4"><span class="hs-identifier">Iconst_4</span></a></a><span>
+</span><a name="line-261"></a><span>    </span><span class="hs-comment">{-
+    OP: 0000 0111, 07
+    Byte: None
+    Stack: &#8594; 4
+    Description: &lt;td&gt;load the int value 4 onto the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-267"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iconst_5"><a href="Compiler.Instructions.html#Iconst_5"><span class="hs-identifier">Iconst_5</span></a></a><span>
+</span><a name="line-268"></a><span>    </span><span class="hs-comment">{-
+    OP: 0000 1000, 08
+    Byte: None
+    Stack: &#8594; 5
+    Description: &lt;td&gt;load the int value 5 onto the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-274"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Idiv"><a href="Compiler.Instructions.html#Idiv"><span class="hs-identifier">Idiv</span></a></a><span>
+</span><a name="line-275"></a><span>    </span><span class="hs-comment">{-
+    OP: 0110 1100, 6c
+    Byte: None
+    Stack: value1, value2 &#8594; result
+    Description: &lt;td&gt;divide two integers&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-281"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="If_Acmpeq"><a href="Compiler.Instructions.html#If_Acmpeq"><span class="hs-identifier">If_Acmpeq</span></a></a><span>
+</span><a name="line-282"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-283"></a><span>    </span><a name="%24sel%3Aif_acmpeq_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aif_acmpeq_branchbytes%3AAconst_Null"><span class="hs-identifier">if_acmpeq_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-284"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-285"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 0101, a5
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value1, value2 &#8594;
+    Description: &lt;td&gt;if references are equal, branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-291"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="If_Acmpne"><a href="Compiler.Instructions.html#If_Acmpne"><span class="hs-identifier">If_Acmpne</span></a></a><span>
+</span><a name="line-292"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-293"></a><span>    </span><a name="%24sel%3Aif_acmpne_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aif_acmpne_branchbytes%3AAconst_Null"><span class="hs-identifier">if_acmpne_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-294"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-295"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 0110, a6
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value1, value2 &#8594;
+    Description: &lt;td&gt;if references are not equal, branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-301"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="If_Icmpeq"><a href="Compiler.Instructions.html#If_Icmpeq"><span class="hs-identifier">If_Icmpeq</span></a></a><span>
+</span><a name="line-302"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-303"></a><span>    </span><a name="%24sel%3Aif_icmpeq_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aif_icmpeq_branchbytes%3AAconst_Null"><span class="hs-identifier">if_icmpeq_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-304"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-305"></a><span>    </span><span class="hs-comment">{-
+    OP: 1001 1111, 9f
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value1, value2 &#8594;
+    Description: &lt;td&gt;if ints are equal, branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-311"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="If_Icmpge"><a href="Compiler.Instructions.html#If_Icmpge"><span class="hs-identifier">If_Icmpge</span></a></a><span>
+</span><a name="line-312"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-313"></a><span>    </span><a name="%24sel%3Aif_icmpge_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aif_icmpge_branchbytes%3AAconst_Null"><span class="hs-identifier">if_icmpge_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-314"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-315"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 0010, a2
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value1, value2 &#8594;
+    Description: &lt;td&gt;if  is greater than or equal to , branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-321"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="If_Icmpgt"><a href="Compiler.Instructions.html#If_Icmpgt"><span class="hs-identifier">If_Icmpgt</span></a></a><span>
+</span><a name="line-322"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-323"></a><span>    </span><a name="%24sel%3Aif_icmpgt_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aif_icmpgt_branchbytes%3AAconst_Null"><span class="hs-identifier">if_icmpgt_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-324"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-325"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 0011, a3
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value1, value2 &#8594;
+    Description: &lt;td&gt;if  is greater than , branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-331"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="If_Icmple"><a href="Compiler.Instructions.html#If_Icmple"><span class="hs-identifier">If_Icmple</span></a></a><span>
+</span><a name="line-332"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-333"></a><span>    </span><a name="%24sel%3Aif_icmple_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aif_icmple_branchbytes%3AAconst_Null"><span class="hs-identifier">if_icmple_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-334"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-335"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 0100, a4
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value1, value2 &#8594;
+    Description: &lt;td&gt;if  is less than or equal to , branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-341"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="If_Icmplt"><a href="Compiler.Instructions.html#If_Icmplt"><span class="hs-identifier">If_Icmplt</span></a></a><span>
+</span><a name="line-342"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-343"></a><span>    </span><a name="%24sel%3Aif_icmplt_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aif_icmplt_branchbytes%3AAconst_Null"><span class="hs-identifier">if_icmplt_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-344"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-345"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 0001, a1
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value1, value2 &#8594;
+    Description: &lt;td&gt;if  is less than , branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-351"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="If_Icmpne"><a href="Compiler.Instructions.html#If_Icmpne"><span class="hs-identifier">If_Icmpne</span></a></a><span>
+</span><a name="line-352"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-353"></a><span>    </span><a name="%24sel%3Aif_icmpne_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aif_icmpne_branchbytes%3AAconst_Null"><span class="hs-identifier">if_icmpne_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-354"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-355"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 0000, a0
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value1, value2 &#8594;
+    Description: &lt;td&gt;if ints are not equal, branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-361"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ifeq"><a href="Compiler.Instructions.html#Ifeq"><span class="hs-identifier">Ifeq</span></a></a><span>
+</span><a name="line-362"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-363"></a><span>    </span><a name="%24sel%3Aifeq_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aifeq_branchbytes%3AAconst_Null"><span class="hs-identifier">ifeq_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-364"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-365"></a><span>    </span><span class="hs-comment">{-
+    OP: 1001 1001, 99
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value &#8594;
+    Description: &lt;td&gt;if  is 0, branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-371"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ifge"><a href="Compiler.Instructions.html#Ifge"><span class="hs-identifier">Ifge</span></a></a><span>
+</span><a name="line-372"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-373"></a><span>    </span><a name="%24sel%3Aifge_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aifge_branchbytes%3AAconst_Null"><span class="hs-identifier">ifge_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-374"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-375"></a><span>    </span><span class="hs-comment">{-
+    OP: 1001 1100, 9c
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value &#8594;
+    Description: &lt;td&gt;if  is greater than or equal to 0, branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-381"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ifgt"><a href="Compiler.Instructions.html#Ifgt"><span class="hs-identifier">Ifgt</span></a></a><span>
+</span><a name="line-382"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-383"></a><span>    </span><a name="%24sel%3Aifgt_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aifgt_branchbytes%3AAconst_Null"><span class="hs-identifier">ifgt_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-384"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-385"></a><span>    </span><span class="hs-comment">{-
+    OP: 1001 1101, 9d
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value &#8594;
+    Description: &lt;td&gt;if  is greater than 0, branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-391"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ifle"><a href="Compiler.Instructions.html#Ifle"><span class="hs-identifier">Ifle</span></a></a><span>
+</span><a name="line-392"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-393"></a><span>    </span><a name="%24sel%3Aifle_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aifle_branchbytes%3AAconst_Null"><span class="hs-identifier">ifle_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-394"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-395"></a><span>    </span><span class="hs-comment">{-
+    OP: 1001 1110, 9e
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value &#8594;
+    Description: &lt;td&gt;if  is less than or equal to 0, branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-401"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iflt"><a href="Compiler.Instructions.html#Iflt"><span class="hs-identifier">Iflt</span></a></a><span>
+</span><a name="line-402"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-403"></a><span>    </span><a name="%24sel%3Aiflt_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aiflt_branchbytes%3AAconst_Null"><span class="hs-identifier">iflt_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-404"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-405"></a><span>    </span><span class="hs-comment">{-
+    OP: 1001 1011, 9b
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value &#8594;
+    Description: &lt;td&gt;if  is less than 0, branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-411"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ifne"><a href="Compiler.Instructions.html#Ifne"><span class="hs-identifier">Ifne</span></a></a><span>
+</span><a name="line-412"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-413"></a><span>    </span><a name="%24sel%3Aifne_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aifne_branchbytes%3AAconst_Null"><span class="hs-identifier">ifne_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-414"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-415"></a><span>    </span><span class="hs-comment">{-
+    OP: 1001 1010, 9a
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value &#8594;
+    Description: &lt;td&gt;if  is not 0, branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-421"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ifnonnull"><a href="Compiler.Instructions.html#Ifnonnull"><span class="hs-identifier">Ifnonnull</span></a></a><span>
+</span><a name="line-422"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-423"></a><span>    </span><a name="%24sel%3Aifnonnull_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aifnonnull_branchbytes%3AAconst_Null"><span class="hs-identifier">ifnonnull_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-424"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-425"></a><span>    </span><span class="hs-comment">{-
+    OP: 1100 0111, c7
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value &#8594;
+    Description: &lt;td&gt;if  is not null, branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-431"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ifnull"><a href="Compiler.Instructions.html#Ifnull"><span class="hs-identifier">Ifnull</span></a></a><span>
+</span><a name="line-432"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-433"></a><span>    </span><a name="%24sel%3Aifnull_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aifnull_branchbytes%3AAconst_Null"><span class="hs-identifier">ifnull_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-434"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-435"></a><span>    </span><span class="hs-comment">{-
+    OP: 1100 0110, c6
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: value &#8594;
+    Description: &lt;td&gt;if  is null, branch to instruction at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-441"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iinc"><a href="Compiler.Instructions.html#Iinc"><span class="hs-identifier">Iinc</span></a></a><span>
+</span><a name="line-442"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-443"></a><span>    </span><a name="%24sel%3Aiinc_index%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aiinc_index%3AAconst_Null"><span class="hs-identifier">iinc_index</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word8</span><span class="hs-special">,</span><span>
+</span><a name="line-444"></a><span>    </span><a name="%24sel%3Aiinc_const%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aiinc_const%3AAconst_Null"><span class="hs-identifier">iinc_const</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int8</span><span>
+</span><a name="line-445"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-446"></a><span>    </span><span class="hs-comment">{-
+    OP: 1000 0100, 84
+    Byte: 2: index, const
+    Stack: [No change]
+    Description: &lt;td&gt;increment local variable  by signed byte &lt;/td&gt;
+    -}</span><span>
+</span><a name="line-452"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iload"><a href="Compiler.Instructions.html#Iload"><span class="hs-identifier">Iload</span></a></a><span>
+</span><a name="line-453"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-454"></a><span>    </span><a name="%24sel%3Aiload_index%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aiload_index%3AAconst_Null"><span class="hs-identifier">iload_index</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word8</span><span>
+</span><a name="line-455"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-456"></a><span>    </span><span class="hs-comment">{-
+    OP: 0001 0101, 15
+    Byte: 1: index
+    Stack: &#8594; value
+    Description: &lt;td&gt;load an int  from a local variable &lt;/td&gt;
+    -}</span><span>
+</span><a name="line-462"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iload_0"><a href="Compiler.Instructions.html#Iload_0"><span class="hs-identifier">Iload_0</span></a></a><span>
+</span><a name="line-463"></a><span>    </span><span class="hs-comment">{-
+    OP: 0001 1010, 1a
+    Byte: None
+    Stack: &#8594; value
+    Description: &lt;td&gt;load an int  from local variable 0&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-469"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iload_1"><a href="Compiler.Instructions.html#Iload_1"><span class="hs-identifier">Iload_1</span></a></a><span>
+</span><a name="line-470"></a><span>    </span><span class="hs-comment">{-
+    OP: 0001 1011, 1b
+    Byte: None
+    Stack: &#8594; value
+    Description: &lt;td&gt;load an int  from local variable 1&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-476"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iload_2"><a href="Compiler.Instructions.html#Iload_2"><span class="hs-identifier">Iload_2</span></a></a><span>
+</span><a name="line-477"></a><span>    </span><span class="hs-comment">{-
+    OP: 0001 1100, 1c
+    Byte: None
+    Stack: &#8594; value
+    Description: &lt;td&gt;load an int  from local variable 2&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-483"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iload_3"><a href="Compiler.Instructions.html#Iload_3"><span class="hs-identifier">Iload_3</span></a></a><span>
+</span><a name="line-484"></a><span>    </span><span class="hs-comment">{-
+    OP: 0001 1101, 1d
+    Byte: None
+    Stack: &#8594; value
+    Description: &lt;td&gt;load an int  from local variable 3&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-490"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Imul"><a href="Compiler.Instructions.html#Imul"><span class="hs-identifier">Imul</span></a></a><span>
+</span><a name="line-491"></a><span>    </span><span class="hs-comment">{-
+    OP: 0110 1000, 68
+    Byte: None
+    Stack: value1, value2 &#8594; result
+    Description: &lt;td&gt;multiply two integers&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-497"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ineg"><a href="Compiler.Instructions.html#Ineg"><span class="hs-identifier">Ineg</span></a></a><span>
+</span><a name="line-498"></a><span>    </span><span class="hs-comment">{-
+    OP: 0111 0100, 74
+    Byte: None
+    Stack: value &#8594; result
+    Description: &lt;td&gt;negate int&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-504"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Instanceof"><a href="Compiler.Instructions.html#Instanceof"><span class="hs-identifier">Instanceof</span></a></a><span>
+</span><a name="line-505"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-506"></a><span>    </span><a name="%24sel%3Ainstanceof_indexbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Ainstanceof_indexbytes%3AAconst_Null"><span class="hs-identifier">instanceof_indexbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span>
+</span><a name="line-507"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-508"></a><span>    </span><span class="hs-comment">{-
+    OP: 1100 0001, c1
+    Byte: 2: indexbyte1, indexbyte2
+    Stack: objectref &#8594; result
+    Description: &lt;td&gt;determines if an object  is of a given type, identified by class reference  in constant pool (&lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;indexbyte1 &amp;lt;&amp;lt; 8 + indexbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-514"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Invokespecial"><a href="Compiler.Instructions.html#Invokespecial"><span class="hs-identifier">Invokespecial</span></a></a><span>
+</span><a name="line-515"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-516"></a><span>    </span><a name="%24sel%3Ainvokespecial_indexbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Ainvokespecial_indexbytes%3AAconst_Null"><span class="hs-identifier">invokespecial_indexbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span>
+</span><a name="line-517"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-518"></a><span>    </span><span class="hs-comment">{-
+    OP: 1011 0111, b7
+    Byte: 2: indexbyte1, indexbyte2
+    Stack: objectref, [arg1, arg2, ...] &#8594; result
+    Description: &lt;td&gt;invoke instance method on object  and puts the result on the stack (might be void); the method is identified by method reference  in constant pool (&lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;indexbyte1 &amp;lt;&amp;lt; 8 + indexbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-524"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Invokestatic"><a href="Compiler.Instructions.html#Invokestatic"><span class="hs-identifier">Invokestatic</span></a></a><span>
+</span><a name="line-525"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-526"></a><span>    </span><a name="%24sel%3Ainvokestatic_indexbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Ainvokestatic_indexbytes%3AAconst_Null"><span class="hs-identifier">invokestatic_indexbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span>
+</span><a name="line-527"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-528"></a><span>    </span><span class="hs-comment">{-
+    OP: 1011 1000, b8
+    Byte: 2: indexbyte1, indexbyte2
+    Stack: [arg1, arg2, ...] &#8594; result
+    Description: &lt;td&gt;invoke a static method and puts the result on the stack (might be void); the method is identified by method reference  in constant pool (&lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;indexbyte1 &amp;lt;&amp;lt; 8 + indexbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-534"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Invokevirtual"><a href="Compiler.Instructions.html#Invokevirtual"><span class="hs-identifier">Invokevirtual</span></a></a><span> </span><span class="hs-comment">-- TODO: Do we support this?</span><span>
+</span><a name="line-535"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-536"></a><span>    </span><a name="%24sel%3Ainvokevirtual_indexbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Ainvokevirtual_indexbytes%3AAconst_Null"><span class="hs-identifier">invokevirtual_indexbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span>
+</span><a name="line-537"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-538"></a><span>    </span><span class="hs-comment">{-
+    OP: 1011 0110, b6
+    Byte: 2: indexbyte1, indexbyte2
+    Stack: objectref, [arg1, arg2, ...] &#8594; result
+    Description: &lt;td&gt;invoke virtual method on object  and puts the result on the stack (might be void); the method is identified by method reference  in constant pool (&lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;indexbyte1 &amp;lt;&amp;lt; 8 + indexbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-544"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ior"><a href="Compiler.Instructions.html#Ior"><span class="hs-identifier">Ior</span></a></a><span>
+</span><a name="line-545"></a><span>    </span><span class="hs-comment">{-
+    OP: 1000 0000, 80
+    Byte: None
+    Stack: value1, value2 &#8594; result
+    Description: &lt;td&gt;bitwise int OR&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-551"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Irem"><a href="Compiler.Instructions.html#Irem"><span class="hs-identifier">Irem</span></a></a><span>
+</span><a name="line-552"></a><span>    </span><span class="hs-comment">{-
+    OP: 0111 0000, 70
+    Byte: None
+    Stack: value1, value2 &#8594; result
+    Description: &lt;td&gt;logical int remainder&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-558"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ireturn"><a href="Compiler.Instructions.html#Ireturn"><span class="hs-identifier">Ireturn</span></a></a><span>
+</span><a name="line-559"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 1100, ac
+    Byte: None
+    Stack: value &#8594; [empty]
+    Description: &lt;td&gt;return an integer from a method&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-565"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ishl"><a href="Compiler.Instructions.html#Ishl"><span class="hs-identifier">Ishl</span></a></a><span>
+</span><a name="line-566"></a><span>    </span><span class="hs-comment">{-
+    OP: 0111 1000, 78
+    Byte: None
+    Stack: value1, value2 &#8594; result
+    Description: &lt;td&gt;int shift left&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-572"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ishr"><a href="Compiler.Instructions.html#Ishr"><span class="hs-identifier">Ishr</span></a></a><span>
+</span><a name="line-573"></a><span>    </span><span class="hs-comment">{-
+    OP: 0111 1010, 7a
+    Byte: None
+    Stack: value1, value2 &#8594; result
+    Description: &lt;td&gt;int arithmetic shift right&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-579"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Istore"><a href="Compiler.Instructions.html#Istore"><span class="hs-identifier">Istore</span></a></a><span>
+</span><a name="line-580"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-581"></a><span>    </span><a name="%24sel%3Aistore_index%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aistore_index%3AAconst_Null"><span class="hs-identifier">istore_index</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word8</span><span>
+</span><a name="line-582"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-583"></a><span>    </span><span class="hs-comment">{-
+    OP: 0011 0110, 36
+    Byte: 1: index
+    Stack: value &#8594;
+    Description: &lt;td&gt;store int  into variable &lt;/td&gt;
+    -}</span><span>
+</span><a name="line-589"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Istore_0"><a href="Compiler.Instructions.html#Istore_0"><span class="hs-identifier">Istore_0</span></a></a><span>
+</span><a name="line-590"></a><span>    </span><span class="hs-comment">{-
+    OP: 0011 1011, 3b
+    Byte: None
+    Stack: value &#8594;
+    Description: &lt;td&gt;store int  into variable 0&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-596"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Istore_1"><a href="Compiler.Instructions.html#Istore_1"><span class="hs-identifier">Istore_1</span></a></a><span>
+</span><a name="line-597"></a><span>    </span><span class="hs-comment">{-
+    OP: 0011 1100, 3c
+    Byte: None
+    Stack: value &#8594;
+    Description: &lt;td&gt;store int  into variable 1&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-603"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Istore_2"><a href="Compiler.Instructions.html#Istore_2"><span class="hs-identifier">Istore_2</span></a></a><span>
+</span><a name="line-604"></a><span>    </span><span class="hs-comment">{-
+    OP: 0011 1101, 3d
+    Byte: None
+    Stack: value &#8594;
+    Description: &lt;td&gt;store int  into variable 2&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-610"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Istore_3"><a href="Compiler.Instructions.html#Istore_3"><span class="hs-identifier">Istore_3</span></a></a><span>
+</span><a name="line-611"></a><span>    </span><span class="hs-comment">{-
+    OP: 0011 1110, 3e
+    Byte: None
+    Stack: value &#8594;
+    Description: &lt;td&gt;store int  into variable 3&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-617"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Isub"><a href="Compiler.Instructions.html#Isub"><span class="hs-identifier">Isub</span></a></a><span>
+</span><a name="line-618"></a><span>    </span><span class="hs-comment">{-
+    OP: 0110 0100, 64
+    Byte: None
+    Stack: value1, value2 &#8594; result
+    Description: &lt;td&gt;int subtract&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-624"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Iushr"><a href="Compiler.Instructions.html#Iushr"><span class="hs-identifier">Iushr</span></a></a><span>
+</span><a name="line-625"></a><span>    </span><span class="hs-comment">{-
+    OP: 0111 1100, 7c
+    Byte: None
+    Stack: value1, value2 &#8594; result
+    Description: &lt;td&gt;int logical shift right&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-631"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ixor"><a href="Compiler.Instructions.html#Ixor"><span class="hs-identifier">Ixor</span></a></a><span>
+</span><a name="line-632"></a><span>    </span><span class="hs-comment">{-
+    OP: 1000 0010, 82
+    Byte: None
+    Stack: value1, value2 &#8594; result
+    Description: &lt;td&gt;int xor&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-638"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Jsr"><a href="Compiler.Instructions.html#Jsr"><span class="hs-identifier">Jsr</span></a></a><span>
+</span><a name="line-639"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-640"></a><span>    </span><a name="%24sel%3Ajsr_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Ajsr_branchbytes%3AAconst_Null"><span class="hs-identifier">jsr_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-641"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-642"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 1000, a8
+    Byte: 2: branchbyte1, branchbyte2
+    Stack: &#8594; address
+    Description: &lt;td&gt;jump to subroutine at  (signed short constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 8 + branchbyte2&lt;/span&gt;) and place the return address on the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-648"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Jsr_W"><a href="Compiler.Instructions.html#Jsr_W"><span class="hs-identifier">Jsr_W</span></a></a><span>
+</span><a name="line-649"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-650"></a><span>    </span><a name="%24sel%3Ajsr_w_branchbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Ajsr_w_branchbytes%3AAconst_Null"><span class="hs-identifier">jsr_w_branchbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int32</span><span>
+</span><a name="line-651"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-652"></a><span>    </span><span class="hs-comment">{-
+    OP: 1100 1001, c9
+    Byte: 4: branchbyte1, branchbyte2, branchbyte3, branchbyte4
+    Stack: &#8594; address
+    Description: &lt;td&gt;jump to subroutine at  (signed int constructed from unsigned bytes &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;branchbyte1 &amp;lt;&amp;lt; 24 + branchbyte2 &amp;lt;&amp;lt; 16 + branchbyte3 &amp;lt;&amp;lt; 8 + branchbyte4&lt;/span&gt;) and place the return address on the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-658"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ldc"><a href="Compiler.Instructions.html#Ldc"><span class="hs-identifier">Ldc</span></a></a><span>
+</span><a name="line-659"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-660"></a><span>    </span><a name="%24sel%3Aldc_index%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aldc_index%3AAconst_Null"><span class="hs-identifier">ldc_index</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word8</span><span>
+</span><a name="line-661"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-662"></a><span>    </span><span class="hs-comment">{-
+    OP: 0001 0010, 12
+    Byte: 1: index
+    Stack: &#8594; value
+    Description: &lt;td&gt;push a constant  from a constant pool (String, int, float, Class, java.lang.invoke.MethodType, or java.lang.invoke.MethodHandle) onto the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-668"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ldc_W"><a href="Compiler.Instructions.html#Ldc_W"><span class="hs-identifier">Ldc_W</span></a></a><span>
+</span><a name="line-669"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-670"></a><span>    </span><a name="%24sel%3Aldc_w_indexbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aldc_w_indexbytes%3AAconst_Null"><span class="hs-identifier">ldc_w_indexbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span>
+</span><a name="line-671"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-672"></a><span>    </span><span class="hs-comment">{-
+    OP: 0001 0011, 13
+    Byte: 2: indexbyte1, indexbyte2
+    Stack: &#8594; value
+    Description: &lt;td&gt;push a constant  from a constant pool (String, int, float, Class, java.lang.invoke.MethodType, or java.lang.invoke.MethodHandle) onto the stack (wide  is constructed as &lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;indexbyte1 &amp;lt;&amp;lt; 8 + indexbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-678"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Lookupswitch"><a href="Compiler.Instructions.html#Lookupswitch"><span class="hs-identifier">Lookupswitch</span></a></a><span> </span><span class="hs-comment">-- NOTE: Do we need this?</span><span>
+</span><a name="line-679"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-680"></a><span>    </span><a name="%24sel%3Alookupswitch_defaultbyte1%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Alookupswitch_defaultbyte1%3AAconst_Null"><span class="hs-identifier">lookupswitch_defaultbyte1</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-681"></a><span>    </span><a name="%24sel%3Alookupswitch_defaultbyte2%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Alookupswitch_defaultbyte2%3AAconst_Null"><span class="hs-identifier">lookupswitch_defaultbyte2</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-682"></a><span>    </span><a name="%24sel%3Alookupswitch_defaultbyte3%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Alookupswitch_defaultbyte3%3AAconst_Null"><span class="hs-identifier">lookupswitch_defaultbyte3</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-683"></a><span>    </span><a name="%24sel%3Alookupswitch_defaultbyte4%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Alookupswitch_defaultbyte4%3AAconst_Null"><span class="hs-identifier">lookupswitch_defaultbyte4</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-684"></a><span>    </span><a name="%24sel%3Alookupswitch_npairs1%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Alookupswitch_npairs1%3AAconst_Null"><span class="hs-identifier">lookupswitch_npairs1</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-685"></a><span>    </span><a name="%24sel%3Alookupswitch_npairs2%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Alookupswitch_npairs2%3AAconst_Null"><span class="hs-identifier">lookupswitch_npairs2</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-686"></a><span>    </span><a name="%24sel%3Alookupswitch_npairs3%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Alookupswitch_npairs3%3AAconst_Null"><span class="hs-identifier">lookupswitch_npairs3</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-687"></a><span>    </span><a name="%24sel%3Alookupswitch_npairs4%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Alookupswitch_npairs4%3AAconst_Null"><span class="hs-identifier">lookupswitch_npairs4</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-688"></a><span>    </span><a name="%24sel%3Alookupswitch_match_offset_pairs%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Alookupswitch_match_offset_pairs%3AAconst_Null"><span class="hs-identifier">lookupswitch_match_offset_pairs</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span>
+</span><a name="line-689"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-690"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 1011, ab
+    Byte: 8+: &lt;0&#8211;3 bytes padding&gt;, defaultbyte1, defaultbyte2, defaultbyte3, defaultbyte4, npairs1, npairs2, npairs3, npairs4, match-offset pairs...
+    Stack: key &#8594;
+    Description: &lt;td&gt;a target address is looked up from a table using a key and execution continues from the instruction at that address&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-696"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="New"><a href="Compiler.Instructions.html#New"><span class="hs-identifier">New</span></a></a><span>
+</span><a name="line-697"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-698"></a><span>    </span><a name="%24sel%3Anew_indexbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Anew_indexbytes%3AAconst_Null"><span class="hs-identifier">new_indexbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span>
+</span><a name="line-699"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-700"></a><span>    </span><span class="hs-comment">{-
+    OP: 1011 1011, bb
+    Byte: 2: indexbyte1, indexbyte2
+    Stack: &#8594; objectref
+    Description: &lt;td&gt;create new object of type identified by class reference in constant pool  (&lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;indexbyte1 &amp;lt;&amp;lt; 8 + indexbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-706"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Nop"><a href="Compiler.Instructions.html#Nop"><span class="hs-identifier">Nop</span></a></a><span>
+</span><a name="line-707"></a><span>    </span><span class="hs-comment">{-
+    OP: 0000 0000, 00
+    Byte: None
+    Stack: [No change]
+    Description: &lt;td&gt;perform no operation&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-713"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Pop"><a href="Compiler.Instructions.html#Pop"><span class="hs-identifier">Pop</span></a></a><span>
+</span><a name="line-714"></a><span>    </span><span class="hs-comment">{-
+    OP: 0101 0111, 57
+    Byte: None
+    Stack: value &#8594;
+    Description: &lt;td&gt;discard the top value on the stack&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-720"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Pop2"><a href="Compiler.Instructions.html#Pop2"><span class="hs-identifier">Pop2</span></a></a><span>
+</span><a name="line-721"></a><span>    </span><span class="hs-comment">{-
+    OP: 0101 1000, 58
+    Byte: None
+    Stack: {value2, value1} &#8594;
+    Description: &lt;td&gt;discard the top two values on the stack (or one value, if it is a double or long)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-727"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Putfield"><a href="Compiler.Instructions.html#Putfield"><span class="hs-identifier">Putfield</span></a></a><span>
+</span><a name="line-728"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-729"></a><span>    </span><a name="%24sel%3Aputfield_indexbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aputfield_indexbytes%3AAconst_Null"><span class="hs-identifier">putfield_indexbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span>
+</span><a name="line-730"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-731"></a><span>    </span><span class="hs-comment">{-
+    OP: 1011 0101, b5
+    Byte: 2: indexbyte1, indexbyte2
+    Stack: objectref, value &#8594;
+    Description: &lt;td&gt;set field to  in an object , where the field is identified by a field reference  in constant pool (&lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;indexbyte1 &amp;lt;&amp;lt; 8 + indexbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-737"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Putstatic"><a href="Compiler.Instructions.html#Putstatic"><span class="hs-identifier">Putstatic</span></a></a><span>
+</span><a name="line-738"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-739"></a><span>    </span><a name="%24sel%3Aputstatic_indexbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aputstatic_indexbytes%3AAconst_Null"><span class="hs-identifier">putstatic_indexbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span>
+</span><a name="line-740"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-741"></a><span>    </span><span class="hs-comment">{-
+    OP: 1011 0011, b3
+    Byte: 2: indexbyte1, indexbyte2
+    Stack: value &#8594;
+    Description: &lt;td&gt;set static field to  in a class, where the field is identified by a field reference  in constant pool (&lt;span class=&quot;monospaced&quot; style=&quot;font-family: monospace, monospace;&quot;&gt;indexbyte1 &amp;lt;&amp;lt; 8 + indexbyte2&lt;/span&gt;)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-747"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Ret"><a href="Compiler.Instructions.html#Ret"><span class="hs-identifier">Ret</span></a></a><span> </span><span class="hs-comment">-- NOTE: Figure out what it is used for</span><span>
+</span><a name="line-748"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-749"></a><span>    </span><a name="%24sel%3Aret_index%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Aret_index%3AAconst_Null"><span class="hs-identifier">ret_index</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word8</span><span>
+</span><a name="line-750"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-751"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 1001, a9
+    Byte: 1: index
+    Stack: [No change]
+    Description: &lt;td&gt;continue execution from address taken from a local variable  (the asymmetry with jsr is intentional)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-757"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Return"><a href="Compiler.Instructions.html#Return"><span class="hs-identifier">Return</span></a></a><span>
+</span><a name="line-758"></a><span>    </span><span class="hs-comment">{-
+    OP: 1011 0001, b1
+    Byte: None
+    Stack: &#8594; [empty]
+    Description: &lt;td&gt;return void from method&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-764"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Swap"><a href="Compiler.Instructions.html#Swap"><span class="hs-identifier">Swap</span></a></a><span>
+</span><a name="line-765"></a><span>    </span><span class="hs-comment">{-
+    OP: 0101 1111, 5f
+    Byte: None
+    Stack: value2, value1 &#8594; value1, value2
+    Description: &lt;td&gt;swaps two top words on the stack (note that value1 and value2 must not be double or long)&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-771"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Tableswitch"><a href="Compiler.Instructions.html#Tableswitch"><span class="hs-identifier">Tableswitch</span></a></a><span>
+</span><a name="line-772"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-773"></a><span>    </span><a name="%24sel%3Atableswitch_defaultbyte1%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_defaultbyte1%3AAconst_Null"><span class="hs-identifier">tableswitch_defaultbyte1</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-774"></a><span>    </span><a name="%24sel%3Atableswitch_defaultbyte2%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_defaultbyte2%3AAconst_Null"><span class="hs-identifier">tableswitch_defaultbyte2</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-775"></a><span>    </span><a name="%24sel%3Atableswitch_defaultbyte3%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_defaultbyte3%3AAconst_Null"><span class="hs-identifier">tableswitch_defaultbyte3</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-776"></a><span>    </span><a name="%24sel%3Atableswitch_defaultbyte4%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_defaultbyte4%3AAconst_Null"><span class="hs-identifier">tableswitch_defaultbyte4</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-777"></a><span>    </span><a name="%24sel%3Atableswitch_lowbyte1%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_lowbyte1%3AAconst_Null"><span class="hs-identifier">tableswitch_lowbyte1</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-778"></a><span>    </span><a name="%24sel%3Atableswitch_lowbyte2%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_lowbyte2%3AAconst_Null"><span class="hs-identifier">tableswitch_lowbyte2</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-779"></a><span>    </span><a name="%24sel%3Atableswitch_lowbyte3%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_lowbyte3%3AAconst_Null"><span class="hs-identifier">tableswitch_lowbyte3</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-780"></a><span>    </span><a name="%24sel%3Atableswitch_lowbyte4%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_lowbyte4%3AAconst_Null"><span class="hs-identifier">tableswitch_lowbyte4</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-781"></a><span>    </span><a name="%24sel%3Atableswitch_highbyte1%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_highbyte1%3AAconst_Null"><span class="hs-identifier">tableswitch_highbyte1</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-782"></a><span>    </span><a name="%24sel%3Atableswitch_highbyte2%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_highbyte2%3AAconst_Null"><span class="hs-identifier">tableswitch_highbyte2</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-783"></a><span>    </span><a name="%24sel%3Atableswitch_highbyte3%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_highbyte3%3AAconst_Null"><span class="hs-identifier">tableswitch_highbyte3</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-784"></a><span>    </span><a name="%24sel%3Atableswitch_highbyte4%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_highbyte4%3AAconst_Null"><span class="hs-identifier">tableswitch_highbyte4</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span class="hs-special">,</span><span>
+</span><a name="line-785"></a><span>    </span><a name="%24sel%3Atableswitch_jump_offsets%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Atableswitch_jump_offsets%3AAconst_Null"><span class="hs-identifier">tableswitch_jump_offsets</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int</span><span>
+</span><a name="line-786"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-787"></a><span>    </span><span class="hs-comment">{-
+    OP: 1010 1010, aa
+    Byte: 16+: [0&#8211;3 bytes padding], defaultbyte1, defaultbyte2, defaultbyte3, defaultbyte4, lowbyte1, lowbyte2, lowbyte3, lowbyte4, highbyte1, highbyte2, highbyte3, highbyte4, jump offsets...
+    Stack: index &#8594;
+    Description: &lt;td&gt;continue execution from an address in the table at offset &lt;/td&gt;
+    -}</span><span>
+</span><a name="line-793"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="Wide"><a href="Compiler.Instructions.html#Wide"><span class="hs-identifier">Wide</span></a></a><span> </span><span class="hs-comment">-- TODO: Fix this and other one byte values</span><span>
+</span><a name="line-794"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-795"></a><span>      </span><a name="%24sel%3Awide_instruction%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Awide_instruction%3AAconst_Null"><span class="hs-identifier">wide_instruction</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><a href="Compiler.Instructions.html#Instruction"><span class="hs-identifier hs-type">Instruction</span></a><span class="hs-special">,</span><span>
+</span><a name="line-796"></a><span>      </span><a name="%24sel%3Awide_index_bytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Awide_index_bytes%3AAconst_Null"><span class="hs-identifier">wide_index_bytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span>
+</span><a name="line-797"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-798"></a><span>    </span><span class="hs-comment">{-
+    OP: 1100 0100, c4
+    Byte: None --TODO
+    Stack: [same as for corresponding instructions]
+    Description: &lt;td&gt;execute , where  is either iload, fload, aload, lload, dload, istore, fstore, astore, lstore, dstore, or ret, but assume the  is 16 bit; or execute iinc, where the  is 16 bits and the constant to increment by is a signed 16 bit short&lt;/td&gt;
+    -}</span><span>
+</span><a name="line-804"></a><span>    </span><span class="hs-glyph">|</span><span> </span><a name="WideIinc"><a href="Compiler.Instructions.html#WideIinc"><span class="hs-identifier">WideIinc</span></a></a><span>
+</span><a name="line-805"></a><span>    </span><span class="hs-special">{</span><span>
+</span><a name="line-806"></a><span>      </span><a name="%24sel%3Awide_iinc_indexbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Awide_iinc_indexbytes%3AAconst_Null"><span class="hs-identifier">wide_iinc_indexbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Word16</span><span class="hs-special">,</span><span>
+</span><a name="line-807"></a><span>      </span><a name="%24sel%3Awide_iinc_countbytes%3AAconst_Null"><a href="Compiler.Instructions.html#%24sel%3Awide_iinc_countbytes%3AAconst_Null"><span class="hs-identifier">wide_iinc_countbytes</span></a></a><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-identifier hs-type">Int16</span><span>
+</span><a name="line-808"></a><span>    </span><span class="hs-special">}</span><span>
+</span><a name="line-809"></a><span>    </span><span class="hs-comment">{-
+      Combination of wide and iinc
+    -}</span><span>
+</span><a name="line-812"></a><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Eq</span><span class="hs-special">,</span><span> </span><span class="hs-identifier hs-type">Show</span><span class="hs-special">)</span><span>
+</span><a name="line-813"></a></pre></body></html>

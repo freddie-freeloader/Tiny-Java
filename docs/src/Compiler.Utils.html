@@ -1,0 +1,14 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- |</span><span>
+</span><a name="line-2"></a><span class="hs-comment">-- Module      :  Compiler.Utils</span><span>
+</span><a name="line-3"></a><span class="hs-comment">--</span><span>
+</span><a name="line-4"></a><span class="hs-comment">-- This module contains utils that are shared by all compiler phases</span><span>
+</span><a name="line-5"></a><span>
+</span><a name="line-6"></a><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Compiler</span><span class="hs-operator">.</span><span class="hs-identifier">Utils</span><span> </span><span class="hs-keyword">where</span><span>
+</span><a name="line-7"></a><span>
+</span><a name="line-8"></a><span class="hs-comment">-- | 'Error' represents the different kinds of errors</span><span>
+</span><a name="line-9"></a><span class="hs-keyword">data</span><span> </span><a name="Error"><a href="Compiler.Utils.html#Error"><span class="hs-identifier">Error</span></a></a><span>
+</span><a name="line-10"></a><span>  </span><span class="hs-glyph">=</span><span> </span><a name="ParseError"><a href="Compiler.Utils.html#ParseError"><span class="hs-identifier">ParseError</span></a></a><span> </span><span class="hs-identifier hs-type">String</span><span> </span><span class="hs-comment">-- ^ 'ParseError' is created by the parser if the input in not syntactically correct</span><span>
+</span><a name="line-11"></a><span>  </span><span class="hs-glyph">|</span><span> </span><a name="SemanticError"><a href="Compiler.Utils.html#SemanticError"><span class="hs-identifier">SemanticError</span></a></a><span> </span><span class="hs-identifier hs-type">String</span><span> </span><span class="hs-comment">-- ^ 'SemanticError' is created by the semantic checker and indicates a semantic or type error</span><span>
+</span><a name="line-12"></a><span>  </span><span class="hs-glyph">|</span><span> </span><a name="InternalError"><a href="Compiler.Utils.html#InternalError"><span class="hs-identifier">InternalError</span></a></a><span> </span><span class="hs-identifier hs-type">String</span><span> </span><span class="hs-comment">-- ^ 'InternalError' can be created by any phase and indicates an internal error of the compiler</span><span>
+</span><a name="line-13"></a><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span class="hs-identifier hs-type">Show</span><span class="hs-special">)</span><span>
+</span><a name="line-14"></a></pre></body></html>

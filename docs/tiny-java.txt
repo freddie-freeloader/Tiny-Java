@@ -4,62 +4,20 @@
 
 -- | A compiler for a subset of Java
 --   
---   This compiler was programmed a part of the "Compilerbau" seminar by
+--   This compiler was programmed as a part of the "Compilerbau" seminar by
 --   Prof. Martin Plümicke.
 @package tiny-java
 @version 0.0.0
-
-
--- | This module contains definitions and some useful helpers for
---   <a>Compiler.Parser</a>
-module Compiler.ParserUtils
-
--- | <a>Parser</a> is using Void for custom errors. This might change
---   someday.
-type Parser = Parsec Void String
-
--- | <a>makeSingleton</a> puts the result of a parser into an array
-makeSingleton :: Parser a -> Parser [a]
-
--- | <a>spaceConsumer</a> consumes spaces and comments
-spaceConsumer :: Parser ()
-
--- | <a>lexeme</a> is a wrapper for lexemes that consumes all spaces and
---   comments after a lexeme
-lexeme :: Parser a -> Parser a
-
--- | Symbol
-symbol :: String -> Parser String
-
--- | <a>parens</a> parses something between parenthesis.
-parens :: Parser a -> Parser a
-
--- | <a>braces</a> parses something between parenthesis.
-braces :: Parser a -> Parser a
-
--- | <a>integer</a> parses an integer.
-integer :: Parser Integer
-
--- | <a>semicolon</a> parses a semicolon.
-semicolon :: Parser ()
-
--- | <a>comma</a> parses a comma.
-comma :: Parser ()
-
--- | <a>kword</a> parses a reserved word (keyword).
-kword :: String -> Parser ()
-
--- | <a>binOp</a> defines recursive binary operation with a different
---   parser for the left side.
-binOp :: String -> (a -> a -> a) -> Parser a -> Parser a
 
 
 -- | This module contains the AST
 module Compiler.Ast
 
 -- | <a>Identifier</a> is a simple identifier, e.g. for a parameter
-newtype Identifier
+data Identifier
 Identifier :: String -> Identifier
+This :: Identifier
+Super :: Identifier
 
 -- | <a>Name</a> represents a Name of something with the relative path to
 --   it
@@ -101,7 +59,11 @@ Class :: Identifier -> [Mod] -> [Decl] -> Class
 -- | <a>Decl</a> are the different types of declaration inside a class
 data Decl
 Field :: VarDecl -> Decl
-Constructor :: Decl
+Constructor :: Identifier -> [Mod] -> [(Type, Identifier)] -> Maybe Statement -> Decl
+[$sel:getIdentifier:Field] :: Decl -> Identifier
+[$sel:getMods:Field] :: Decl -> [Mod]
+[$sel:getParamList:Field] :: Decl -> [(Type, Identifier)]
+[$sel:getBody:Field] :: Decl -> Maybe Statement
 Method :: Identifier -> [Mod] -> Type -> [(Type, Identifier)] -> Maybe Statement -> Decl
 [$sel:getIdentifier:Field] :: Decl -> Identifier
 [$sel:getMods:Field] :: Decl -> [Mod]
@@ -133,9 +95,6 @@ PrimBinOp :: BinOp -> Expression -> Expression -> Expression
 -- | Primitive unary Operation
 PrimUnOp :: UnOp -> Expression -> Expression
 
--- | this keyword
-This :: Expression
-
 -- | A variable
 Iden :: Name -> Expression
 Select :: Expression -> Identifier -> Expression
@@ -146,6 +105,7 @@ Literal :: Lit -> Expression
 -- | A StatementExpression that is in an Expression position
 ExprExprStmt :: StmtExpr -> Expression
 Cast :: Type -> Expression -> Expression
+TypedExpression :: (Expression, Type) -> Expression
 
 -- | <a>Statement</a> is dual to <a>Expression</a> since it does not
 --   evaluate to a value
@@ -161,6 +121,9 @@ Block :: [Statement] -> Statement
 Return :: (Maybe Expression) -> Statement
 LocalVar :: VarDecl -> Statement
 StmtExprStmt :: StmtExpr -> Statement
+TypedStatement :: (Statement, Type) -> Statement
+Continue :: Statement
+Break :: Statement
 
 -- | <a>StmtExpr</a> can be a <a>Statement</a> as well as an
 --   <a>Expression</a>
@@ -173,6 +136,7 @@ Apply :: Expression -> [Expression] -> StmtExpr
 
 -- | UnOp that returns something and has a side effect
 SEUnOp :: IncrOrDecr -> Expression -> StmtExpr
+TypedStmtExpr :: (StmtExpr, Type) -> StmtExpr
 
 -- | <a>Lit</a> are the Java literals
 data Lit
@@ -190,18 +154,17 @@ DivideAssign :: AssignOp
 ModuloAssign :: AssignOp
 PlusAssign :: AssignOp
 MinusAssign :: AssignOp
-ShiftLeftAssign :: AssignOp
-SignedShiftRightAssign :: AssignOp
-USignedShiftRightAssign :: AssignOp
+LeftShiftAssign :: AssignOp
+ShiftRightAssign :: AssignOp
+UnsignedShiftRightAssign :: AssignOp
 AndAssign :: AssignOp
-XOrAssign :: AssignOp
+BitXOrAssign :: AssignOp
 OrAssign :: AssignOp
 
 -- | <a>BinOp</a> are all primitive binary operations
 data BinOp
 And :: BinOp
 Or :: BinOp
-XOr :: BinOp
 Eq :: BinOp
 Less :: BinOp
 LessEq :: BinOp
@@ -213,6 +176,12 @@ Divide :: BinOp
 Add :: BinOp
 Subtract :: BinOp
 Modulo :: BinOp
+ShiftLeft :: BinOp
+ShiftRight :: BinOp
+UnsignedShiftRight :: BinOp
+BitAnd :: BinOp
+BitOr :: BinOp
+BitXOr :: BinOp
 
 -- | <a>UnOp</a> are all primitive unary operations
 data UnOp
@@ -262,9 +231,577 @@ instance GHC.Show.Show Compiler.Ast.Name
 instance GHC.Classes.Eq Compiler.Ast.Identifier
 instance GHC.Show.Show Compiler.Ast.Identifier
 
+module Compiler.BytecodeGeneration.ToByteUtil
+unpackByteStringToListWord8 :: ByteString -> [Word8]
+concatByteStrings :: [ByteString] -> ByteString
+packListWord8ToByteString :: [Word8] -> ByteString
+convertListWord16ToListWord8 :: [Word16] -> [Word8]
+convertWord16ToListWord8 :: Word16 -> [Word8]
+convertWord32ToListWord8 :: Word32 -> [Word8]
+convertInt32ToWord32 :: Int32 -> Word32
+convertInt32ToListWord8 :: Int32 -> [Word8]
+convertInt16ToListWord8 :: Int16 -> [Word8]
+convertInt8ToWort8 :: Int8 -> Word8
+
+module Compiler.Instructions
+type Instructions = [Instruction]
+data Instruction
+Aconst_Null :: Instruction
+Aload :: Word8 -> Instruction
+[$sel:aload_index:Aconst_Null] :: Instruction -> Word8
+Aload_0 :: Instruction
+Aload_1 :: Instruction
+Aload_2 :: Instruction
+Aload_3 :: Instruction
+Areturn :: Instruction
+Astore :: Word8 -> Instruction
+[$sel:astore_index:Aconst_Null] :: Instruction -> Word8
+Astore_0 :: Instruction
+Astore_1 :: Instruction
+Astore_2 :: Instruction
+Astore_3 :: Instruction
+Bipush :: Int8 -> Instruction
+[$sel:bipush_byte:Aconst_Null] :: Instruction -> Int8
+Sipush :: Int16 -> Instruction
+[$sel:sipush_value:Aconst_Null] :: Instruction -> Int16
+Checkcast :: Word16 -> Instruction
+[$sel:checkcast_indexbytes:Aconst_Null] :: Instruction -> Word16
+Dup :: Instruction
+Dup_X1 :: Instruction
+Dup_X2 :: Instruction
+Dup2 :: Instruction
+Dup2_X1 :: Instruction
+Dup2_X2 :: Instruction
+Getfield :: Word16 -> Instruction
+[$sel:getfield_indexbytes:Aconst_Null] :: Instruction -> Word16
+Getstatic :: Word16 -> Instruction
+[$sel:getstatic_indexbytes:Aconst_Null] :: Instruction -> Word16
+Goto :: Int16 -> Instruction
+[$sel:goto_branchbytes:Aconst_Null] :: Instruction -> Int16
+Goto_W :: Int32 -> Instruction
+[$sel:goto_w_branchbytes:Aconst_Null] :: Instruction -> Int32
+I2C :: Instruction
+Iadd :: Instruction
+Iand :: Instruction
+Iconst_M1 :: Instruction
+Iconst_0 :: Instruction
+Iconst_1 :: Instruction
+Iconst_2 :: Instruction
+Iconst_3 :: Instruction
+Iconst_4 :: Instruction
+Iconst_5 :: Instruction
+Idiv :: Instruction
+If_Acmpeq :: Int16 -> Instruction
+[$sel:if_acmpeq_branchbytes:Aconst_Null] :: Instruction -> Int16
+If_Acmpne :: Int16 -> Instruction
+[$sel:if_acmpne_branchbytes:Aconst_Null] :: Instruction -> Int16
+If_Icmpeq :: Int16 -> Instruction
+[$sel:if_icmpeq_branchbytes:Aconst_Null] :: Instruction -> Int16
+If_Icmpge :: Int16 -> Instruction
+[$sel:if_icmpge_branchbytes:Aconst_Null] :: Instruction -> Int16
+If_Icmpgt :: Int16 -> Instruction
+[$sel:if_icmpgt_branchbytes:Aconst_Null] :: Instruction -> Int16
+If_Icmple :: Int16 -> Instruction
+[$sel:if_icmple_branchbytes:Aconst_Null] :: Instruction -> Int16
+If_Icmplt :: Int16 -> Instruction
+[$sel:if_icmplt_branchbytes:Aconst_Null] :: Instruction -> Int16
+If_Icmpne :: Int16 -> Instruction
+[$sel:if_icmpne_branchbytes:Aconst_Null] :: Instruction -> Int16
+Ifeq :: Int16 -> Instruction
+[$sel:ifeq_branchbytes:Aconst_Null] :: Instruction -> Int16
+Ifge :: Int16 -> Instruction
+[$sel:ifge_branchbytes:Aconst_Null] :: Instruction -> Int16
+Ifgt :: Int16 -> Instruction
+[$sel:ifgt_branchbytes:Aconst_Null] :: Instruction -> Int16
+Ifle :: Int16 -> Instruction
+[$sel:ifle_branchbytes:Aconst_Null] :: Instruction -> Int16
+Iflt :: Int16 -> Instruction
+[$sel:iflt_branchbytes:Aconst_Null] :: Instruction -> Int16
+Ifne :: Int16 -> Instruction
+[$sel:ifne_branchbytes:Aconst_Null] :: Instruction -> Int16
+Ifnonnull :: Int16 -> Instruction
+[$sel:ifnonnull_branchbytes:Aconst_Null] :: Instruction -> Int16
+Ifnull :: Int16 -> Instruction
+[$sel:ifnull_branchbytes:Aconst_Null] :: Instruction -> Int16
+Iinc :: Word8 -> Int8 -> Instruction
+[$sel:iinc_index:Aconst_Null] :: Instruction -> Word8
+[$sel:iinc_const:Aconst_Null] :: Instruction -> Int8
+Iload :: Word8 -> Instruction
+[$sel:iload_index:Aconst_Null] :: Instruction -> Word8
+Iload_0 :: Instruction
+Iload_1 :: Instruction
+Iload_2 :: Instruction
+Iload_3 :: Instruction
+Imul :: Instruction
+Ineg :: Instruction
+Instanceof :: Word16 -> Instruction
+[$sel:instanceof_indexbytes:Aconst_Null] :: Instruction -> Word16
+Invokespecial :: Word16 -> Instruction
+[$sel:invokespecial_indexbytes:Aconst_Null] :: Instruction -> Word16
+Invokestatic :: Word16 -> Instruction
+[$sel:invokestatic_indexbytes:Aconst_Null] :: Instruction -> Word16
+Invokevirtual :: Word16 -> Instruction
+[$sel:invokevirtual_indexbytes:Aconst_Null] :: Instruction -> Word16
+Ior :: Instruction
+Irem :: Instruction
+Ireturn :: Instruction
+Ishl :: Instruction
+Ishr :: Instruction
+Istore :: Word8 -> Instruction
+[$sel:istore_index:Aconst_Null] :: Instruction -> Word8
+Istore_0 :: Instruction
+Istore_1 :: Instruction
+Istore_2 :: Instruction
+Istore_3 :: Instruction
+Isub :: Instruction
+Iushr :: Instruction
+Ixor :: Instruction
+Jsr :: Int16 -> Instruction
+[$sel:jsr_branchbytes:Aconst_Null] :: Instruction -> Int16
+Jsr_W :: Int32 -> Instruction
+[$sel:jsr_w_branchbytes:Aconst_Null] :: Instruction -> Int32
+Ldc :: Word8 -> Instruction
+[$sel:ldc_index:Aconst_Null] :: Instruction -> Word8
+Ldc_W :: Word16 -> Instruction
+[$sel:ldc_w_indexbytes:Aconst_Null] :: Instruction -> Word16
+Lookupswitch :: Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Instruction
+[$sel:lookupswitch_defaultbyte1:Aconst_Null] :: Instruction -> Int
+[$sel:lookupswitch_defaultbyte2:Aconst_Null] :: Instruction -> Int
+[$sel:lookupswitch_defaultbyte3:Aconst_Null] :: Instruction -> Int
+[$sel:lookupswitch_defaultbyte4:Aconst_Null] :: Instruction -> Int
+[$sel:lookupswitch_npairs1:Aconst_Null] :: Instruction -> Int
+[$sel:lookupswitch_npairs2:Aconst_Null] :: Instruction -> Int
+[$sel:lookupswitch_npairs3:Aconst_Null] :: Instruction -> Int
+[$sel:lookupswitch_npairs4:Aconst_Null] :: Instruction -> Int
+[$sel:lookupswitch_match_offset_pairs:Aconst_Null] :: Instruction -> Int
+New :: Word16 -> Instruction
+[$sel:new_indexbytes:Aconst_Null] :: Instruction -> Word16
+Nop :: Instruction
+Pop :: Instruction
+Pop2 :: Instruction
+Putfield :: Word16 -> Instruction
+[$sel:putfield_indexbytes:Aconst_Null] :: Instruction -> Word16
+Putstatic :: Word16 -> Instruction
+[$sel:putstatic_indexbytes:Aconst_Null] :: Instruction -> Word16
+Ret :: Word8 -> Instruction
+[$sel:ret_index:Aconst_Null] :: Instruction -> Word8
+Return :: Instruction
+Swap :: Instruction
+Tableswitch :: Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Instruction
+[$sel:tableswitch_defaultbyte1:Aconst_Null] :: Instruction -> Int
+[$sel:tableswitch_defaultbyte2:Aconst_Null] :: Instruction -> Int
+[$sel:tableswitch_defaultbyte3:Aconst_Null] :: Instruction -> Int
+[$sel:tableswitch_defaultbyte4:Aconst_Null] :: Instruction -> Int
+[$sel:tableswitch_lowbyte1:Aconst_Null] :: Instruction -> Int
+[$sel:tableswitch_lowbyte2:Aconst_Null] :: Instruction -> Int
+[$sel:tableswitch_lowbyte3:Aconst_Null] :: Instruction -> Int
+[$sel:tableswitch_lowbyte4:Aconst_Null] :: Instruction -> Int
+[$sel:tableswitch_highbyte1:Aconst_Null] :: Instruction -> Int
+[$sel:tableswitch_highbyte2:Aconst_Null] :: Instruction -> Int
+[$sel:tableswitch_highbyte3:Aconst_Null] :: Instruction -> Int
+[$sel:tableswitch_highbyte4:Aconst_Null] :: Instruction -> Int
+[$sel:tableswitch_jump_offsets:Aconst_Null] :: Instruction -> Int
+Wide :: Instruction -> Word16 -> Instruction
+[$sel:wide_instruction:Aconst_Null] :: Instruction -> Instruction
+[$sel:wide_index_bytes:Aconst_Null] :: Instruction -> Word16
+WideIinc :: Word16 -> Int16 -> Instruction
+[$sel:wide_iinc_indexbytes:Aconst_Null] :: Instruction -> Word16
+[$sel:wide_iinc_countbytes:Aconst_Null] :: Instruction -> Int16
+instance GHC.Show.Show Compiler.Instructions.Instruction
+instance GHC.Classes.Eq Compiler.Instructions.Instruction
+
+module Compiler.BytecodeGeneration.InstructionsToBytes
+
+-- | Translate a list of instructions to bytecode that can be interpreted
+--   by the JVM
+instructionsToByte :: [Instruction] -> [Word8]
+
+module Compiler.AbstractBytecode
+data ClassFile
+ClassFile :: Magic -> MinorVersion -> MajorVersion -> ConstantPool -> ClassFileAccessFlags -> ThisClass -> SuperClass -> Interfaces -> Fields -> Methods -> Attributes -> ClassFile
+[$sel:magic:ClassFile] :: ClassFile -> Magic
+[$sel:minver:ClassFile] :: ClassFile -> MinorVersion
+[$sel:maxver:ClassFile] :: ClassFile -> MajorVersion
+[$sel:array_cp:ClassFile] :: ClassFile -> ConstantPool
+[$sel:classFileAccessFlags:ClassFile] :: ClassFile -> ClassFileAccessFlags
+[$sel:this:ClassFile] :: ClassFile -> ThisClass
+[$sel:super:ClassFile] :: ClassFile -> SuperClass
+[$sel:array_interfaces:ClassFile] :: ClassFile -> Interfaces
+[$sel:array_fields:ClassFile] :: ClassFile -> Fields
+[$sel:array_methods:ClassFile] :: ClassFile -> Methods
+[$sel:array_attributes:ClassFile] :: ClassFile -> Attributes
+data Magic
+Magic :: Magic
+data MinorVersion
+MinorVersion :: MinorVersion
+data MajorVersion
+MajorVersion :: MajorVersion
+type ConstantPool = [Constant]
+data Constant
+CONSTANT_Class :: Index_Constant_Pool -> Constant
+[$sel:constant_class_name_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+CONSTANT_FieldRef :: Index_Constant_Pool -> Index_Constant_Pool -> Constant
+[$sel:class_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+[$sel:name_and_type_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+CONSTANT_MethodRef :: Index_Constant_Pool -> Index_Constant_Pool -> Constant
+[$sel:class_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+[$sel:name_and_type_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+CONSTANT_InterfaceMethodRef :: Index_Constant_Pool -> Index_Constant_Pool -> Constant
+[$sel:class_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+[$sel:name_and_type_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+CONSTANT_String :: Index_Constant_Pool -> Constant
+[$sel:string_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+CONSTANT_Integer :: Int32 -> Constant
+[$sel:int_value:CONSTANT_Class] :: Constant -> Int32
+CONSTANT_Float :: Float -> Constant
+[$sel:float_value:CONSTANT_Class] :: Constant -> Float
+CONSTANT_Long :: Int64 -> Constant
+[$sel:long_value:CONSTANT_Class] :: Constant -> Int64
+CONSTANT_Double :: Double -> Constant
+[$sel:double_value:CONSTANT_Class] :: Constant -> Double
+CONSTANT_NameAndType :: Index_Constant_Pool -> Index_Constant_Pool -> Constant
+[$sel:constant_name_and_type_name_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+[$sel:constant_name_and_type_descriptor_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+CONSTANT_Utf8 :: String -> Constant
+[$sel:utf8_value:CONSTANT_Class] :: Constant -> String
+CONSTANT_MethodHandle :: Reference -> Index_Constant_Pool -> Constant
+[$sel:reference_kind:CONSTANT_Class] :: Constant -> Reference
+[$sel:reference_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+CONSTANT_MethodType :: Index_Constant_Pool -> Constant
+[$sel:descriptor_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+CONSTANT_InvokeDynamic :: Index_Bootstrap_Methods -> Index_Constant_Pool -> Constant
+[$sel:bootstrap_method_attribute_index:CONSTANT_Class] :: Constant -> Index_Bootstrap_Methods
+[$sel:name_and_type_index:CONSTANT_Class] :: Constant -> Index_Constant_Pool
+type Index_Constant_Pool = Word16
+data Reference
+GetField :: Reference
+GetStatic :: Reference
+PutField :: Reference
+PutStatic :: Reference
+InvokeVirtual :: Reference
+InvokeStatic :: Reference
+InvokeSpecial :: Reference
+NewInvokeSpecial :: Reference
+InvokeInterface :: Reference
+type Index_Bootstrap_Methods = Word16
+type ClassFileAccessFlags = [ClassFileAccessFlag]
+data ClassFileAccessFlag
+PUBLIC :: ClassFileAccessFlag
+FINAL :: ClassFileAccessFlag
+SUPER :: ClassFileAccessFlag
+INTERFACE :: ClassFileAccessFlag
+ABSTRACT :: ClassFileAccessFlag
+SYNTHETIC :: ClassFileAccessFlag
+ANNOTATION :: ClassFileAccessFlag
+ENUM :: ClassFileAccessFlag
+data ThisClass
+ThisClass :: Index_Constant_Pool -> ThisClass
+[$sel:this_class_index:ThisClass] :: ThisClass -> Index_Constant_Pool
+data SuperClass
+SuperClass :: Index_Constant_Pool -> SuperClass
+[$sel:super_class_index:SuperClass] :: SuperClass -> Index_Constant_Pool
+type Interfaces = [Interface]
+data Interface
+Interface :: Interface
+type Fields = [Field]
+data Field
+Field :: FieldAccessFlags -> Index_Constant_Pool -> Index_Constant_Pool -> Attributes -> Field
+[$sel:field_access_flags:Field] :: Field -> FieldAccessFlags
+[$sel:field_name_index:Field] :: Field -> Index_Constant_Pool
+[$sel:field_descriptor_index:Field] :: Field -> Index_Constant_Pool
+[$sel:field_attributes:Field] :: Field -> Attributes
+type FieldAccessFlags = [FieldAccessFlag]
+data FieldAccessFlag
+F_PUBLIC :: FieldAccessFlag
+F_PRIVATE :: FieldAccessFlag
+F_PROTECTED :: FieldAccessFlag
+F_STATIC :: FieldAccessFlag
+F_FINAL :: FieldAccessFlag
+F_VOLATILE :: FieldAccessFlag
+F_TRANSIENT :: FieldAccessFlag
+F_SYNTHETIC :: FieldAccessFlag
+F_ENUM :: FieldAccessFlag
+type Methods = [Method]
+data Method
+Method :: MethodAccessFlags -> Index_Constant_Pool -> Index_Constant_Pool -> Attributes -> Method
+[$sel:method_access_flags:Method] :: Method -> MethodAccessFlags
+[$sel:method_name_index:Method] :: Method -> Index_Constant_Pool
+[$sel:method_descriptor_index:Method] :: Method -> Index_Constant_Pool
+[$sel:method_attributes:Method] :: Method -> Attributes
+type MethodAccessFlags = [MethodAccessFlag]
+data MethodAccessFlag
+M_PUBLIC :: MethodAccessFlag
+M_PRIVATE :: MethodAccessFlag
+M_PROTECTED :: MethodAccessFlag
+M_STATIC :: MethodAccessFlag
+M_FINAL :: MethodAccessFlag
+M_SYNCHRONIZED :: MethodAccessFlag
+M_BRIDGE :: MethodAccessFlag
+M_VARARGS :: MethodAccessFlag
+M_NATIVE :: MethodAccessFlag
+M_ABSTRACT :: MethodAccessFlag
+M_STRICT :: MethodAccessFlag
+M_SYNTHETIC :: MethodAccessFlag
+type Attributes = [Attribute]
+data Attribute
+ConstantValue :: Index_Constant_Pool -> Index_Constant_Pool -> Attribute
+[$sel:constant_value_name_index:ConstantValue] :: Attribute -> Index_Constant_Pool
+[$sel:constant_value_constantvalue_index:ConstantValue] :: Attribute -> Index_Constant_Pool
+Code :: Index_Constant_Pool -> Word16 -> Word16 -> Instructions -> ExceptionTables -> Attributes -> Attribute
+[$sel:code_name_index:ConstantValue] :: Attribute -> Index_Constant_Pool
+[$sel:max_stack:ConstantValue] :: Attribute -> Word16
+[$sel:max_locals:ConstantValue] :: Attribute -> Word16
+[$sel:code:ConstantValue] :: Attribute -> Instructions
+[$sel:exception_tables:ConstantValue] :: Attribute -> ExceptionTables
+[$sel:attributes:ConstantValue] :: Attribute -> Attributes
+StackMapTable :: Index_Constant_Pool -> Entries -> Attribute
+[$sel:stack_map_name_index:ConstantValue] :: Attribute -> Index_Constant_Pool
+[$sel:stack_map_frame:ConstantValue] :: Attribute -> Entries
+InnerClass :: Index_Constant_Pool -> Classes -> Attribute
+[$sel:inner_class_name_index:ConstantValue] :: Attribute -> Index_Constant_Pool
+[$sel:classes:ConstantValue] :: Attribute -> Classes
+Synthetic :: Index_Constant_Pool -> Attribute
+[$sel:synthetic_name_index:ConstantValue] :: Attribute -> Index_Constant_Pool
+SourceFile :: Index_Constant_Pool -> Index_Constant_Pool -> Attribute
+[$sel:source_file_name_index:ConstantValue] :: Attribute -> Index_Constant_Pool
+[$sel:sourcefile_index:ConstantValue] :: Attribute -> Index_Constant_Pool
+LineNumberTable :: Index_Constant_Pool -> LineNumberTable -> Attribute
+[$sel:line_number_table_name_index:ConstantValue] :: Attribute -> Index_Constant_Pool
+[$sel:line_number_table:ConstantValue] :: Attribute -> LineNumberTable
+LocalVariableTable :: Index_Constant_Pool -> LocalVariableTable -> Attribute
+[$sel:local_variable_table_name_index:ConstantValue] :: Attribute -> Index_Constant_Pool
+[$sel:local_variable_table:ConstantValue] :: Attribute -> LocalVariableTable
+Deprecated :: Index_Constant_Pool -> Attribute
+[$sel:deprecated_name_index:ConstantValue] :: Attribute -> Index_Constant_Pool
+type ExceptionTables = [ExceptionTable]
+data ExceptionTable
+Exception :: ExceptionTable
+type Entries = [Entrie]
+data Entrie
+SameFrame :: Entrie
+SameLocals1StackItemFrame :: UnionStack -> Entrie
+[$sel:stack:SameFrame] :: Entrie -> UnionStack
+SameLocals1StackItemFrameExtended :: Int16 -> UnionStack -> Entrie
+[$sel:offset_delta:SameFrame] :: Entrie -> Int16
+[$sel:sameLocals1_stack:SameFrame] :: Entrie -> UnionStack
+ChopFrame :: Int16 -> Entrie
+[$sel:offset_delta:SameFrame] :: Entrie -> Int16
+SameFrameExtended :: Int16 -> Entrie
+[$sel:offset_delta:SameFrame] :: Entrie -> Int16
+AppendFrame :: Int16 -> UnionLocals -> Entrie
+[$sel:offset_delta:SameFrame] :: Entrie -> Int16
+[$sel:appendFrame_locals:SameFrame] :: Entrie -> UnionLocals
+FullFrame :: Int16 -> UnionLocals -> UnionLocals -> Entrie
+[$sel:offset_delta:SameFrame] :: Entrie -> Int16
+[$sel:locals:SameFrame] :: Entrie -> UnionLocals
+[$sel:stack:SameFrame] :: Entrie -> UnionLocals
+type UnionLocals = [Local]
+type UnionStack = [StackItem]
+type Local = VerificationType
+type StackItem = VerificationType
+data VerificationType
+ItemTop :: VerificationType
+ItemInteger :: VerificationType
+ItemFoat :: VerificationType
+ItemLong :: VerificationType
+ItemDouble :: VerificationType
+ItemNull :: VerificationType
+ItemUninitializedThis :: VerificationType
+ItemObject :: Index_Constant_Pool -> VerificationType
+[$sel:constantvalue_index:ItemTop] :: VerificationType -> Index_Constant_Pool
+ItemUninitialized :: Int16 -> VerificationType
+[$sel:offset:ItemTop] :: VerificationType -> Int16
+type Classes = [Class]
+data Class
+Class :: Index_Constant_Pool -> Index_Constant_Pool -> Index_Constant_Pool -> InnerClassAccessFlags -> Class
+[$sel:inner_class_info_index:Class] :: Class -> Index_Constant_Pool
+[$sel:outer_class_info_index:Class] :: Class -> Index_Constant_Pool
+[$sel:inner_name_index:Class] :: Class -> Index_Constant_Pool
+[$sel:inner_class_access_flags:Class] :: Class -> InnerClassAccessFlags
+type InnerClassAccessFlags = [InnerClassAccessFlag]
+data InnerClassAccessFlag
+IC_PUBLIC :: InnerClassAccessFlag
+IC_PRIVATE :: InnerClassAccessFlag
+IC_PROTECTED :: InnerClassAccessFlag
+IC_STATIC :: InnerClassAccessFlag
+IC_FINAL :: InnerClassAccessFlag
+IC_INTERFACE :: InnerClassAccessFlag
+IC_ABSTRACT :: InnerClassAccessFlag
+IC_SYNTHETIC :: InnerClassAccessFlag
+IC_ANNOTATION :: InnerClassAccessFlag
+IC_ENUM :: InnerClassAccessFlag
+type LineNumberTable = [LineNumber]
+data LineNumber
+LineNumber :: Word16 -> Word16 -> LineNumber
+[$sel:line_number_start_pc:LineNumber] :: LineNumber -> Word16
+[$sel:line_number:LineNumber] :: LineNumber -> Word16
+type LocalVariableTable = [LocalVariable]
+data LocalVariable
+LocalVariable :: Word16 -> Index_Constant_Pool -> Index_Constant_Pool -> Word16 -> LocalVariable
+[$sel:local_variable_start_pc:LocalVariable] :: LocalVariable -> Word16
+[$sel:local_variable_name_index:LocalVariable] :: LocalVariable -> Index_Constant_Pool
+[$sel:local_variable_descriptor_index:LocalVariable] :: LocalVariable -> Index_Constant_Pool
+[$sel:local_variable_index:LocalVariable] :: LocalVariable -> Word16
+instance GHC.Show.Show Compiler.AbstractBytecode.ClassFile
+instance GHC.Classes.Eq Compiler.AbstractBytecode.ClassFile
+instance GHC.Show.Show Compiler.AbstractBytecode.Field
+instance GHC.Classes.Eq Compiler.AbstractBytecode.Field
+instance GHC.Show.Show Compiler.AbstractBytecode.Method
+instance GHC.Classes.Eq Compiler.AbstractBytecode.Method
+instance GHC.Show.Show Compiler.AbstractBytecode.Attribute
+instance GHC.Classes.Eq Compiler.AbstractBytecode.Attribute
+instance GHC.Show.Show Compiler.AbstractBytecode.LocalVariable
+instance GHC.Classes.Eq Compiler.AbstractBytecode.LocalVariable
+instance GHC.Show.Show Compiler.AbstractBytecode.LineNumber
+instance GHC.Classes.Eq Compiler.AbstractBytecode.LineNumber
+instance GHC.Show.Show Compiler.AbstractBytecode.Class
+instance GHC.Classes.Eq Compiler.AbstractBytecode.Class
+instance GHC.Show.Show Compiler.AbstractBytecode.InnerClassAccessFlag
+instance GHC.Classes.Eq Compiler.AbstractBytecode.InnerClassAccessFlag
+instance GHC.Show.Show Compiler.AbstractBytecode.Entrie
+instance GHC.Classes.Eq Compiler.AbstractBytecode.Entrie
+instance GHC.Show.Show Compiler.AbstractBytecode.VerificationType
+instance GHC.Classes.Eq Compiler.AbstractBytecode.VerificationType
+instance GHC.Show.Show Compiler.AbstractBytecode.ExceptionTable
+instance GHC.Classes.Eq Compiler.AbstractBytecode.ExceptionTable
+instance GHC.Show.Show Compiler.AbstractBytecode.MethodAccessFlag
+instance GHC.Classes.Eq Compiler.AbstractBytecode.MethodAccessFlag
+instance GHC.Show.Show Compiler.AbstractBytecode.FieldAccessFlag
+instance GHC.Classes.Eq Compiler.AbstractBytecode.FieldAccessFlag
+instance GHC.Show.Show Compiler.AbstractBytecode.Interface
+instance GHC.Classes.Eq Compiler.AbstractBytecode.Interface
+instance GHC.Show.Show Compiler.AbstractBytecode.SuperClass
+instance GHC.Classes.Eq Compiler.AbstractBytecode.SuperClass
+instance GHC.Show.Show Compiler.AbstractBytecode.ThisClass
+instance GHC.Classes.Eq Compiler.AbstractBytecode.ThisClass
+instance GHC.Show.Show Compiler.AbstractBytecode.ClassFileAccessFlag
+instance GHC.Classes.Eq Compiler.AbstractBytecode.ClassFileAccessFlag
+instance GHC.Show.Show Compiler.AbstractBytecode.Constant
+instance GHC.Classes.Eq Compiler.AbstractBytecode.Constant
+instance GHC.Show.Show Compiler.AbstractBytecode.Reference
+instance GHC.Classes.Eq Compiler.AbstractBytecode.Reference
+instance GHC.Show.Show Compiler.AbstractBytecode.MajorVersion
+instance GHC.Classes.Eq Compiler.AbstractBytecode.MajorVersion
+instance GHC.Show.Show Compiler.AbstractBytecode.MinorVersion
+instance GHC.Classes.Eq Compiler.AbstractBytecode.MinorVersion
+instance GHC.Show.Show Compiler.AbstractBytecode.Magic
+instance GHC.Classes.Eq Compiler.AbstractBytecode.Magic
+
+module Compiler.BytecodeGeneration.ConstantPoolToByte
+constantPoolToByte :: ConstantPool -> [Word8]
+
+module Compiler.BytecodeGeneration.AttributesToByte
+attributesToByte :: Attributes -> [Word8]
+
+module Compiler.BytecodeGeneration.MethodsToByte
+methodsToByte :: Methods -> [Word8]
+
+module Compiler.BytecodeGeneration.FieldsToByte
+fieldsToByte :: Fields -> [Word8]
+
+module Compiler.BytecodeGeneration.ByteFileGenerator
+generateByteFile :: FilePath -> ClassFile -> IO ()
+
+
+-- | This module contains definitions and some useful helpers for
+--   <a>Compiler.Parser</a>
+module Compiler.ParserUtils
+
+-- | <a>Parser</a> is using Void for custom errors. This might change
+--   someday.
+type Parser = Parsec Void String
+
+-- | <a>makeSingleton</a> puts the result of a parser into an array
+makeSingleton :: Parser a -> Parser [a]
+
+-- | <a>spaceConsumer</a> consumes spaces and comments
+spaceConsumer :: Parser ()
+
+-- | <a>lexeme</a> is a wrapper for lexemes that consumes all spaces and
+--   comments after a lexeme
+lexeme :: Parser a -> Parser a
+
+-- | Symbol
+symbol :: String -> Parser String
+
+-- | <a>parens</a> parses something between parenthesis.
+parens :: Parser a -> Parser a
+
+-- | <a>braces</a> parses something between parenthesis.
+braces :: Parser a -> Parser a
+
+-- | <a>integer</a> parses an integer.
+integer :: Parser Integer
+
+-- | <a>semicolon</a> parses a semicolon.
+semicolon :: Parser ()
+
+-- | <a>comma</a> parses a comma.
+comma :: Parser ()
+
+-- | <a>kword</a> parses a reserved word (keyword).
+kword :: String -> Parser ()
+
+-- | <a>binOp</a> defines recursive binary operation with a different
+--   parser for the left side.
+binOp :: String -> (a -> a -> a) -> Parser a -> Parser a
+
 
 -- | This module contains the complete parser
 module Compiler.Parser
 
 -- | <a>parseTest</a> parses a String, which contains multiple classes
 parseTestString :: String -> Maybe [Class]
+
+module Compiler.Type_Check
+data Error
+TypecheckError :: String -> Error
+MiscError :: String -> Error
+type Symtab = [(Identifier, Type)]
+tcerror :: Error
+typecheckteststring :: String -> Either Error [Class]
+typecheckprogram :: [Class] -> [Either Error Class]
+typecheckclass :: [Class] -> Class -> Either Error Class
+typecheckdecls :: Identifier -> [Class] -> [Decl] -> Either Error (Symtab, [Decl])
+typecheckdecl :: Identifier -> [Class] -> (Symtab, [Decl]) -> Decl -> Either Error (Symtab, [Decl])
+typecheckexpr :: [Class] -> Symtab -> Expression -> Either Error Expression
+typecheckstmt :: [Class] -> Symtab -> Statement -> Either Error Statement
+typecheckstmtexpr :: [Class] -> Symtab -> StmtExpr -> Either Error StmtExpr
+reduceErrors :: [Either Error a] -> Either Error [a]
+emptyOr :: [Bool] -> Bool
+typeofexpr :: Expression -> Type
+findclass :: Identifier -> [Class] -> Maybe Class
+lookupmethods :: [Class] -> Class -> Name -> [Decl]
+lookupnametype :: [Class] -> Class -> Name -> Either Error Type
+lookupidenttype :: Class -> Identifier -> Either Error Type
+finddecltype :: Identifier -> [Decl] -> Either Error Type
+getconstrtypes :: Class -> [[Type]]
+getconstrtypesfromdecls :: [Decl] -> [[Type]]
+validconstructors :: [Decl] -> Bool
+validmethods :: [Decl] -> Bool
+withdupllists :: Eq a => [[a]] -> Bool
+returningstmt :: Statement -> Bool
+modsOk :: [Mod] -> Bool
+upperbound :: Type -> Type -> Maybe Type
+blockhlp :: [Class] -> Symtab -> [Statement] -> Either Error ([Statement], Type)
+instance GHC.Show.Show Compiler.Type_Check.Error
+
+
+-- | This module contains utils that are shared by all compiler phases
+module Compiler.Utils
+
+-- | <a>Error</a> represents the different kinds of errors
+data Error
+
+-- | <a>ParseError</a> is created by the parser if the input in not
+--   syntactically correct
+ParseError :: String -> Error
+
+-- | <a>SemanticError</a> is created by the semantic checker and indicates
+--   a semantic or type error
+SemanticError :: String -> Error
+
+-- | <a>InternalError</a> can be created by any phase and indicates an
+--   internal error of the compiler
+InternalError :: String -> Error
+instance GHC.Show.Show Compiler.Utils.Error
