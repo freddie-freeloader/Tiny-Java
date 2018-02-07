@@ -20,7 +20,8 @@ tcerror = TypecheckError "A typecheck error occurred"
 -- warnings
 -- error messages
 
-
+typecheck :: [Class] -> Either Error [Class]
+typecheck = reduceErrors . typecheckprogram
 
 typecheckteststring :: String -> Either Error [Class]
 typecheckteststring str = 
@@ -172,7 +173,6 @@ typecheckexpr cls symtab expr@(Iden name) =
                  Left err   -> Left err
                  Right typ  -> Right (TypedExpression(expr, typ)) 
 
---typecheckexpr cls symtab (Select expr ident) = undefined
 
 
 typecheckexpr _ _ expr@(Literal lit) = case lit of 
@@ -322,8 +322,9 @@ typecheckstmtexpr cls symtab (Apply iden@(Iden (Name path ident)) params) =
                   Just (RefType (Name [] clid)) -> case findclass clid cls of
                     Nothing -> Left tcerror
                     Just cl -> case lookupmethods cls cl (Name ps ident) of
-                      [] -> Left tcerror
-                      decls@(decl:_) -> if or $ map ((==) (map typeofexpr exprlist)) (map ((map fst) . getParamList) decls)  
+                      Left err -> Left err
+                      Right [] -> Left tcerror
+                      Right (decls@(decl:_)) -> if or $ map ((==) (map typeofexpr exprlist)) (map ((map fst) . getParamList) decls)  
                         then Right (TypedStmtExpr(Apply iden exprlist, getReturnType decl))
                         else Left tcerror
 
@@ -367,12 +368,16 @@ findclass _ [] = Nothing
 findclass ident ((c@(Class id _ _)):cs) = if ident == id then Just c else findclass ident cs 
 
 
-lookupmethods :: [Class] -> Class -> Name -> [Decl] 
-lookupmethods _ (Class _ _ decls) (Name [] ident) =  filter method decls 
+lookupmethods :: [Class] -> Class -> Name -> Either Error [Decl] 
+lookupmethods _ (Class _ _ decls) (Name [] ident) =  Right $ filter method decls 
   where
     method (Method id _ _ _ _) = id == ident 
     method _ = False
-lookupmethods cls c (Name (p:ps) ident) = undefined
+lookupmethods cls c (Name (p:ps) ident) = case lookupidenttype c p of
+    Left err -> Left err
+    Right (RefType (Name [] classname)) -> case findclass classname cls of
+      Nothing -> Left tcerror
+      Just cl -> lookupmethods cls cl (Name ps ident)  
          
 lookupnametype :: [Class] -> Class -> Name -> Either Error Type
 lookupnametype _ c (Name [] ident) = lookupidenttype c ident
@@ -409,16 +414,28 @@ getconstrtypesfromdecls decls = map extrtypes $ filter isconstr decls
 validconstructors :: [Decl] -> Bool
 validconstructors decls = not (withdupllists (getconstrtypesfromdecls decls)) 
 
+
 validmethods :: [Decl] -> Bool
-validmethods decls =
-  let
-    ismethod (Method _ _ _ _ _) = True
-    ismethod _ = False
-    pt (Method _ _ _ pl _) = map fst pl
-    methods = filter ismethod decls 
-    types = map getReturnType methods
-    paramtypes = map pt methods
-  in null methods || ((all (== head types) (tail types)) && not (withdupllists paramtypes))
+validmethods = checkmethodshelper []
+
+checkmethodshelper :: [((Identifier, Type), [Type])] -> [Decl] -> Bool
+checkmethodshelper _ [] = True
+checkmethodshelper ls ((Method ident _ rt pl _):decls) = 
+  let 
+    idt = (ident, rt)
+    mtypes = map fst pl 
+  in 
+    if mok ls idt mtypes then checkmethodshelper ((idt, mtypes):ls) decls
+                         else False 
+  where
+    mok [] _ _ = True
+    mok ((tup, mtypes) : ls) idt pl = if idt == tup 
+         then if (mtypes == pl) then False else mok ls idt pl 
+         else mok ls idt pl 
+
+checkmethodshelper ls (decl:decls) = checkmethodshelper ls decls
+
+
   
 withdupllists :: Eq a => [[a]] -> Bool
 withdupllists [] = False
