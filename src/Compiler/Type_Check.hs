@@ -9,6 +9,7 @@ import Data.Maybe(fromJust)
 
 data Error = TypecheckError String
            | MiscError String
+           | InternalError String
   deriving Show
 
 type Symtab = [(Identifier, Type)]
@@ -122,7 +123,6 @@ typecheckexpr cls symtab (TernaryIf cond elseexpr thenexpr) =
             Nothing  -> Left tcerror
             Just typ -> Right (TypedExpression(TernaryIf condt telse tthen, typ))
   
--- todo adapt to new binops from AST
 typecheckexpr cls symtab (PrimBinOp binop expr1 expr2) =
   case (typecheckexpr cls symtab expr1, typecheckexpr cls symtab expr2) of 
     (Left err, _) -> Left err
@@ -130,12 +130,12 @@ typecheckexpr cls symtab (PrimBinOp binop expr1 expr2) =
     (Right exp1@(TypedExpression(_, exp1type)), Right exp2@(TypedExpression(_, exp2type))) ->  
        case (exp1type, exp2type) of
          (PrimType Boolean, PrimType Boolean) ->
-            if (binop == And || binop == Or || binop == Eq) then
+            if (binop == And || binop == Or || binop == Eq || binop == BitAnd || binop == BitOr || binop == BitXOr) then
                       Right (TypedExpression(PrimBinOp binop exp1 exp2, PrimType Boolean))
             else 
                       Left tcerror 
          (PrimType Int, PrimType Int) ->
-            if (binop == Multiply || binop == Divide || binop == Add || binop == Subtract || binop == Modulo) then
+            if (binop == Multiply || binop == Divide || binop == Add || binop == Subtract || binop == Modulo || binop == ShiftLeft || binop == ShiftRight || binop == UnsignedShiftRight || binop == BitAnd || binop == BitOr || binop == BitXOr) then
                       Right (TypedExpression(PrimBinOp binop exp1 exp2, PrimType Int))
             else
               if (binop == Eq || binop == Less ||  binop == LessEq || binop == Greater || binop == GreaterEq) then
@@ -143,7 +143,7 @@ typecheckexpr cls symtab (PrimBinOp binop expr1 expr2) =
               else
                       Left tcerror
          (PrimType Char, PrimType Char) ->
-            if (binop == Eq) then
+            if (binop == Eq || binop == Less || binop == LessEq || binop == Greater || binop == GreaterEq) then
                       Right (TypedExpression(PrimBinOp binop exp1 exp2, PrimType Boolean))
             else
                       Left tcerror
@@ -290,6 +290,9 @@ typecheckstmtexpr cls symtab (Assign assignop name expr) =
                                         -> if elem assignop booltobool
                                            then Right (TypedStmtExpr(Assign assignop name texpr, PrimType Boolean))
                                            else Left tcerror
+           (typ1, typ2)                 -> if assignop == NormalAssign && typ1 == typ2
+                                           then Right (TypedStmtExpr(Assign assignop name texpr, typ1))
+                                           else Left tcerror 
            otherwise -> Left tcerror
   where
    inttoint = [NormalAssign, MultiplyAssign, DivideAssign, ModuloAssign, PlusAssign, MinusAssign, LeftShiftAssign, ShiftRightAssign, UnsignedShiftRightAssign, BitXOrAssign]
