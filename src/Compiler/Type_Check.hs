@@ -10,7 +10,11 @@ import Data.Maybe(fromJust)
 
 type Symtab = [(Identifier, Type)]
 
-tcerror = SemanticError "A typecheck error occurred"
+throw :: String -> Either Error b
+throw s = Left $ SemanticError s
+
+nottyped :: Error
+nottyped = InternalError "Typecheck-method returned non typed expression or statement."
 
 
 typecheck :: [Class] -> Either Error [Class]
@@ -26,15 +30,16 @@ typecheckprogram :: [Class] -> [Either Error Class]
 typecheckprogram cls = map (typecheckclass cls) cls
 
 typecheckclass :: [Class] -> Class -> Either Error Class
-typecheckclass cls (Class ident mods decls) 
- | not (validconstructors decls) =  Left tcerror
- | not (validmethods decls) = Left tcerror
- | not (modsOk mods) = Left tcerror
- | elem Protected mods = Left tcerror
- | elem Private mods = Left tcerror
- | elem Static mods = Left tcerror
+typecheckclass cls (Class ident@(Identifier id) mods decls) 
+ | not (validconstructors decls) =  throw ("Invalid Constructors in class " ++ id) 
+ | not (validmethods decls) = throw ("Invalid methods in class " ++ id ++ ". Maybe double declarations?")
+ | not (modsOk mods) = throw ("Invalid modifier of class " ++ id) 
+ | elem Protected mods = throw ("Modifier protected not allowed here. Class " ++ id) 
+ | elem Private mods = throw ("Modifier private not allowed here. Class " ++ id) 
+ | elem Static mods =  throw ("Modifier static not allowed here. Class " ++ id) 
  | otherwise = case typecheckdecls ident cls decls of 
-    Left err      -> Left err
+    Left (SemanticError err)      -> throw ("Class " ++ id ++ " : " ++ err) 
+    Left err -> Left err
     Right typeddecls  -> Right (Class ident mods (snd typeddecls))
 
 typecheckdecls :: Identifier -> [Class] -> [Decl] -> Either Error (Symtab, [Decl])
@@ -46,51 +51,56 @@ typecheckdecls ident cls = foldl (tchelper ident cls) (Right ([(This, RefType (N
 
 typecheckdecl :: Identifier -> [Class] -> (Symtab, [Decl]) -> Decl -> Either Error (Symtab , [Decl]) 
 
-typecheckdecl _ cls (symtab, ast) decl@(Field (VarDecl ident mods typ rhs)) 
- | not (modsOk mods) = Left tcerror
+typecheckdecl _ cls (symtab, ast) decl@(Field (VarDecl ident@(Identifier id) mods typ rhs)) 
+ | not (modsOk mods) = throw ("Invalid modifiers in declaration of field variable " ++ id) 
  | otherwise = 
   case lookup ident symtab of
-   (Just _) -> Left tcerror
+   (Just _) -> throw ("Variable " ++ id ++ " already defined.") 
    Nothing -> 
     case rhs of
       Nothing -> Right ((ident, typ) : symtab, ast ++ [decl])
       Just expr -> 
         case typecheckexpr cls symtab expr of
+         Left (SemanticError err) -> throw ("Field " ++ id ++ " : " ++ err) 
          Left err -> Left err
          Right exp@(TypedExpression(_, exptype)) -> 
            if typ == exptype then
                      Right ((ident, typ) : symtab, ast ++ [(Field (VarDecl ident mods typ (Just exp)))])
            else 
-                     Left tcerror
+                     throw ("Field variable " ++ id ++ " : Incompatible types, " ++ (show exptype) ++ " cannot be converted to " ++ (show typ))
 
 typecheckdecl clident cls (symtab, ast) constr@(Constructor ident mods paramlist body)  
- | clident /= ident = Left tcerror
- | not (modsOk mods) = Left tcerror
- | elem Static mods = Left tcerror
- | elem Abstract mods = Left tcerror
+ | clident /= ident = throw ("Constructor name does not match class.")  
+ | not (modsOk mods) = throw ("Invalid modifiers in constructor.") 
+ | elem Static mods = throw ("Modifier static not allowed in constructor.") 
+ | elem Abstract mods = throw ("Modifier abstract not allowed in constructor.")
  | otherwise = 
   case body of 
     Nothing   -> Right (symtab, ast ++ [constr])
-    Just stmt -> if returningstmt stmt then Left tcerror 
-      else case typecheckstmt cls ((map swap paramlist) ++ symtab) stmt of
+    Just stmt -> 
+      case typecheckstmt cls ((map swap paramlist) ++ symtab) stmt of
+        Left (SemanticError err) -> throw ("Constructor : " ++ err) 
         Left err -> Left err
         Right stmt@(TypedStatement(_, JVoid)) -> Right (symtab, ast ++ [Constructor ident mods paramlist (Just stmt)])
-        otherwise -> Left tcerror
+        Right (TypedStatement(_, _)) -> throw "Unexpected return value in constructor."
+        _ -> Left nottyped 
 
-typecheckdecl _ cls (symtab, ast) method@(Method ident mods rettype paramlist body) 
- | not (modsOk mods) = Left tcerror
- | elem Abstract mods = Left tcerror
+typecheckdecl _ cls (symtab, ast) method@(Method ident@(Identifier id) mods rettype paramlist body) 
+ | not (modsOk mods) = throw ("Invalid modifiers in method declaration of " ++ id) 
+ | elem Abstract mods = throw ("Modifier abstract not allowed in method declaration of " ++ id) 
+ | withdupls (map snd paramlist) = throw ("Double definition of parameters in method " ++ id)
  | otherwise = 
   case body of
     Nothing   -> Right (symtab, ast ++ [method]) 
     Just stmt -> let symt = if elem Static mods then map swap paramlist else ((map swap paramlist) ++ symtab) in
       case typecheckstmt cls symt stmt of
+        Left (SemanticError err) -> throw ("Method " ++ id ++ " : " ++ err) 
         Left err -> Left err
         Right stm@(TypedStatement(_, stmtype)) ->
           if rettype == stmtype then
                     Right (symtab, ast ++ [(Method ident mods rettype paramlist (Just stm))])
           else
-                    Left tcerror                    
+                   throw ("Method " ++ id ++ " : Incompatible types, " ++ (show stmtype) ++ " cannot be converted to " ++ (show rettype))  
 
 
 
@@ -106,13 +116,13 @@ typecheckexpr cls symtab (TernaryIf cond elseexpr thenexpr) =
  case typecheckexpr cls symtab cond of
    Left err -> Left err
    Right (condt@(TypedExpression(_, condtype))) -> if not (condtype == PrimType Boolean) 
-     then Left tcerror
+     then throw ("Condition of ternaryIf must be boolean but has type " ++ (show condtype))
      else case (typecheckexpr cls symtab elseexpr, typecheckexpr cls symtab thenexpr) of
        (Left err, _) -> Left err
        (_, Left err) -> Left err
        (Right telse@(TypedExpression(_, elsetype)), Right tthen@(TypedExpression(_, thentype))) ->
           case upperbound elsetype thentype of
-            Nothing  -> Left tcerror
+            Nothing  -> throw ("Cannot match type " ++ (show elsetype) ++ " and type " ++ (show thentype))
             Just typ -> Right (TypedExpression(TernaryIf condt telse tthen, typ))
   
 typecheckexpr cls symtab (PrimBinOp binop expr1 expr2) =
@@ -125,7 +135,7 @@ typecheckexpr cls symtab (PrimBinOp binop expr1 expr2) =
             if (binop == And || binop == Or || binop == Eq || binop == BitAnd || binop == BitOr || binop == BitXOr) then
                       Right (TypedExpression(PrimBinOp binop exp1 exp2, PrimType Boolean))
             else 
-                      Left tcerror 
+                     throw ("Binary operator " ++ (show binop) ++ " not applicable to type boolean.") 
          (PrimType Int, PrimType Int) ->
             if (binop == Multiply || binop == Divide || binop == Add || binop == Subtract || binop == Modulo || binop == ShiftLeft || binop == ShiftRight || binop == UnsignedShiftRight || binop == BitAnd || binop == BitOr || binop == BitXOr) then
                       Right (TypedExpression(PrimBinOp binop exp1 exp2, PrimType Int))
@@ -133,14 +143,14 @@ typecheckexpr cls symtab (PrimBinOp binop expr1 expr2) =
               if (binop == Eq || binop == Less ||  binop == LessEq || binop == Greater || binop == GreaterEq) then
                       Right (TypedExpression(PrimBinOp binop exp1 exp2, PrimType Boolean))
               else
-                      Left tcerror
+                      throw ("Binary operator " ++ (show binop) ++ " not applicable to type int.")
          (PrimType Char, PrimType Char) ->
             if (binop == Eq || binop == Less || binop == LessEq || binop == Greater || binop == GreaterEq) then
                       Right (TypedExpression(PrimBinOp binop exp1 exp2, PrimType Boolean))
             else
-                      Left tcerror
-         otherwise ->
-                      Left tcerror 
+                     throw ("Binary operator " ++ (show binop) ++ " not applicable to type char.") 
+         (typ1, typ2) ->
+                     throw ("Binary operator " ++ (show binop) ++ " not applicable to types " ++ (show typ1) ++ " and " ++ (show typ2)) 
    
 typecheckexpr cls symtab (PrimUnOp unop expr) =  
   case typecheckexpr cls symtab expr of
@@ -150,17 +160,17 @@ typecheckexpr cls symtab (PrimUnOp unop expr) =
         (Not, PrimType Boolean) -> Right (TypedExpression(PrimUnOp unop exp, PrimType Boolean))
 	(Neg, PrimType Int)     -> Right (TypedExpression(PrimUnOp unop exp, PrimType Int))
 	(BitCompl, PrimType Int) -> Right (TypedExpression(PrimUnOp unop exp, PrimType Int))
-	otherwise -> Left tcerror 
+	otherwise -> throw ("Unary operator " ++ (show unop) ++ " not applicable to type " ++ (show exptype) ++ ".")
   
 typecheckexpr cls symtab expr@(Iden name) = 
   case name of
     (Name [] ident) -> case lookup ident symtab of 
-            Nothing    -> Left tcerror
+            Nothing    -> throw ("Not in scope, " ++ (show ident)) 
             (Just typ) -> Right (TypedExpression(expr, typ)) 
     (Name (x:xs) ident) -> case lookup x symtab of
-            Nothing -> Left tcerror
+            Nothing -> throw ("Not in scope, " ++ (show x)) 
             (Just (RefType (Name [] c))) -> case findclass c cls of
-               Nothing   -> Left tcerror
+               Nothing   -> throw ("Cannot find class " ++ (show c)) 
                (Just cl) -> case lookupnametype cls cl (Name xs ident) of 
                  Left err   -> Left err
                  Right typ  -> Right (TypedExpression(expr, typ)) 
@@ -208,7 +218,8 @@ typecheckstmt cls symtab (While cond body) =
         (Just stmt) -> case typecheckstmt cls symtab stmt of 
            Left err -> Left err
            Right stm@(TypedStatement(_, stmtype)) -> Right (TypedStatement(While condexp (Just stm), stmtype))
-    otherwise   -> Left tcerror
+    Right (TypedExpression(_, typ)) -> throw ("Condition of while loop must be of type boolean, but has type " ++ (show typ))
+    Right _     -> Left nottyped
 
 typecheckstmt cls symtab (If cond ifthen ifelse) =
   case typecheckexpr cls symtab cond of 
@@ -228,9 +239,10 @@ typecheckstmt cls symtab (If cond ifthen ifelse) =
           (Right stm1@(TypedStatement(_, stm1type)), Right stm2@(TypedStatement(_, stm2type))) ->
                  let uppertype = upperbound stm1type stm2type in
                    if uppertype == Nothing 
-                   then Left tcerror  
+                   then throw ("then- and else- statements resolve to incompatible types, namely " ++ (show stm1type) ++ " and " ++ (show stm2type))  
                    else Right (TypedStatement(If condexp (Just stm1) (Just stm2), fromJust uppertype)) 
-    otherwise -> Left tcerror 
+    Right (TypedExpression(_, typ)) -> throw ("If-Condition must be of type boolean, but has type " ++ (show typ))
+    Right _ -> Left nottyped 
                         
 typecheckstmt cls symtab (Block stmts) = 
   case blockhlp cls symtab stmts of
@@ -251,7 +263,7 @@ typecheckstmt cls symtab (LocalVar (VarDecl ident mods typ (Just expr))) =
       if typ == exptype then
         Right (TypedStatement(LocalVar (VarDecl ident mods typ (Just exp)), typ))
       else
-        Left tcerror
+        throw ("Incompatible types, " ++ (show exptype) ++ " cannot be converted to " ++ (show typ) ++ ".")
 
 typecheckstmt cls symtab (StmtExprStmt stmtexpr) = 
   case typecheckstmtexpr cls symtab stmtexpr of
@@ -276,15 +288,16 @@ typecheckstmtexpr cls symtab (Assign assignop name expr) =
          case (vartype, exprtype) of
            (PrimType Int, PrimType Int) -> if elem assignop inttoint 
                                            then Right (TypedStmtExpr(Assign assignop name texpr, PrimType Int)) 
-                                           else Left tcerror
+                                           else throw ("Operator " ++ (show assignop) ++ " not applicable to type int") 
            (PrimType Boolean, PrimType Boolean) 
                                         -> if elem assignop booltobool
                                            then Right (TypedStmtExpr(Assign assignop name texpr, PrimType Boolean))
-                                           else Left tcerror
-           (typ1, typ2)                 -> if assignop == NormalAssign && typ1 == typ2
-                                           then Right (TypedStmtExpr(Assign assignop name texpr, typ1))
-                                           else Left tcerror 
-           otherwise -> Left tcerror
+                                           else throw ("Operator " ++ (show assignop) ++ " not applicable to type boolean") 
+           otherwise                     -> if assignop == NormalAssign 
+                                           then if vartype == exprtype 
+                                                then Right (TypedStmtExpr(Assign assignop name texpr, vartype))
+                                                else throw ("Incompatible types, " ++ (show exprtype) ++ " cannot be converted to " ++ (show vartype) ++ ".")
+                                           else throw ("Operator " ++ (show assignop) ++ " not applicable to types " ++ (show vartype) ++ " and " ++ (show exprtype) ++ ".")  
   where
    inttoint = [NormalAssign, MultiplyAssign, DivideAssign, ModuloAssign, PlusAssign, MinusAssign, LeftShiftAssign, ShiftRightAssign, UnsignedShiftRightAssign, BitXOrAssign]
    booltobool = [NormalAssign, AndAssign, BitXOrAssign, OrAssign]
@@ -295,7 +308,7 @@ typecheckstmtexpr cls symtab (Instantiation typ@(Name [] c) exprs) =
     Left err -> Left err
     Right exprlist -> 
       case findclass c cls of 
-        Nothing -> Left tcerror
+        Nothing -> throw ("Cannot find class " ++ (show c)) 
         Just cl -> 
           let 
             constrtypes = getconstrtypes cl
@@ -303,7 +316,7 @@ typecheckstmtexpr cls symtab (Instantiation typ@(Name [] c) exprs) =
           in 
             if (or $ map ((==) exprtypes) constrtypes) || (null constrtypes && null exprtypes)
 	      then Right (TypedStmtExpr(Instantiation typ exprlist, RefType typ)) 
-	      else Left tcerror 
+	      else throw ("Class " ++ (show c) ++ " does not have a constructor accepting parameters with types " ++ (show exprtypes)) 
 	     
 typecheckstmtexpr cls symtab (Apply iden@(Iden (Name path ident)) params) = 
   case reduceErrors $ (map (typecheckexpr cls symtab)) params of
@@ -312,15 +325,15 @@ typecheckstmtexpr cls symtab (Apply iden@(Iden (Name path ident)) params) =
     case path of
       []     -> typecheckstmtexpr cls symtab (Apply (Iden (Name [This] ident)) params)    
       (p:ps) -> case lookup p symtab of 
-                  Nothing -> Left tcerror
+                  Nothing -> throw ("Not in scope, " ++ (show p)) 
                   Just (RefType (Name [] clid)) -> case findclass clid cls of
-                    Nothing -> Left tcerror
+                    Nothing -> throw ("Cannot find class " ++ (show clid)) 
                     Just cl -> case lookupmethods cls cl (Name ps ident) of
                       Left err -> Left err
-                      Right [] -> Left tcerror
+                      Right [] -> throw ("Cannot find method " ++ (show ident)) 
                       Right (decls@(decl:_)) -> if or $ map ((==) (map typeofexpr exprlist)) (map ((map fst) . getParamList) decls)  
                         then Right (TypedStmtExpr(Apply iden exprlist, getReturnType decl))
-                        else Left tcerror
+                        else throw ("Method " ++ (show ident) ++ " does not accept parameters of type " ++ (show (map typeofexpr exprlist)))
 
 
 typecheckstmtexpr cls symtab  (SEUnOp op expr) = 
@@ -328,7 +341,7 @@ typecheckstmtexpr cls symtab  (SEUnOp op expr) =
     Left err -> Left err
     Right (texpr@(TypedExpression(_, exprtype))) -> if exprtype == PrimType Int 
       then Right (TypedStmtExpr(SEUnOp op texpr, exprtype))
-      else Left tcerror
+      else throw ((show op) ++ " not applicable to type " ++ (show exprtype)) 
 
 typecheckstmtexpr _ _ stmtexpr@(TypedStmtExpr(_)) = Right stmtexpr
         
@@ -370,28 +383,27 @@ lookupmethods _ (Class _ _ decls) (Name [] ident) =  Right $ filter method decls
 lookupmethods cls c (Name (p:ps) ident) = case lookupidenttype c p of
     Left err -> Left err
     Right (RefType (Name [] classname)) -> case findclass classname cls of
-      Nothing -> Left tcerror
+      Nothing -> throw ("Could not find class " ++ (show classname)) 
       Just cl -> lookupmethods cls cl (Name ps ident)  
+    Right typ -> throw ((show p) ++ " of type " ++ (show typ) ++ " cannot have a method.") 
          
 lookupnametype :: [Class] -> Class -> Name -> Either Error Type
 lookupnametype _ c (Name [] ident) = lookupidenttype c ident
 lookupnametype cls c (Name (p:ps) ident) = case lookupidenttype c p of
    Left err -> Left err
    Right (RefType (Name [] classname)) -> case findclass classname cls of
-     Nothing -> Left tcerror
+     Nothing -> throw ("Could not find class " ++ (show classname)) 
      (Just cl) -> lookupnametype cls cl (Name ps ident)
-   otherwise -> Left tcerror 
+   Right typ -> throw ((show p) ++ " of type " ++ (show typ) ++ " cannot have a field.") 
                       
 lookupidenttype :: Class ->  Identifier -> Either Error Type
-lookupidenttype (Class _ mods decls) ident = if elem Private mods 
-   then Left tcerror 
-   else finddecltype ident decls 
+lookupidenttype (Class _ mods decls) ident = finddecltype ident decls 
 
 finddecltype :: Identifier -> [Decl] -> Either Error Type 
-finddecltype ident [] = Left tcerror
+finddecltype ident [] = throw ("Not in scope, " ++ (show ident)) 
 finddecltype ident ((Field (VarDecl id mods typ _)):decls) = if id == ident then
       if elem Private mods 
-        then Left tcerror 
+        then throw ((show id) ++ " is private.") 
         else Right typ 
    else finddecltype ident decls
 finddecltype ident (_:decls) = finddecltype ident decls
@@ -418,6 +430,7 @@ checkmethodshelper ls ((Method ident _ rt pl _):decls) =
   let 
     idt = (ident, rt)
     mtypes = map fst pl 
+    mparams = map snd pl
   in 
     if mok ls idt mtypes then checkmethodshelper ((idt, mtypes):ls) decls
                          else False 
@@ -430,21 +443,15 @@ checkmethodshelper ls ((Method ident _ rt pl _):decls) =
 checkmethodshelper ls (decl:decls) = checkmethodshelper ls decls
 
 
-  
+withdupls :: Eq a => [a] -> Bool
+withdupls [] = False
+withdupls (x:xs) = if elem x xs then True else withdupls xs
+ 
 withdupllists :: Eq a => [[a]] -> Bool
 withdupllists [] = False
 withdupllists (x:xs) = if or (map ((==) x) xs) then True else withdupllists xs
 
 
-
-returningstmt :: Statement -> Bool
-returningstmt (Return _) = True
-returningstmt (While _ (Just stmt)) = returningstmt stmt
-returningstmt (If _ (Just stmt) _) = returningstmt stmt 
-returningstmt (If _ _ (Just stmt)) = returningstmt stmt
-returningstmt (Block stmts) = or (map returningstmt stmts)
-returningstmt (TypedStatement(stmt, _)) = returningstmt stmt
-returningstmt _ = False
 
 
 modsOk :: [Mod] -> Bool
@@ -477,7 +484,8 @@ blockhlp cls symtab (stmt:stmts) =
         Left err -> Left err
         Right (stmlist, typestmts)
                  -> let uppertype = upperbound stmtype typestmts in
-                     if uppertype == Nothing then Left tcerror 
+                     if uppertype == Nothing 
+                     then throw ("Block statements resolve to incompatible types, namely " ++ (show stmtype) ++ " and " ++ (show typestmts)) 
                      else Right (stm:stmlist, fromJust uppertype)
                  
 
