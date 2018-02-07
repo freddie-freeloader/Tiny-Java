@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fdeb4cb70639707f4f7443484938c90a32b5692fb94823451379cf64144b448c
+-- hash: 02dcba5df91792b5758bd4b056115769f879303a041ac1e2de824d77c333dd5a
 
 name:           tiny-java
 version:        0.0.0
@@ -39,6 +39,7 @@ library
       Compiler.Parser
       Compiler.ParserUtils
       Compiler.Type_Check
+      Compiler.Utils
   other-modules:
       Paths_tiny_java
   default-language: Haskell2010
