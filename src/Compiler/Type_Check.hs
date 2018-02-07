@@ -1,25 +1,17 @@
-module Compiler.Type_Check where
+module Compiler.Type_Check(typecheck, typecheckprogram) where
 
 import Compiler.Ast
 import Compiler.Parser 
+import Compiler.Utils
 import Data.List(lookup)
 import Data.Tuple(swap)
 import Data.Maybe(fromJust)
 
 
-data Error = TypecheckError String
-           | MiscError String
-           | InternalError String
-  deriving Show
-
 type Symtab = [(Identifier, Type)]
 
-tcerror = TypecheckError "A typecheck error occurred"
+tcerror = SemanticError "A typecheck error occurred"
 
--- ops
--- exporting
--- warnings
--- error messages
 
 typecheck :: [Class] -> Either Error [Class]
 typecheck = reduceErrors . typecheckprogram
@@ -27,7 +19,7 @@ typecheck = reduceErrors . typecheckprogram
 typecheckteststring :: String -> Either Error [Class]
 typecheckteststring str = 
   case parseTestString str of
-    Nothing  -> Left (MiscError "The test string could not be parsed.")
+    Nothing  -> Left (ParseError "The test string could not be parsed.")
     Just cls -> (reduceErrors . typecheckprogram) cls 
 
 typecheckprogram :: [Class] -> [Either Error Class]
@@ -274,7 +266,6 @@ typecheckstmt _ _ Continue = Right (TypedStatement(Continue, JVoid))
 
 typecheckstmtexpr :: [Class] -> Symtab -> StmtExpr -> Either Error StmtExpr
 
--- todo correct op assignments? 
 typecheckstmtexpr cls symtab (Assign assignop name expr) = 
   case typecheckexpr cls symtab (Iden name) of 
    Left err -> Left err
