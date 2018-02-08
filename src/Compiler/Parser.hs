@@ -379,13 +379,11 @@ expressionStmt = StmtExprStmt <$> statementExpr <* semicolon
     postIncr = do
       e   <- postFixExpr
       ops <- many $ void (symbol "++")
-      return $
-        case makeSeqOp PostIncr ops e of ExprExprStmt inner -> inner; _ -> undefined
+      case makeSeqOp PostIncr ops e of ExprExprStmt inner -> return inner; _ -> fail "Parser error: malformed expression"
     postDecr = do
       e   <- postFixExpr
       ops <- many $ void (symbol "--")
-      return $
-        case makeSeqOp PostDecr ops e of ExprExprStmt inner -> inner; _ -> undefined
+      case makeSeqOp PostDecr ops e of ExprExprStmt inner -> return inner; _ -> fail "Parser error: malformed expression"
     postFixExpr = try primary <|> (Iden <$> name)
     makeSeqOp :: IncrOrDecr -> [()] -> Expression -> Expression
     makeSeqOp constr ops e =
