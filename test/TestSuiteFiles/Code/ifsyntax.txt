@@ -1,0 +1,6 @@
+class Ifnoexp{
+    void ifhasskillz(){
+        if()
+            return;
+    }
+}

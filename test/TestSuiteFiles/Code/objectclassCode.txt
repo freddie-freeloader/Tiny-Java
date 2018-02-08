@@ -1,0 +1,10 @@
+class Objectclass {
+
+    Objectclass(){
+    
+    }
+
+    void objectMethod(){
+        Objectclass om = new Objectclass();
+    }
+}

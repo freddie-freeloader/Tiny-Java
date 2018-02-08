@@ -1,0 +1,9 @@
+class Objectmethod{
+    void objectcalling(){
+        new Objectmethod().methodToCall();
+    }
+    
+    public void methodToCall(){
+    
+    }
+}

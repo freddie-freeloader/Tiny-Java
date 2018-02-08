@@ -1,0 +1,6 @@
+class Comments{
+	/*Multiline Comment*/ 
+	Comments(){
+		/*int ignoreMe;*/
+	}
+}

@@ -1,0 +1,9 @@
+class ObjParamCall {
+    
+    void CallParamMethod(){
+        ObjParamCall opc = new ObjParamCall();
+        opc.CallMe(opc);
+    }
+    
+    public void CallMe(ObjParamCall oPC){}
+}

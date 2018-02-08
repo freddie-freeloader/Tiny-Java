@@ -1,0 +1,3 @@
+class ObjParam{
+    void ObjParamMethod(ObjParam op){}
+}

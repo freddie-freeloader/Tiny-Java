@@ -1,0 +1,3 @@
+class Methodtype{
+    int(){}
+}

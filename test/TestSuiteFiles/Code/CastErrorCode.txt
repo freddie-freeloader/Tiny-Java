@@ -1,0 +1,5 @@
+class CtoI{
+	int castToInt(char c){
+		return (char)c;
+	}
+}

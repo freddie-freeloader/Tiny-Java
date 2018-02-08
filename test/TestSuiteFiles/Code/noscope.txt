@@ -1,0 +1,8 @@
+class Scope{
+    void callMethod(){
+        new SeeMe().NoCall();
+    }
+}
+public class SeeMe{
+    private void NoCall(){}
+}

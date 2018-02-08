@@ -1,0 +1,6 @@
+class UseThis{
+	int hand; 
+	void thisMethod(){
+		this.hand = 2;
+	}
+}

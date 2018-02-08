@@ -1,0 +1,4 @@
+class Paramclass {
+    void paramMethod(int i_param, boolean b_param, char c_param){
+    }
+}

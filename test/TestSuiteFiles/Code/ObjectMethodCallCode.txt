@@ -1,0 +1,9 @@
+class ObjCall {
+    
+    void CallMethod(){
+        ObjCall oc = new ObjCall();
+        oc.CallMe();
+    }
+    
+    public void CallMe(){}
+}

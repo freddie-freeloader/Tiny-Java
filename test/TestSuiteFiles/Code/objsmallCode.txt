@@ -1,0 +1,5 @@
+class Smallobjectclass {
+    void objectMethod(){
+        new Smallobjectclass();
+    }
+}

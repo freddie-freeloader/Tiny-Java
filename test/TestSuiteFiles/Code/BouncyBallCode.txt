@@ -1,0 +1,113 @@
+class BouncyBall{   
+	
+    /*
+    This is a test game to test functionalities.
+    It uses a rng function to create a pseudo random gameworld.
+    The Player is a sentient rubber ball, who wants to jump the highest of all the balls.
+    It can choose to bounce on the same level and charge power or bounce a little less each bounce and charge double power. 
+    It can release the power and reach a bigger height.
+    There is a chance that it hits a flying object, like a bird or an airplane and looses some height and all the charged power.
+    When it bounces less the chance of it hitting an object are reduced significantly.
+    
+    All the Input is realised with a call of the rng Function.
+    */
+	
+	/*Rng value*/
+	int rng; 
+	
+    /*Simulated Input*/
+	char input;
+	
+    /*GameStates: bouncing(same height) 's', bouncing(lower height) 'l', release power 'r'*/
+	char gameState;
+	
+    /*Ball Variables*/
+	int height;
+	int chargedPower; 
+	
+	/*World Vars*/
+	int hitObjectChance;
+	
+	BouncyBall(){
+		int i = 50; 
+		while(i > 0) {
+			i = i - 1; 
+			nextRandomNumber();
+		}
+		gameState = 's';
+		height = 50;
+		chargedPower = 0;
+		hitObjectChance = 65535/5;  
+		input = 's';
+		mainLoop();
+	} 
+	
+	void mainLoop(){
+		boolean running = true;
+		while(running){
+			nextRandomNumber();
+			if(rng < 65535/3)
+				input = 's'; 
+			else if(rng < 65535*2/3)
+				input = 'l'; 
+			else 
+			input = 'r';  
+			
+			if(gameState ==  's') {
+				chargedPower += 10 + height/4;
+				hitObjectChance = 65535/5; 
+				gameState = input;
+			}else if(gameState == 'l') {
+				chargedPower += 10 + height/10;
+				hitObjectChance = 65535/10; 
+				height = height*5/6;
+				gameState = input;
+			}else if(gameState == 'r') {
+				height += chargedPower;
+				chargedPower = 0;
+				hitObjectChance = 65535/5;  
+				gameState = input;
+			} 
+			
+			if(chargedPower > 10000)
+				gameState = 'r'; 
+			
+			nextRandomNumber();
+			if(rng < hitObjectChance){
+				nextRandomNumber();
+				if(rng < 65535/3)
+					height = height * 5/6;  
+				else if(rng < 65535*2/3)
+					height = height  * 3/4; 
+				else 
+					height = height  * 1/2;  
+			} 
+			
+			nextRandomNumber();
+			if(rng < 65535/150){
+				running = false;
+			}
+		}
+	}
+			
+	int nextRandomNumber(){
+		rng = rngFunction(rng);
+		return rng;
+	}    
+			
+	int rngFunction(int input){
+		int s0 = (input << 8); 
+		s0 ^= input;
+		input = ((s0 & 255) << 8) | ((s0 & 65280) >>> 8);
+		s0 = (s0 << 1) ^ input;
+		int s1 = (s0 >>> 1) ^ 65408;
+		if((s0 & 1) == 0){
+			if(s1 == 43605) 
+				input = 0;
+			else 
+				input = s1^8180;
+		}else 
+			input = s1 ^33152;
+		return input & 65535;
+	}
+}

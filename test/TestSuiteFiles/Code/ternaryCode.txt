@@ -1,0 +1,5 @@
+class Ternary{
+	void ternary(){
+		int tern = 5 < 7 ? 1 : 2;
+	}
+}
