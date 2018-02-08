@@ -1,17 +1,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-import Compiler.Ast (Class)
-import           Compiler.Parser        (parseSrc)
-import           Compiler.Utils         (Error (..))
-import           Control.Applicative    ((<|>),optional)
-import Compiler.Type_Check (typecheck)
-import           Control.Monad.Loops    (unfoldM)
-import qualified Data.Text              as Text (pack, unpack)
-import qualified Turtle                 as T (FilePath, Text,linesToText)
+import           Compiler.AbstractBytecode                     (ClassFile)
+import           Compiler.Ast                                  (Class (..),
+                                                                Identifier (..))
+import           Compiler.BytecodeGeneration.ByteFileGenerator (generateByteFile)
+import           Compiler.Parser                               (parseSrc)
+import           Compiler.Type_Check                           (typecheck)
+import           Compiler.Utils                                (Error (..))
+import           Control.Applicative                           (optional, (<|>))
+import           Control.Monad.Loops                           (unfoldM)
+import           Data.Maybe                                    (fromMaybe)
+import qualified Data.Text                                     as Text (pack,
+                                                                        unpack)
+import qualified Turtle                                        as T (FilePath,
+                                                                     Text,
+                                                                     linesToText)
 import           Turtle.Format
 import           Turtle.Options
 import           Turtle.Prelude
-import Data.Maybe (fromMaybe)
 
 
 main :: IO ()
@@ -28,7 +34,20 @@ run =
     (filePath,typeCheckFlag) <- options "Tiny Java Compiler" cliParser
     input <- getInput filePath
     let inputName = fromMaybe "StdIn" $ show <$> filePath
-    either printError (printSuccess inputName) (runPipeline inputName (Text.unpack input) typeCheckFlag)
+    if typeCheckFlag
+      then parseAndTypecheck inputName input
+      else fullCompilation inputName input
+  where
+    fullCompilation :: String -> T.Text -> IO ()
+    fullCompilation inputName input =
+      do
+        let compilationResult = runFullPipeline inputName (Text.unpack input)
+        either printError (handleSuccess inputName) compilationResult
+    parseAndTypecheck :: String -> T.Text -> IO ()
+    parseAndTypecheck inputName input =
+      do
+        let compilationResult = runUntilTypecheck inputName (Text.unpack input)
+        either printError (const $ printSuccessMessage inputName "type-checked") compilationResult
 
 printError :: Error -> IO ()
 printError = eprintf (errorTextLeft%w%errorTextRight)
@@ -36,20 +55,38 @@ printError = eprintf (errorTextLeft%w%errorTextRight)
     errorTextLeft = "=== Compile Error ===\n\nThe reason the compilation failed:\n~~~\n"
     errorTextRight = "\n~~~\n"
 
-type Result = [Class]
+type ClassFileName = String
+type Result = [(ClassFileName,ClassFile)]
 
-printSuccess :: String -> Result -> IO ()
-printSuccess = const . printf ("== Success ==\n"%s%" was successfully compiled!\n") . Text.pack
+handleSuccess :: String -> Result -> IO ()
+handleSuccess inputName results = do
+  mapM_ (uncurry generateByteFile) results
+  printSuccessMessage inputName "compiled"
 
-runPipeline :: String -> String -> Bool -> Either Error Result
-runPipeline filePath input typeCheckFlag =
+printSuccessMessage :: String -> String ->  IO ()
+printSuccessMessage inputName jobName = printf ("=== Success ===\n\n~~~\n"%s%" was successfully "%s%"!\n~~~\n") (Text.pack inputName) (Text.pack jobName)
+
+runUntilTypecheck :: String -> String -> Either Error [Class]
+runUntilTypecheck filePath input =
   do
     nonEmptyInput <- if null input
                        then Left $ ParseError "The input appears to be empty."
                        else return input
     parseResult <- parseSrc filePath  nonEmptyInput
-    typeCheckResult <- typecheck parseResult
-    return typeCheckResult
+    typecheck parseResult
+
+runFullPipeline :: String -> String -> Either Error Result
+runFullPipeline filePath input =
+  do
+    typeCheckResult <- runUntilTypecheck filePath input
+    compilationResult <- mapM compileByteCode typeCheckResult
+    return $ zip (map getClassName typeCheckResult) compilationResult
+  where
+    compileByteCode :: Class -> Either Error ClassFile
+    compileByteCode = const $ Left $ InternalError "Byte-code-generation failed!"
+    getClassName :: Class -> ClassFileName
+    getClassName (Class (Identifier className) _ _ ) = className ++ ".class"
+    getClassName _ = error "Partial function"
 
 getInput :: Maybe T.FilePath -> IO T.Text
 getInput (Just filePath) = readTextFile filePath
