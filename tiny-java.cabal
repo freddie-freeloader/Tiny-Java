@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fcd538d293146f94230605e0bb52428164be89dc1c86181553198448830f5907
+-- hash: 24f0d9eba29f23f3c51a1c1cfcb644d53db98336bb208510ce3bbb893b930939
 
 name:           tiny-java
 version:        0.0.0
@@ -29,6 +29,13 @@ library
   exposed-modules:
       Compiler.AbstractBytecode
       Compiler.Ast
+      Compiler.AstToClassFileTranslator
+      Compiler.AstToClassFileTranslator.ConstantPoolGenerator
+      Compiler.AstToClassFileTranslator.GenerateAbstractClassFile
+      Compiler.AstToClassFileTranslator.InstructionsToLength
+      Compiler.AstToClassFileTranslator.MaxStackCalculator
+      Compiler.AstToClassFileTranslator.Stack
+      Compiler.AstToClassFileTranslator.TranslateMethodBody
       Compiler.BytecodeGeneration.AttributesToByte
       Compiler.BytecodeGeneration.ByteFileGenerator
       Compiler.BytecodeGeneration.ConstantPoolToByte
