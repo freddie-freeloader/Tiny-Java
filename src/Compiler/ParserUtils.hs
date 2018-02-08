@@ -12,7 +12,7 @@ import Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 
 -- | 'Parser' is using Void for custom errors. This might change someday.
-type Parser = Parsec Void String
+type Parser = Parsec (ErrorFancy Void) String
 
 -- | 'makeSingleton' puts the result of a parser into an array
 makeSingleton :: Parser a -> Parser [a]

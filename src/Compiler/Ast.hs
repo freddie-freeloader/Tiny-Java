@@ -5,16 +5,31 @@
 
 module Compiler.Ast where
 
+import           Data.List (intercalate)
+
 -- | 'Identifier' is a simple identifier, e.g. for a parameter
 data Identifier = Identifier String
                 | This
                 | Super
-  deriving (Show,Eq)
+  deriving (Eq)
+
+instance Show Identifier where
+  show (Identifier s) = s
+  show This           = "this"
+  show Super          = "super"
 
 -- | 'Name' represents a Name of something with the relative path to it
 data Name = Name { path          :: [Identifier]
                  , getIdentifier :: Identifier }
-  deriving (Show, Eq)
+  deriving (Eq)
+
+instance Show Name where
+  show (Name path identifier) = if null shownPath
+                                  then showIdentifier
+                                  else shownPath ++ "." ++ showIdentifier
+    where
+      shownPath = intercalate "." (fmap show path)
+      showIdentifier  = show identifier
 
 -- | 'Type' are different types of types
 data Type = PrimType PType -- ^ Represents a primitive java type

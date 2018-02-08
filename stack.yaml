@@ -4,6 +4,7 @@ extra-package-dbs: []
 packages:
 - .
 extra-deps:
+  - turtle-1.5.1
 resolver: lts-10.0
 build:
   haddock-arguments:

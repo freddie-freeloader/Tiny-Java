@@ -3,17 +3,29 @@
 --
 -- This module contains the complete parser
 
-module Compiler.Parser(parseTestString) where
+module Compiler.Parser(parseTestString,parseSrc) where
 
 import           Compiler.Ast
 import           Compiler.ParserUtils
+import qualified Compiler.Utils             as Utils
 import           Control.Monad              (void)
+import           Data.Either.Combinators    (mapLeft)
 import           Data.Maybe                 (catMaybes)
+import           Data.Void
 import           Text.Megaparsec
 import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import           Text.Megaparsec.Expr
 
+parseSrc :: String -> String -> Either Utils.Error [Class]
+parseSrc fileName input =  (Utils.ParseError . parseErrorPretty' input) `mapLeft` result
+  where
+    result ::  Either (ParseError (Token String) (ErrorFancy Void)) [Class]
+    result = parse program fileName input
+
+-- | 'parseTest' parses a String, which contains multiple classes
+parseTestString :: String -> Maybe [Class]
+parseTestString = parseMaybe program
 
 -- | 'mods' is a list of available modifiers
 mods :: [(Mod,String)]
@@ -37,10 +49,6 @@ identifier = (lexeme . try) (p >>= check)
             | x == "this" = return This
             | x == "super" = return Super
             | otherwise = return $ Identifier x
-
--- | 'parseTest' parses a String, which contains multiple classes
-parseTestString :: String -> Maybe [Class]
-parseTestString = parseMaybe program
 
 -- | 'program' parses multiple classes
 program :: Parser [Class]
