@@ -1,0 +1,5 @@
+class Typeclass {
+    int intField;
+    char charField;
+    boolean floatField;
+}

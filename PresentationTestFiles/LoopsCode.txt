@@ -1,0 +1,6 @@
+class WLoop{
+	void whileLoop(){
+		while(true){
+		}
+	}
+}

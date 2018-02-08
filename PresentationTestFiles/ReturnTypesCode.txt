@@ -1,0 +1,16 @@
+class ExprInReturn{
+int x = 42;
+
+int retfieldvar(){
+  return x;
+}
+
+int retfromparamlist(int y){
+  return y;
+}
+
+int retlocalvar(){
+  int z = 2;
+  return z;
+}
+}

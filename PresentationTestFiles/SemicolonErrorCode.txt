@@ -1,0 +1,3 @@
+class Semicolon{
+    int field
+}

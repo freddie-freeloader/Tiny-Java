@@ -1,0 +1,8 @@
+class Arithclass {
+    int cvar = 10;
+    
+    void Arithmethod (){
+        int locvar = 5;
+        int res = cvar + locvar;
+    }
+}

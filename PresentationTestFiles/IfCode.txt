@@ -1,0 +1,8 @@
+class IfClass{ 
+	void ifMethod(){
+		if(1 > 0){
+		}
+		else{
+		}
+	}
+}
