@@ -11,6 +11,7 @@ data Error
   | SemanticError String -- ^ 'SemanticError' is created by the semantic checker and indicates a semantic or type error
   | InternalError String -- ^ 'InternalError' can be created by any phase and indicates an internal error of the compiler
 
+-- | This instance is needed for a prettier output in the case the compiler fails with an error
 instance Show Error where
   show (ParseError s) = s
   show (SemanticError s) = "A semantic error was found:\n" ++ s

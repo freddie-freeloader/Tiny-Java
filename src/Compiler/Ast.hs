@@ -13,6 +13,7 @@ data Identifier = Identifier String
                 | Super
   deriving (Eq)
 
+-- | This instance is important for error reporting
 instance Show Identifier where
   show (Identifier s) = s
   show This           = "this"
@@ -23,6 +24,7 @@ data Name = Name { path          :: [Identifier]
                  , getIdentifier :: Identifier }
   deriving (Eq)
 
+-- | This instance is important for error reporting
 instance Show Name where
   show (Name path identifier) = if null shownPath
                                   then showIdentifier
@@ -79,7 +81,6 @@ data Expression = TernaryIf { getCond     :: Expression
                 | PrimBinOp BinOp Expression Expression -- ^ Primitive binary Operation
                 | PrimUnOp UnOp Expression -- ^ Primitive unary Operation
                 | Iden Name -- ^ A variable
-                | Select Expression Identifier
                 | Literal Lit -- ^ All kind of literals
                 | ExprExprStmt StmtExpr -- ^ A StatementExpression that is in an Expression position
                 | Cast Type Expression

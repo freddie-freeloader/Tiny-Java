@@ -17,13 +17,14 @@ import           Text.Megaparsec.Char
 import qualified Text.Megaparsec.Char.Lexer as L
 import           Text.Megaparsec.Expr
 
+-- | 'parseSrc' parses a java-class and returns either an 'ParserError' or an 'Ast'
 parseSrc :: String -> String -> Either Utils.Error [Class]
 parseSrc fileName input =  (Utils.ParseError . parseErrorPretty' input) `mapLeft` result
   where
     result ::  Either (ParseError (Token String) (ErrorFancy Void)) [Class]
     result = parse program fileName input
 
--- | 'parseTest' parses a String, which contains multiple classes
+-- | 'parseTest' is only used for testing and provides no error reporting
 parseTestString :: String -> Maybe [Class]
 parseTestString = parseMaybe program
 
