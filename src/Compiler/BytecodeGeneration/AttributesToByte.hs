@@ -9,22 +9,22 @@ attributesToByte :: Attributes -> [Word8]
 attributesToByte = (foldr (\x app -> (attributeToByte x) ++ app) [])
 
 attributeToByte :: Attribute -> [Word8]
-attributeToByte (ConstantValue x y) =
-  (convertWord16ToListWord8 x) ++ [0x02] ++ (convertWord16ToListWord8 y)
+attributeToByte (ConstantValue constantValueNameIndex constantValueConstantvalueIndex) =
+  (convertWord16ToListWord8 constantValueNameIndex) ++ [0x02] ++ (convertWord16ToListWord8 constantValueConstantvalueIndex)
 
 attributeToByte (Code codeNameIndex maxStack maxLocals instructions exeptionTable attributes) =
   (convertWord16ToListWord8 codeNameIndex)
-  ++ (convertWord32ToListWord8 (((fromIntegral . length) v) :: Word32))
-  ++ v
-  where v = (convertWord16ToListWord8 maxStack)
-          ++ (convertWord16ToListWord8 maxLocals)
-          ++ (convertWord32ToListWord8 (((fromIntegral . length) w) :: Word32))
-          ++ w
-          ++ [0x00,0x00] --exeptionTable length
-          -- ++ (exeptionTableToByte exeptionTable)
-          ++ (convertWord16ToListWord8 (((fromIntegral . length) attributes) :: Word16))
-          ++ (attributesToByte attributes)
-          where w = (instructionsToByte instructions)
+  ++ (convertWord32ToListWord8 (((fromIntegral . length) codeList) :: Word32))
+  ++ codeList
+  where codeList = (convertWord16ToListWord8 maxStack)
+                   ++ (convertWord16ToListWord8 maxLocals)
+                   ++ (convertWord32ToListWord8 (((fromIntegral . length) instructionList) :: Word32))
+                   ++ instructionList
+                   ++ [0x00,0x00] --exeptionTable length
+                   -- ++ (exeptionTableToByte exeptionTable)
+                   ++ (convertWord16ToListWord8 (((fromIntegral . length) attributes) :: Word16))
+                   ++ (attributesToByte attributes)
+                   where instructionList = (instructionsToByte instructions)
 
 attributeToByte (StackMapTable stackMapNameIndex entries) = -- dummy implementation
   [0x00,0x00]
@@ -65,7 +65,7 @@ attributeToByte (Deprecated deprecatedNameIndex) =
   (convertWord16ToListWord8 deprecatedNameIndex)
   ++ [0x00,0x00,0x00,0x00]
 
--- Maybe TODO from ExceptionTables(line 221) to VerificationType(line 268)
+-- Maybe TODO (extend) from ExceptionTables(line 221) to VerificationType(line 268)
 
 --verificationTypeToByte :: VerificationType ->
 
@@ -111,7 +111,7 @@ localVariableToByte :: LocalVariable -> [Word16] -- dummy implementation
 localVariableToByte (LocalVariable localVariableStartPc localVariableNameIndex
                                    localVariableDescriptorIndex localVariableIndex) =
                                         [localVariableStartPc]
-                                        ++ [0x00,0x00] -- add length FIXME
+                                        ++ [0x00,0x00] -- Maybe TODO add length
                                         ++ [localVariableNameIndex]
                                         ++ [localVariableDescriptorIndex]
                                         ++ [localVariableIndex]

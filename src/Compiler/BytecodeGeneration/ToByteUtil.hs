@@ -21,13 +21,6 @@ convertWord16ToListWord8 x = [(fromIntegral (shiftR x 8))] ++ [fromIntegral x]
 
 convertWord32ToListWord8 :: Word32 -> [Word8]
 convertWord32ToListWord8 x = [(fromIntegral (shiftR x 24))] ++ [(fromIntegral (shiftR x 16))] ++ [(fromIntegral (shiftR x 8))]++ [fromIntegral x]
-{-
-convertWord32ToListWord8 :: Word32 -> [Word8]
-convertWord32ToListWord8 x = (convertWord16ToListWord8 (fromIntegral $ shiftR x 16))
-                             ++ ((convertWord16ToListWord8 . fromIntegral) x)
-convertWord64ToListWord8 :: Word64 -> [Word8]
-convertWord64ToListWord8 x = [(fromIntegral (shiftR x 56))] ++ [(fromIntegral (shiftR x 48))] ++ [(fromIntegral (shiftR x 40))] ++ [(fromIntegral (shiftR x 32))] ++ [(fromIntegral (shiftR x 24))] ++ [(fromIntegral (shiftR x 16))] ++ [(fromIntegral (shiftR x 8))] ++ [fromIntegral x]
--}
 
 convertInt32ToWord32 :: Int32 -> Word32
 convertInt32ToWord32 = fromIntegral

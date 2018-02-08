@@ -98,7 +98,11 @@ data Instruction =
     -}
     | Bipush
     {
-    bipush_byte :: Int8
+    bipush_byte :: Int8 -- TODO AENDERN
+    }
+    | Sipush
+    {
+      sipush_twoByte :: Int16 -- TODOOOOOO HINZUFÜGEN OFFIZIELL
     }
     {-
     OP: 0001 0000, 10
@@ -106,14 +110,11 @@ data Instruction =
     Stack: → value
     Description: <td>push a  onto the stack as an integer </td>
     -}
-    | Sipush{
-    sipush_value :: Int16
-    }
     | Checkcast
     {
     checkcast_indexbytes :: Word16
     }
-    {-
+    {- NOTE: Do we need this?
     OP: 1100 0000, c0
     Byte: 2: indexbyte1, indexbyte2
     Stack: objectref → objectref
@@ -183,7 +184,7 @@ data Instruction =
     -}
     | Goto
     {
-    goto_branchbytes :: Int16
+    goto_branchbytes :: Word16
     }
     {-
     OP: 1010 0111, a7
@@ -248,7 +249,8 @@ data Instruction =
     OP: 0000 0101, 05
     Byte: None
     Stack: → 2
-    Description: <td>load the int value 2 onto the stack</td>
+    Description: <td>
+     the int value 2 onto the stack</td>
     -}
     | Iconst_3
     {-
@@ -310,7 +312,7 @@ data Instruction =
     -}
     | If_Icmpge
     {
-    if_icmpge_branchbytes :: Int16
+    if_icmpge_branchbytes :: Word16
     }
     {-
     OP: 1010 0010, a2
@@ -320,7 +322,7 @@ data Instruction =
     -}
     | If_Icmpgt
     {
-    if_icmpgt_branchbytes :: Int16
+    if_icmpgt_branchbytes :: Word16
     }
     {-
     OP: 1010 0011, a3
@@ -330,7 +332,7 @@ data Instruction =
     -}
     | If_Icmple
     {
-    if_icmple_branchbytes :: Int16
+    if_icmple_branchbytes :: Word16
     }
     {-
     OP: 1010 0100, a4
@@ -340,7 +342,7 @@ data Instruction =
     -}
     | If_Icmplt
     {
-    if_icmplt_branchbytes :: Int16
+    if_icmplt_branchbytes :: Word16
     }
     {-
     OP: 1010 0001, a1
@@ -350,7 +352,7 @@ data Instruction =
     -}
     | If_Icmpne
     {
-    if_icmpne_branchbytes :: Int16
+    if_icmpne_branchbytes :: Word16
     }
     {-
     OP: 1010 0000, a0
@@ -410,7 +412,7 @@ data Instruction =
     -}
     | Ifne
     {
-    ifne_branchbytes :: Int16
+    ifne_branchbytes :: Word16
     }
     {-
     OP: 1001 1010, 9a

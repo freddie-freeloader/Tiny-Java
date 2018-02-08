@@ -1,0 +1,103 @@
+module Compiler.AstToClassFileTranslator.MaxStackCalculator where
+import Compiler.Instructions
+import Data.Word (Word8, Word16)
+
+evalInstructionStackImpact :: [Instruction] -> Word16
+evalInstructionStackImpact xs = foldr (\x acc -> stackImpact x + acc) 0 xs
+
+stackImpact Areturn = 0
+stackImpact (Astore _) = 0
+stackImpact Astore_0 = 0
+stackImpact Astore_1 = 0
+stackImpact (Checkcast _) = 0
+stackImpact (Getfield _) = 0
+stackImpact (Goto _) = 0
+stackImpact (Goto_W _) = 0
+stackImpact I2C = 0
+stackImpact (If_Acmpne _) = 0
+stackImpact (If_Acmpeq _) = 0
+stackImpact (If_Icmpeq _) = 0
+stackImpact (If_Icmpge _) = 0
+stackImpact (If_Icmpgt _) = 0
+stackImpact (If_Icmple _) = 0
+stackImpact (If_Icmplt _) = 0
+stackImpact (If_Icmpne _) = 0
+stackImpact (Ifeq _) = 0
+stackImpact (Ifge _) = 0
+stackImpact (Ifgt _) = 0
+stackImpact (Ifle _) = 0
+stackImpact (Iflt _) = 0
+stackImpact (Ifne _) = 0
+stackImpact (Ifnonnull _) = 0
+stackImpact (Ifnull _) = 0
+stackImpact (Iinc _ _) = 0
+stackImpact Ineg = 0
+stackImpact (Instanceof _) = 0
+stackImpact (Invokespecial _) = 0
+stackImpact (Invokestatic _) = 0
+stackImpact (Invokevirtual _) = 0
+stackImpact Ior = 0
+stackImpact Irem = 0
+stackImpact Ireturn = 0
+stackImpact Ishl = 0
+stackImpact Ishr = 0
+stackImpact (Istore _) = 0
+stackImpact Istore_0 = 0
+stackImpact Istore_1 = 0
+stackImpact Istore_2 = 0
+stackImpact Istore_3 = 0
+stackImpact Isub = 0
+stackImpact Iushr = 0
+stackImpact Ixor = 0
+stackImpact (Lookupswitch _ _ _ _ _ _ _ _ _) = 0
+stackImpact Nop = 0
+stackImpact Pop = 0
+stackImpact Pop2 = 0
+stackImpact (Putfield _) = 0
+stackImpact (Putstatic _) = 0
+stackImpact (Ret _) = 0
+stackImpact Return = 0
+stackImpact Swap = 0
+stackImpact (Tableswitch _ _ _ _ _ _ _ _ _ _ _ _ _) = 0
+stackImpact (WideIinc _ _) = 0
+
+stackImpact Aconst_Null = 1
+stackImpact (Aload _) = 1
+stackImpact Aload_0 = 1
+stackImpact Aload_1 = 1
+stackImpact Aload_2 = 1
+stackImpact Aload_3 = 1
+stackImpact (Bipush _) = 1
+stackImpact (Sipush _) = 1
+stackImpact Dup = 1
+stackImpact Dup_X1 = 1
+stackImpact Dup_X2 = 1
+stackImpact (Getstatic _) = 1
+stackImpact Iadd = 1
+stackImpact Iand = 1
+stackImpact Iconst_M1 = 1
+stackImpact Iconst_0 = 1
+stackImpact Iconst_1 = 1
+stackImpact Iconst_2 = 1
+stackImpact Iconst_3 = 1
+stackImpact Iconst_4 = 1
+stackImpact Iconst_5 = 1
+stackImpact Idiv = 1
+stackImpact (Iload _) = 1
+stackImpact Iload_0 = 1
+stackImpact Iload_1 = 1
+stackImpact Iload_2 = 1
+stackImpact Iload_3 = 1
+stackImpact Imul = 1
+stackImpact (Jsr _) = 1
+stackImpact (Jsr_W _) = 1
+stackImpact (Ldc _) = 1
+stackImpact (Ldc_W _) = 1
+stackImpact (New _) = 1
+
+stackImpact Dup2 = 2
+stackImpact Dup2_X1 = 2
+stackImpact Dup2_X2 = 2
+
+stackImpact (Wide inst _) = stackImpact inst
+stackImpact _ = 0
