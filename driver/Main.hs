@@ -5,6 +5,7 @@ import           Compiler.Ast                                  (Class (..),
                                                                 Identifier (..))
 import           Compiler.BytecodeGeneration.ByteFileGenerator (generateByteFile)
 import           Compiler.Parser                               (parseSrc)
+import Compiler.AstToClassFileTranslator.GenerateAbstractClassFile (translateToAbstractClassFile)
 import           Compiler.Type_Check                           (typecheck)
 import           Compiler.Utils                                (Error (..))
 import           Control.Applicative                           (optional, (<|>))
@@ -26,7 +27,7 @@ main = run
 cliParser :: Parser (Maybe T.FilePath, Bool, Bool, Bool)
 cliParser = (\ a b c d -> (a,b,c,d)) <$>
   (optional (argPath "FilePath" "Path to .java-file") <|> pure Nothing)
-  <*> switch "parse-only" 'p' "If this flag is set, the compiler will only type-check the code."
+  <*> switch "parse-only" 'p' "If this flag is set, the compiler will only parse the code."
   <*> switch "type-only" 't' "If this flag is set, the compiler will only type-check the code."
   <*> switch "verbose" 'v' "If this flag is set, the final result will be output on stdout."
 
@@ -36,7 +37,7 @@ type SuccessHandler result = String -> Bool -> result -> IO ()
 run :: IO ()
 run =
   do
-    (filePath,parserFlag,typeCheckFlag,verboseFlag) <- options "Tiny Java Compiler" cliParser
+    (filePath,parserFlag,typeCheckFlag,verboseFlag) <- options programInfo cliParser
     input <- getInput filePath
     let inputName = fromMaybe "StdIn" $ show <$> filePath
     if parserFlag
@@ -45,6 +46,7 @@ run =
                then run untilTypecheck (handleSuccess "type-checked") inputName input verboseFlag
                else run runFullPipeline handleSuccessAndWrite inputName input verboseFlag)
   where
+    programInfo = "Tiny Java Compiler\n\nA compiler for a subset of java"
     run :: Pipeline a -> SuccessHandler a -> String -> T.Text -> Bool -> IO ()
     run pipeline successHandler inputName input verboseFlag =
       do
@@ -64,7 +66,7 @@ handleSuccess :: Show result => String -> SuccessHandler [(String,result)]
 handleSuccess jobName inputName verboseFlag results = do
   printSuccessMessage inputName jobName
   if verboseFlag
-    then mapM_ (\(name,res) -> printf("\nClass Name: "%w%"\nByte-code:\n"%w%"\n") name res) results
+    then mapM_ (\(name,res) -> printf("\n=======\nThe raw result:\n\nClass Name: "%w%"\nAST:\n"%w%"\n") name res) results
     else return ()
 
 handleSuccessAndWrite :: SuccessHandler Result
@@ -72,7 +74,7 @@ handleSuccessAndWrite inputName verboseFlag results = do
   mapM_ (uncurry generateByteFile) results
   printSuccessMessage inputName "compiled"
   if verboseFlag
-    then mapM_ (\(name,res) -> printf("\nClass Name: "%w%"\nByte-code:\n"%w%"\n") name res) results
+    then mapM_ (\(name,res) -> printf("\n=======\nThe raw result:\n\nClass Name: "%w%"\nByte-code:\n"%w%"\n") name res) results
     else return ()
 
 printSuccessMessage :: String -> String ->  IO ()
@@ -106,7 +108,8 @@ runFullPipeline filePath input =
     return $ zip (map fst typeCheckResult) compilationResult
   where
     compileByteCode :: Class -> Either Error ClassFile
-    compileByteCode = const $ Left $ InternalError "Byte-code-generation failed!"
+    -- TODO
+    compileByteCode jclass = Right $ translateToAbstractClassFile jclass
 
 getInput :: Maybe T.FilePath -> IO T.Text
 getInput (Just filePath) = readTextFile filePath
