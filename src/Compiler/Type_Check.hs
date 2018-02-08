@@ -1,7 +1,6 @@
 module Compiler.Type_Check(typecheck, typecheckprogram) where
 
 import Compiler.Ast
-import Compiler.Parser 
 import Compiler.Utils
 import Data.List(lookup)
 import Data.Tuple(swap)
@@ -19,12 +18,6 @@ nottyped = InternalError "Typecheck-method returned non typed expression or stat
 
 typecheck :: [Class] -> Either Error [Class]
 typecheck = reduceErrors . typecheckprogram
-
-typecheckteststring :: String -> Either Error [Class]
-typecheckteststring str = 
-  case parseTestString str of
-    Nothing  -> Left (ParseError "The test string could not be parsed.")
-    Just cls -> (reduceErrors . typecheckprogram) cls 
 
 typecheckprogram :: [Class] -> [Either Error Class]
 typecheckprogram cls = map (typecheckclass cls) cls
