@@ -41,7 +41,7 @@ minverToByte :: MinorVersion -> [Word8]
 minverToByte _ = [0x00,0x00]
 
 maxverToByte :: MajorVersion -> [Word8]
-maxverToByte _ = [0x00,0x34]
+maxverToByte _ = [0x00,0x30]
 
 arrayCPToByte :: ConstantPool -> [Word8]
 arrayCPToByte arrayCP = constantPoolToByte arrayCP
