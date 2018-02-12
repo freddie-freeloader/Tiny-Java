@@ -9,7 +9,8 @@ maintainer: Rick Sanchez <rick@sanchez.net>
 
 ghc-options: -Wall -fno-warn-name-shadowing
 
-default-extensions: DuplicateRecordFields
+default-extensions:
+  - DuplicateRecordFields
 
 dependencies:
  - base == 4.*
@@ -24,6 +25,7 @@ executable:
     - tiny-java
     - monad-loops == 0.4.*
     - turtle == 1.5.*
+    - mtl == 2.2.*
 
 library:
   source-dirs: src

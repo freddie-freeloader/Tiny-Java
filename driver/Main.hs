@@ -1,25 +1,28 @@
+{-# LANGUAGE MultiWayIf        #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
-import           Compiler.AbstractBytecode                     (ClassFile)
-import           Compiler.Ast                                  (Class (..),
-                                                                Identifier (..))
-import           Compiler.BytecodeGeneration.ByteFileGenerator (generateByteFile)
-import           Compiler.Parser                               (parseSrc)
-import Compiler.AstToClassFileTranslator.GenerateAbstractClassFile (translateToAbstractClassFile)
-import           Compiler.Type_Check                           (typecheck)
-import           Compiler.Utils                                (Error (..))
-import           Control.Applicative                           (optional, (<|>))
-import           Control.Monad.Loops                           (unfoldM)
-import           Data.Maybe                                    (fromMaybe)
-import qualified Data.Text                                     as Text (pack,
-                                                                        unpack)
-import qualified Turtle                                        as T (FilePath,
-                                                                     Text,
-                                                                     linesToText)
-import           Turtle.Format
-import           Turtle.Options
-import           Turtle.Prelude
-
+import           Compiler.AbstractBytecode                                   (ClassFile)
+import           Compiler.Ast                                                (Class (..), Identifier (..))
+import           Compiler.AstToClassFileTranslator.GenerateAbstractClassFile (translateToAbstractClassFile)
+import           Compiler.BytecodeGeneration.ByteFileGenerator               (generateByteFile)
+import           Compiler.Parser                                             (parseSrc)
+import           Compiler.Type_Check                                         (typecheck)
+import           Compiler.Utils                                              (Error (..))
+import           Control.Arrow                                               (first)
+import           Control.Applicative                                         (optional, (<|>))
+import           Control.Monad                                               (when)
+import           Control.Monad.Loops                                         (unfoldM)
+import           Data.Maybe                                                  (fromMaybe)
+import qualified Data.Text as Text                                           (pack, unpack)
+import Control.Monad.Except                                                  (MonadError,throwError)
+import qualified Turtle as T                                                 (FilePath, Text, linesToText)
+import           Turtle.Format                                               (eprintf,printf,w,s,(%))
+import           Turtle.Options                                              (switch,Parser,argPath,options)
+import qualified           Turtle.Prelude as T                               (readTextFile,readline)
+import Control.Monad.Reader                                                  (MonadReader,MonadIO,ask,runReaderT,liftIO)
 
 main :: IO ()
 main = run
@@ -31,86 +34,97 @@ cliParser = (\ a b c d -> (a,b,c,d)) <$>
   <*> switch "type-only" 't' "If this flag is set, the compiler will only type-check the code."
   <*> switch "verbose" 'v' "If this flag is set, the final result will be output on stdout."
 
-type Pipeline result = String -> String -> Either Error result
-type SuccessHandler result = String -> Bool -> result -> IO ()
+-- Basic types
+newtype InputName = InputName String
+newtype ClassName = ClassName { fileName :: String }
+newtype RawInput = RawInput T.Text
 
-run :: IO ()
+-- Pipeline
+type PipelineMonad a = forall m . (MonadReader (InputName, RawInput) m, MonadError Error m) => m a
+type Pipeline result = PipelineMonad [(ClassName,result)]
+
+-- Handler for successful compilation
+data HandlerEnv result = HandlerEnv [(ClassName,result)] InputName Bool
+type SuccessHandler result = forall m . (MonadReader (HandlerEnv result) m, MonadIO m) => m ()
+
+
+run :: forall io . MonadIO io => io ()
 run =
   do
-    (filePath,parserFlag,typeCheckFlag,verboseFlag) <- options programInfo cliParser
+    (filePath, parserFlag, typeCheckFlag,verboseFlag) <- options programInfo cliParser
     input <- getInput filePath
-    let inputName = fromMaybe "StdIn" $ show <$> filePath
-    if parserFlag
-      then run untilParser (handleSuccess "parsed") inputName input verboseFlag
-      else (if typeCheckFlag
-               then run untilTypecheck (handleSuccess "type-checked") inputName input verboseFlag
-               else run runFullPipeline handleSuccessAndWrite inputName input verboseFlag)
+    let inputName = InputName <$> fromMaybe "StdIn" $ show <$> filePath
+    if | parserFlag    -> run untilParser    (printSuccess "parsed") inputName input verboseFlag
+       | typeCheckFlag -> run untilTypecheck (printSuccess "type-checked") inputName input verboseFlag
+       | otherwise     -> run fullPipeline   (do printSuccess "fully compiled"; writeToFile) inputName input verboseFlag
   where
+
     programInfo = "Tiny Java Compiler\n\nA compiler for a subset of java"
-    run :: Pipeline a -> SuccessHandler a -> String -> T.Text -> Bool -> IO ()
+
+    getInput (Just filePath) = liftIO $ RawInput <$> T.readTextFile filePath
+    getInput Nothing         = RawInput . T.linesToText <$> unfoldM T.readline
+
+    run :: Pipeline a -> SuccessHandler a -> InputName -> RawInput -> Bool -> io ()
     run pipeline successHandler inputName input verboseFlag =
       do
-        let compilationResult = pipeline inputName (Text.unpack input)
-        either printError (successHandler inputName verboseFlag) compilationResult
+        let compilationResult = runReaderT pipeline (inputName, input)
+        either printError (\res -> runReaderT successHandler (HandlerEnv res inputName verboseFlag)) compilationResult
 
-printError :: Error -> IO ()
-printError = eprintf (errorTextLeft%w%errorTextRight)
-  where
+    printError = eprintf (errorTextLeft%w%errorTextRight)
+
     errorTextLeft = "=== Compile Error ===\n\nThe reason the compilation failed:\n~~~\n"
     errorTextRight = "\n~~~\n"
 
-type ClassFileName = String
-type Result = [(ClassFileName,ClassFile)]
 
-handleSuccess :: Show result => String -> SuccessHandler [(String,result)]
-handleSuccess jobName inputName verboseFlag results = do
-  printSuccessMessage inputName jobName
-  if verboseFlag
-    then mapM_ (\(name,res) -> printf("\n=======\nThe raw result:\n\nClass Name: "%w%"\nAST:\n"%w%"\n") name res) results
-    else return ()
-
-handleSuccessAndWrite :: SuccessHandler Result
-handleSuccessAndWrite inputName verboseFlag results = do
-  mapM_ (uncurry generateByteFile) results
-  printSuccessMessage inputName "compiled"
-  if verboseFlag
-    then mapM_ (\(name,res) -> printf("\n=======\nThe raw result:\n\nClass Name: "%w%"\nByte-code:\n"%w%"\n") name res) results
-    else return ()
-
-printSuccessMessage :: String -> String ->  IO ()
-printSuccessMessage inputName jobName = printf ("=== Success ===\n\n~~~\n"%s%" was successfully "%s%"!\n~~~\n") (Text.pack inputName) (Text.pack jobName)
-
-untilParser :: Pipeline [(String,Class)]
-untilParser filePath input =
+printSuccess :: Show result => String -> SuccessHandler result
+printSuccess jobName =
   do
-    nonEmptyInput <- if null input
-                       then Left $ ParseError "The input appears to be empty."
-                       else return input
-    parseResult <- parseSrc filePath  nonEmptyInput
-    return $ zip (map getClassName parseResult) parseResult
+    (HandlerEnv results (InputName inputName) verboseFlag) <- ask
+    printSuccessMessage (Text.pack inputName) (Text.pack jobName)
+    when verboseFlag $
+      mapM_ (printRawTuple . first fileName)  results
   where
-    getClassName :: Class -> ClassFileName
-    getClassName (Class (Identifier className) _ _ ) = className ++ ".class"
-    getClassName _ = error "Partial function"
+    printSuccessMessage = printf ("=== Success ===\n\n~~~\n"%s%" was successfully "%s%"!\n~~~\n")
+    printRawTuple = uncurry $ printf ("\n=======\nThe raw result:\n\nClass Name: "%w%"\nAST:\n"%w%"\n")
 
-untilTypecheck :: Pipeline [(String,Class)]
-untilTypecheck filePath input =
+writeToFile :: SuccessHandler ClassFile
+writeToFile =
   do
-    parseResult <- untilParser filePath input
-    typeCheckResult <- typecheck (map snd parseResult)
-    return $ zip (map fst parseResult) typeCheckResult
-
-runFullPipeline :: Pipeline Result
-runFullPipeline filePath input =
-  do
-    typeCheckResult <- untilTypecheck filePath input
-    compilationResult <- mapM (compileByteCode . snd) typeCheckResult
-    return $ zip (map fst typeCheckResult) compilationResult
+    (HandlerEnv results _ verboseFlag) <- ask
+    liftIO $ mapM_ (uncurry generateByteFile . first (addClassSuffix . fileName)) results
+    when verboseFlag $
+      printf "\nWrote to file\n"
   where
-    compileByteCode :: Class -> Either Error ClassFile
-    -- TODO
-    compileByteCode jclass = Right $ translateToAbstractClassFile jclass
+    addClassSuffix = flip (++) ".class"
 
-getInput :: Maybe T.FilePath -> IO T.Text
-getInput (Just filePath) = readTextFile filePath
-getInput Nothing         = T.linesToText <$> unfoldM readline
+-- Pipelines
+
+untilParser :: Pipeline Class
+untilParser  = fmap zipWithClassName $ (fromEither . parse) =<< ask
+  where
+    parse (InputName inputName, RawInput input) = parseSrc inputName (Text.unpack input)
+
+    zipWithClassName xs = zip (map getClassName xs) xs
+
+    getClassName (Class (Identifier className) _ _ ) = ClassName className
+    getClassName _ = error "Internal error: Class name should not be this or super"
+
+untilTypecheck ::  Pipeline Class
+untilTypecheck = untilParser >>= applySndAndZip (fromEither . typecheck)
+
+fullPipeline :: Pipeline ClassFile
+fullPipeline = untilTypecheck >>= mapM (mapM compileByteCode)
+  where
+    -- As long as 'translateToAbstractClassFile' is not exposing an
+    -- internal error (this would be sane!), we wrap its output in pure
+    compileByteCode = pure . translateToAbstractClassFile
+
+
+
+-- Utilities
+
+fromEither :: MonadError e m => Either e a -> m a
+fromEither = either throwError pure
+
+applySndAndZip :: (Monad m)  => ([b] -> m [c]) -> [(a, b)] -> m [(a, c)]
+applySndAndZip f xs = f (map snd xs) >>= pure . zip (map fst xs)

@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 24f0d9eba29f23f3c51a1c1cfcb644d53db98336bb208510ce3bbb893b930939
+-- hash: 9dd2a51f22565d1f6741e143299144360b762909ffacccf782bd72d135af97d4
 
 name:           tiny-java
 version:        0.0.0
@@ -63,6 +63,7 @@ executable tiny-java
     , bytestring ==0.10.8.*
     , megaparsec ==6.*
     , monad-loops ==0.4.*
+    , mtl ==2.2.*
     , text ==1.2.*
     , tiny-java
     , turtle ==1.5.*
