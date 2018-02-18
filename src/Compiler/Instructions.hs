@@ -362,7 +362,7 @@ data Instruction =
     -}
     | Ifeq
     {
-    ifeq_branchbytes :: Int16
+    ifeq_branchbytes :: Word16
     }
     {-
     OP: 1001 1001, 99
@@ -372,7 +372,7 @@ data Instruction =
     -}
     | Ifge
     {
-    ifge_branchbytes :: Int16
+    ifge_branchbytes :: Word16
     }
     {-
     OP: 1001 1100, 9c
@@ -382,7 +382,7 @@ data Instruction =
     -}
     | Ifgt
     {
-    ifgt_branchbytes :: Int16
+    ifgt_branchbytes :: Word16
     }
     {-
     OP: 1001 1101, 9d
@@ -392,7 +392,7 @@ data Instruction =
     -}
     | Ifle
     {
-    ifle_branchbytes :: Int16
+    ifle_branchbytes :: Word16
     }
     {-
     OP: 1001 1110, 9e
@@ -402,7 +402,7 @@ data Instruction =
     -}
     | Iflt
     {
-    iflt_branchbytes :: Int16
+    iflt_branchbytes :: Word16
     }
     {-
     OP: 1001 1011, 9b

@@ -57,10 +57,10 @@ getInstructionSize (Ifnonnull _) = 3
 getInstructionSize (Ifnull _) = 3
 getInstructionSize (Iinc _ _) = 3
 getInstructionSize (Iload _) = 2
-getInstructionSize (Iload_0) = 2
-getInstructionSize (Iload_1) = 2
-getInstructionSize (Iload_2) = 2
-getInstructionSize (Iload_3) = 2
+getInstructionSize (Iload_0) = 1
+getInstructionSize (Iload_1) = 1
+getInstructionSize (Iload_2) = 1
+getInstructionSize (Iload_3) = 1 
 getInstructionSize (Imul) = 1
 getInstructionSize (Ineg) = 1
 getInstructionSize (Instanceof _) = 3
@@ -84,7 +84,6 @@ getInstructionSize (Jsr _) = 3
 getInstructionSize (Jsr_W _) = 5
 getInstructionSize (Ldc _) = 2
 getInstructionSize (Ldc_W _) = 3
--- getInstructionSize (Lookupswitch _ _ _ _ _ _ _ _ _) =  TODOOOO
 getInstructionSize (New _) = 3
 getInstructionSize (Nop) = 1
 getInstructionSize (Pop) = 1
@@ -94,9 +93,8 @@ getInstructionSize (Putstatic _) = 3
 getInstructionSize (Ret _) = 2
 getInstructionSize (Return) = 1
 getInstructionSize (Swap) = 1
--- getInstructionSize (Tableswitch _ _ _ _ _ _ _ _ _ _ _ _ _) TODOOOOOO
 getInstructionSize (Wide instr _) = 2 + (getInstructionSize instr)
 getInstructionSize (WideIinc _ _) = 5
-
+getInstructionSize (Sipush _) = 3
 
 

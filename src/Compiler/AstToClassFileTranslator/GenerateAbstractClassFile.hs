@@ -80,13 +80,17 @@ module Compiler.AstToClassFileTranslator.GenerateAbstractClassFile where
     isField (Compiler.Ast.Field _) = True
     isField _ = False
     
-    translateMethods :: [Decl] -> Dictionary -> [Constant] -> [Compiler.AbstractBytecode.Method]
-    translateMethods [] dic constants = []
-    translateMethods (x : []) dic constants = [(translateMethodToAbstractByteCodeMethod x dic constants)]
-    translateMethods (x : xs) dic constants = [(translateMethodToAbstractByteCodeMethod x dic constants)] ++ (translateMethods xs dic constants)
+    translateMethods :: [Decl] -> Dictionary -> [Constant] -> Word16 -> [Compiler.AbstractBytecode.Method]
+    translateMethods [] dic constants globalFieldsCount = []
+    translateMethods (x : []) dic constants globalFieldsCount = [(translateMethodToAbstractByteCodeMethod x dic constants globalFieldsCount)]
+    translateMethods (x : xs) dic constants globalFieldsCount = [(translateMethodToAbstractByteCodeMethod x dic constants globalFieldsCount)] ++ (translateMethods xs dic constants globalFieldsCount)
     
-    translateMethodToAbstractByteCodeMethod :: Decl -> Dictionary -> [Constant] -> Compiler.AbstractBytecode.Method
-    translateMethodToAbstractByteCodeMethod (Compiler.Ast.Method (Identifier name) mods retTyp params bdy) dic cp = let
+    isRetTypeJVoid :: Type -> Bool
+    isRetTypeJVoid (JVoid) = True
+    isRetTypeJVoid _ = False
+
+    translateMethodToAbstractByteCodeMethod :: Decl -> Dictionary -> [Constant] -> Word16 -> Compiler.AbstractBytecode.Method
+    translateMethodToAbstractByteCodeMethod (Compiler.Ast.Method (Identifier name) mods retTyp params bdy) dic cp globalFieldsCount = let
         methodAccessFlags = (translateListOfModMethodToListOfMethodAccessFlag mods)
         methodNameIndex = (fromJust (cpLookUp (CONSTANT_Utf8 name) cp))
         methodDescriptorIndex = (fromJust (cpLookUp  (CONSTANT_Utf8 (methodDescriptorToString (map getTypeOfTypeIdenTuple params) retTyp)) cp))
@@ -97,38 +101,90 @@ module Compiler.AstToClassFileTranslator.GenerateAbstractClassFile where
             codeNameIndex = (6 :: Word16) 
             code = let
                 translatedBody | (isNothing bdy) = [(Compiler.Instructions.Return)]
-                               | otherwise = (getInstructionListOfReturnTupel (translateStatement (fromJust bdy) dic iniLstVarTypTupel emptyStack [])) ++ [(Compiler.Instructions.Return)]
-                in (translatedBody)
-            maxStack =  (evalInstructionStackImpact code) + 1
-            maxLocals = (Prelude.length params) + 1
+                               | otherwise = (getInstructionListOfReturnTupel (translateStatement (fromJust bdy) dic iniLstVarTypTupel [])) 
+                in (translatedBody) 
+            codeFinished | (isRetTypeJVoid retTyp) = code ++ [(Compiler.Instructions.Return)] 
+                         | otherwise = code 
+            maxStack =  (evalInstructionStackImpact code) + 1 
+            maxLocals = ((getMaxLocals codeFinished 0) + globalFieldsCount + 1)
             exceptionTables = []
             attributes = []
-            in [(Code codeNameIndex (fromIntegral maxStack) (fromIntegral maxLocals) code exceptionTables attributes)]
+            in [(Code codeNameIndex (fromIntegral maxStack) (fromIntegral maxLocals) codeFinished exceptionTables attributes)]
         in (Compiler.AbstractBytecode.Method methodAccessFlags (fromIntegral methodNameIndex) (fromIntegral methodDescriptorIndex) methodAttribute)
     
     
     getMaxLocals :: Instructions -> Word8 -> Word16
     getMaxLocals [] acc = (fromIntegral acc)
-    getMaxLocals ((Astore_0): xs) acc = (getMaxLocals xs(acc + 1))
-    getMaxLocals ((Astore_1) : xs) acc = (getMaxLocals xs(acc + 1))
-    getMaxLocals ((Astore_2) : xs) acc = (getMaxLocals xs(acc + 1))
-    getMaxLocals ((Astore_3) : xs) acc = (getMaxLocals xs(acc + 1))
-    getMaxLocals ((Astore x) : xs) acc = (getMaxLocals xs(acc + 1))
-    getMaxLocals ((Istore_0) : xs) acc = (getMaxLocals xs(acc + 1))
-    getMaxLocals ((Istore_1) : xs) acc = (getMaxLocals xs(acc + 1))
-    getMaxLocals ((Istore_2) : xs) acc = (getMaxLocals xs(acc + 1))
-    getMaxLocals ((Istore_3) : xs) acc = (getMaxLocals xs(acc + 1))
-    getMaxLocals ((Istore x) : xs) acc = (getMaxLocals xs(acc + 1))
+    getMaxLocals ((Astore_0): xs) acc | 1 > acc = (getMaxLocals xs 1)
+                                      | otherwise = (getMaxLocals xs acc)
+
+    getMaxLocals ((Astore_1) : xs) acc | 2 > acc = (getMaxLocals xs 2)
+                                       | otherwise = (getMaxLocals xs acc)
+
+    getMaxLocals ((Astore_2) : xs) acc | 3 > acc = (getMaxLocals xs 3)
+                                       | otherwise = (getMaxLocals xs acc)
+
+    getMaxLocals ((Astore_3) : xs) acc | 4 > acc = (getMaxLocals xs 4)
+                                       | otherwise = (getMaxLocals xs acc)
+
+    getMaxLocals ((Astore x) : xs) acc | x > acc = (getMaxLocals xs x)
+                                       | otherwise = (getMaxLocals xs acc)
+
+    getMaxLocals ((Istore_0) : xs) acc | 1 > acc = (getMaxLocals xs 1)
+                                       | otherwise = (getMaxLocals xs acc)
+
+    getMaxLocals ((Istore_1) : xs) acc | 2 > acc = (getMaxLocals xs 2)
+                                       | otherwise = (getMaxLocals xs acc)
+
+    getMaxLocals ((Istore_2) : xs) acc | 3 > acc = (getMaxLocals xs 3)
+                                       | otherwise = (getMaxLocals xs acc)
+
+    getMaxLocals ((Istore_3) : xs) acc | 4 > acc = (getMaxLocals xs 4)
+                                       | otherwise = (getMaxLocals xs acc)
+
+    getMaxLocals ((Istore x) : xs) acc | x > acc = (getMaxLocals xs x)
+                                       | otherwise = (getMaxLocals xs acc)
+
+    getMaxLocals ((Aload_0): xs) acc | 1 > acc = (getMaxLocals xs 1)
+                                       | otherwise = (getMaxLocals xs acc)
+ 
+    getMaxLocals ((Aload_1) : xs) acc | 2 > acc = (getMaxLocals xs 2)
+                                        | otherwise = (getMaxLocals xs acc)
+ 
+    getMaxLocals ((Aload_2) : xs) acc | 3 > acc = (getMaxLocals xs 3)
+                                        | otherwise = (getMaxLocals xs acc)
+ 
+    getMaxLocals ((Aload_3) : xs) acc | 4 > acc = (getMaxLocals xs 4)
+                                        | otherwise = (getMaxLocals xs acc)
+ 
+    getMaxLocals ((Aload x) : xs) acc | x > acc = (getMaxLocals xs x)
+                                        | otherwise = (getMaxLocals xs acc)
+ 
+    getMaxLocals ((Iload_0) : xs) acc | 1 > acc = (getMaxLocals xs 1)
+                                        | otherwise = (getMaxLocals xs acc)
+ 
+    getMaxLocals ((Iload_1) : xs) acc | 2 > acc = (getMaxLocals xs 2)
+                                        | otherwise = (getMaxLocals xs acc)
+ 
+    getMaxLocals ((Iload_2) : xs) acc | 3 > acc = (getMaxLocals xs 3)
+                                        | otherwise = (getMaxLocals xs acc)
+ 
+    getMaxLocals ((Iload_3) : xs) acc | 4 > acc = (getMaxLocals xs 4)
+                                        | otherwise = (getMaxLocals xs acc)
+ 
+    getMaxLocals ((Iload x) : xs) acc | x > acc = (getMaxLocals xs x)
+                                        | otherwise = (getMaxLocals xs acc)
+
     getMaxLocals (_ : xs) acc = (getMaxLocals xs acc)
     
     
-    translateListOfConstructors :: [Decl] -> [Decl] -> Dictionary -> [Constant] -> [Compiler.AbstractBytecode.Method]
-    translateListOfConstructors [] field dictionary  cp = []
-    translateListOfConstructors (x : []) field dictionary cp = [(translateConstructorToAbstractByteCodeMethod x field dictionary cp)]
-    translateListOfConstructors (x : xs) field dictionary cp = [(translateConstructorToAbstractByteCodeMethod x field dictionary cp)] ++ (translateListOfConstructors xs field dictionary cp)
+    translateListOfConstructors :: [Decl] -> [Decl] -> Dictionary -> [Constant] -> Word16 -> [Compiler.AbstractBytecode.Method]
+    translateListOfConstructors [] field dictionary  cp globalFieldsCount = []
+    translateListOfConstructors (x : []) field dictionary cp globalFieldsCount = [(translateConstructorToAbstractByteCodeMethod x field dictionary cp globalFieldsCount)]
+    translateListOfConstructors (x : xs) field dictionary cp globalFieldsCount = [(translateConstructorToAbstractByteCodeMethod x field dictionary cp globalFieldsCount)] ++ (translateListOfConstructors xs field dictionary cp globalFieldsCount)
     
-    translateConstructorToAbstractByteCodeMethod :: Decl -> [Decl] -> Dictionary  -> [Constant] -> Compiler.AbstractBytecode.Method
-    translateConstructorToAbstractByteCodeMethod (Constructor _ mods params bdy) fields dic cp = let   
+    translateConstructorToAbstractByteCodeMethod :: Decl -> [Decl] -> Dictionary  -> [Constant] -> Word16 -> Compiler.AbstractBytecode.Method
+    translateConstructorToAbstractByteCodeMethod (Constructor _ mods params bdy) fields dic cp globalFieldsCount = let   
         methodAccessFlags = [M_PUBLIC]
         methodNameIndex = (4 :: Word16) 
         methodDescriptorIndex = (fromJust (cpLookUp  (CONSTANT_Utf8 (methodDescriptorToString (map getTypeOfTypeIdenTuple params) JVoid)) cp))
@@ -139,13 +195,13 @@ module Compiler.AstToClassFileTranslator.GenerateAbstractClassFile where
         methodAttribute = let
             codeNameIndex = (6 :: Word16) 
             code = let
-                defaultConstructingValue = getDefaultConstructorEntry
+                defaultConstructingValue = (getDefaultConstructorEntry)
                 initializeGlobalFields = (getInitForGlobalFields fields dic defaultConstructingValue)
                 translatedBody | (isNothing bdy) = initializeGlobalFields ++ [(Compiler.Instructions.Return)]
-                               | otherwise = (getInstructionListOfReturnTupel (translateStatement (fromJust bdy) dic iniLstVarTypTupel emptyStack initializeGlobalFields)) ++ [(Compiler.Instructions.Return)]
+                               | otherwise = (getInstructionListOfReturnTupel (translateStatement (fromJust bdy) dic iniLstVarTypTupel initializeGlobalFields)) ++ [(Compiler.Instructions.Return)]
                 in (translatedBody)
             maxStack = (evalInstructionStackImpact code) + 1
-            maxLocals = (Prelude.length params) + 1
+            maxLocals = ((getMaxLocals code 0) + globalFieldsCount + 1)
             exceptionTables = []
             attributes = []
             in [(Code codeNameIndex (fromIntegral maxStack) (fromIntegral maxLocals) code exceptionTables attributes)]
@@ -167,17 +223,21 @@ module Compiler.AstToClassFileTranslator.GenerateAbstractClassFile where
     getInitForGlobalFields decls dic instructionList = (foldr (\d acc -> (translateField d dic acc)) instructionList decls)
     
     translateField :: Decl -> Dictionary -> Instructions -> Instructions
-    translateField (Compiler.Ast.Field (VarDecl (Identifier name) _ _ bdy)) dic instructionList = let 
-        translatedBody  | (isNothing bdy) = [] 
-                        | otherwise = (getInstructionListOfReturnTupel (translateExpression (fromJust bdy) dic [] emptyStack (instructionList ++ [Aload_0])))
-        saveInstr | (Prelude.length translatedBody == 0) = []
-                  | otherwise =  translatedBody ++ [(Putfield (fromIntegral (fromJust (dictLookUp ("Field this." ++ name) dic))))]
+    translateField (Compiler.Ast.Field (VarDecl (Identifier name) _ typ bdy)) dic instructionList = let 
+        translatedBody  | (isNothing bdy) = (getInitForOnlyDecledField typ dic (instructionList ++ [Aload_0])) 
+                        | otherwise = (getInstructionListOfReturnTupel (translateExpression (fromJust bdy) dic [] (instructionList ++ [Aload_0])))
+        
+        saveInstr = translatedBody ++ [(Putfield (fromIntegral (fromJust (dictLookUp ("Field this." ++ name) dic))))]
         in saveInstr
     
     
        
+    getInitForOnlyDecledField :: Type -> Dictionary -> Instructions -> Instructions
+    getInitForOnlyDecledField (PrimType Int) dic instructionList = instructionList ++ [(Bipush 0)]
+    getInitForOnlyDecledField (PrimType Boolean) dic instructionList = instructionList ++ [(Bipush 0)]
+    getInitForOnlyDecledField (PrimType Char) dic instructionList = instructionList ++ [(Bipush 0), (I2C)]
+    getInitForOnlyDecledField (RefType name) dic instructionList =  instructionList ++ [(Aconst_Null)]   
     
-        
     
     
     getTypeOfTypeIdenTuple :: (Type, Identifier) -> Type
@@ -230,20 +290,20 @@ module Compiler.AstToClassFileTranslator.GenerateAbstractClassFile where
     
         array_fields = (map (\g -> (translateFieldToAbstractClassField g constantPool)) globalFieldList)
                      
-     
+        fieldsCount = (length globalFieldList)
     
         listOfConstructors = (returnConstructorListOfDeclList decls)
         listOfMethods  =  (returnMethodListOfDeclList decls)
     
         array_methods | (doesEmptyConstructorExists listOfConstructors) = let
-                        methodListConstr = (translateListOfConstructors listOfConstructors globalFieldList dictionary constantPool)
-                        methodListNormal = (translateMethods listOfMethods dictionary constantPool)
+                        methodListConstr = (translateListOfConstructors listOfConstructors globalFieldList dictionary constantPool (fromIntegral fieldsCount))
+                        methodListNormal = (translateMethods listOfMethods dictionary constantPool (fromIntegral fieldsCount))
                         methodList = methodListConstr ++ methodListNormal
                         in methodList
                      | otherwise =  let
                         listOfConstructorsWithEmpty = listOfConstructors ++ [createStandardConstructor]
-                        methodListConstr = (translateListOfConstructors listOfConstructorsWithEmpty globalFieldList dictionary constantPool)
-                        methodListNormal = (translateMethods listOfMethods dictionary constantPool)
+                        methodListConstr = (translateListOfConstructors listOfConstructorsWithEmpty globalFieldList dictionary constantPool (fromIntegral fieldsCount))
+                        methodListNormal = (translateMethods listOfMethods dictionary constantPool (fromIntegral fieldsCount))
                         methodList = methodListConstr ++ methodListNormal
                         in methodList
                                    

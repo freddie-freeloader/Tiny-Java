@@ -192,8 +192,9 @@ module Compiler.AstToClassFileTranslator.ConstantPoolGenerator where
       (varTyAfterFieldRef, cpAfterFieldRef, dictAfterFieldRef) = case fieldType of
           Just type_ -> ((\(cpAf, dictAf) -> (varTypeTable, cpAf, dictAf)) (fieldRefToCP className name type_ cp dictionary))
           Nothing    -> (varTypeTable, cp, dictionary)
+      (varTyAfterExpression, cpAfterExpression, dictAfterExpression) = expressionValueToCP class_ expression varTyAfterFieldRef cpAfterFieldRef dictAfterFieldRef
     in
-      (varTyAfterFieldRef, cpAfterFieldRef, dictAfterFieldRef)
+      (varTyAfterExpression, cpAfterExpression, dictAfterExpression)
   stmtExprToCP class_ (TypedStmtExpr(Instantiation name expressions, _)) varTypeTable cp dictionary =
     let
       (varTyAfterExpression, cpAfterExpression, dictAfterExpression) = foldr (\expression (varTyAcc, cpAcc, dictAcc) -> expressionValueToCP class_ expression varTyAcc cpAcc dictAcc) (varTypeTable, cp, dictionary) (reverse expressions) -- NOTE: Reverse for easy debugging
@@ -204,18 +205,25 @@ module Compiler.AstToClassFileTranslator.ConstantPoolGenerator where
       (cpAfterMethodRef, dictAfterMethodRef) = methodRefToCP (fullClass class_ name) methodName expressionTypes JVoid cpAfterClassInMethod dictAfterClassInMethod
     in
       (varTyAfterExpression, cpAfterMethodRef, dictAfterMethodRef)
-  stmtExprToCP class_ (TypedStmtExpr(Apply (TypedExpression(Iden (Name path (Identifier name)), _)) expressions, returnType)) varTypeTable cp dictionary =
+  stmtExprToCP class_ (TypedStmtExpr(Apply (Iden (Name path (Identifier name))) expressions, returnType)) varTypeTable cp dictionary =
     let
-      (varTyAfterParams, cpAfterParams, dictAfterParams) = foldr (\expr (varTyAcc, cpAcc, dictAcc) -> expressionValueToCP class_ expr varTyAcc cpAcc dictAcc) (varTypeTable, cp, dictionary) (reverse expressions)
-      types = foldr (\(TypedExpression(_, t)) acc -> t : acc) [] expressions
-      pathToName p | length p > 1 = Name (init p) (last p)
-                   | length p == 1 = Name [] (head p)
-                   | length p == 0 = Name [] This
-      classType p | length p >= 1 = case varTypeTableLookUp (fullClass class_ (pathToName p)) varTyAfterParams of
-          Just (RefType val) -> fullClass class_ val
-          Nothing -> fullClass class_ (pathToName p)
-                  | otherwise = fullClass class_ (pathToName p)
-      (cpAfterMethodRef, dictAfterMethodRef) = methodRefToCP (classType path) name types returnType cpAfterParams dictAfterParams
+      (varTyAfterParams, cpAfterParams, dictAfterParams) = foldr (\expr (varTyAcc, cpAcc, dictAcc) -> expressionValueToCP class_ expr varTyAcc cpAcc dictAcc) (varTypeTable, cp, dictionary) (reverse expressions) -- FIXME: Add auto This to methods
+      expressionTypes = foldr (\(TypedExpression(_, type_)) acc -> type_ : acc) [] expressions
+      pathType [] = Name [] This
+      pathType [This] = Name [] This
+      pathType [Super] = Name [] Super
+      pathType p | length p == 1 = case varTypeTableLookUp (((translateType class_) . head) p) varTyAfterParams of ------------------------------
+                                     Just (RefType n) -> n -- Other class
+                                     Just (PrimType Int) -> Name [Identifier "java", Identifier "lang"] (Identifier "Integer") -- Silent cast
+                                     Just (PrimType Char) -> Name [Identifier "java", Identifier "lang"] (Identifier "Character") -- Silent cast
+                                     Just (PrimType Boolean) -> Name [Identifier "java", Identifier "lang"] (Identifier "Boolean") -- Silent cast
+                                     Just JVoid -> Name [] This -- Shouldn't happen
+                                     Nothing -> Name [] This -- Means that it is owned by the class itself, or is an error
+                 | length p >= 2 = Name (init p) (last p)
+                 | length p == 0 = Name [] This
+      pathType _ = Name [] This
+      pathClass = fullClass class_ (pathType path)
+      (cpAfterMethodRef, dictAfterMethodRef) = methodRefToCP pathClass name expressionTypes returnType cpAfterParams dictAfterParams
     in
       (varTypeTable, cpAfterMethodRef, dictAfterMethodRef)
   stmtExprToCP class_ (TypedStmtExpr(SEUnOp _ expression, _)) varTypeTable cp dictionary =
@@ -321,10 +329,10 @@ module Compiler.AstToClassFileTranslator.ConstantPoolGenerator where
 
   -- | Will add a name and type index reference to the constant pool
   methodNameAndTypeToCP :: String -> [Type] -> Type -> [Constant] -> ([Constant], Int)
-  methodNameAndTypeToCP name param returnType cp = updateCP nameAndtTypeConst cpAfterType
+  methodNameAndTypeToCP name param returnType cp = updateCP nameAndtTypeConst cpAfterTypeSign
     where (cpAfterName, nameIndex) = utf8ToCP name cp
           (cpAfterTypeSign, typeSignIndex) = methodDescriptorToCP param returnType cpAfterName
-          (cpAfterType, _) = methodTypeToCP param returnType cpAfterTypeSign -- NOTE: Index not needed, just extra work
+     --     (cpAfterType, _) = methodTypeToCP param returnType cpAfterTypeSign -- NOTE: Index not needed, just extra work
           nameAndtTypeConst = CONSTANT_NameAndType (fromIntegral nameIndex) (fromIntegral typeSignIndex)
 
 
@@ -345,12 +353,15 @@ module Compiler.AstToClassFileTranslator.ConstantPoolGenerator where
 
   -- | Will add a constructor/method reference and descriptor reference to the constant pool
   methodRefToCP :: String -> String -> [Type] -> Type -> [Constant] -> Dictionary -> ([Constant], Dictionary)
-  methodRefToCP class_ name param returnType cp dictionary = (cpAfterMethodType, dictAfterRef)
+  methodRefToCP class_ name param returnType cp dictionary = (cpAfterMethodRef, dictAfterThis)
     where (cpAfterClass, classIndex) = classToCP class_ cp
           (cpAfterNameAndType, nameAndtTypeIndex) = methodNameAndTypeToCP name param returnType cpAfterClass
           methodRefConst = CONSTANT_MethodRef (fromIntegral classIndex) (fromIntegral nameAndtTypeIndex)
           (cpAfterMethodRef, methodRefIndex) = updateCP methodRefConst cpAfterNameAndType
-          (cpAfterMethodType, methodTypeIndex) = methodTypeToCP param returnType cpAfterMethodRef
+        --  (cpAfterMethodType, methodTypeIndex) = methodTypeToCP param returnType cpAfterMethodRef
+          
+            
+          
           isThis = classIndex == 2
           dictAfterRef = updateDict ("Method " ++ class_ ++ "." ++ name ++ ":" ++ (methodDescriptorToString param returnType), methodRefIndex) dictionary
           dictAfterThis | isThis = updateDict ("Method this." ++ name ++ ":" ++ (methodDescriptorToString param returnType), methodRefIndex) dictAfterRef
@@ -376,10 +387,10 @@ module Compiler.AstToClassFileTranslator.ConstantPoolGenerator where
 
 
   -- | Will be used in method to indicate descriptor
-  methodTypeToCP :: [Type] -> Type -> [Constant] -> ([Constant], Int)
-  methodTypeToCP param returnType cp = updateCP methodTypeConst cpAfterDescriptor
-    where (cpAfterDescriptor, descriptorIndex) = methodDescriptorToCP param returnType cp
-          methodTypeConst = CONSTANT_MethodType (fromIntegral descriptorIndex)
+  -- methodTypeToCP :: [Type] -> Type -> [Constant] -> ([Constant], Int)
+  -- methodTypeToCP param returnType cp = updateCP methodTypeConst cpAfterDescriptor
+  --   where (cpAfterDescriptor, descriptorIndex) = methodDescriptorToCP param returnType cp
+  --         methodTypeConst = CONSTANT_MethodType (fromIntegral descriptorIndex)
 
 
   -- | Will add a type to the constant pool

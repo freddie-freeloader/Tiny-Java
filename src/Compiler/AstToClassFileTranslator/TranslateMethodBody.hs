@@ -1,5 +1,4 @@
 module Compiler.AstToClassFileTranslator.TranslateMethodBody where
-import Compiler.AstToClassFileTranslator.Stack
 import Compiler.AbstractBytecode
 import Compiler.Instructions
 import Compiler.Ast
@@ -9,9 +8,8 @@ import Data.Word (Word8, Word16)
 import Data.Int (Int16, Int32, Int64)
 import Data.Maybe
 import Compiler.AstToClassFileTranslator.ConstantPoolGenerator
--- DEFINITION LISTE IN LOKALE VARIABLEN
 
-type ListVarTypTupel = (String, Word8, Type)  -- wird Zeug eingetragen was mit store gespeichert wurde
+type ListVarTypTupel = (String, Word8, Type)  
 type ReturnValueTupel = ([ListVarTypTupel], Instructions)
 
 
@@ -22,606 +20,692 @@ type ReturnValueTupel = ([ListVarTypTupel], Instructions)
 
 
                                             -- STATEMENT TRANSLATION --
-translateStatement :: Compiler.Ast.Statement -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateStatement (TypedStatement ((While cnd bdy), typ)) constantPool lstVarTypTupel stck instructionsList = (translateWhileStatement cnd bdy constantPool lstVarTypTupel stck instructionsList)
-translateStatement (TypedStatement ((If cnd thn els), typ)) constantPool lstVarTypTupel stck instructionsList = (translateIfStatement cnd thn els constantPool lstVarTypTupel stck instructionsList)
-translateStatement (TypedStatement ((Block stmt), typ)) constantPool lstVarTypTupel stck instructionsList = (translateBlockStatement stmt constantPool lstVarTypTupel stck instructionsList)
-translateStatement (TypedStatement ((Compiler.Ast.Return maybeExpr), typ)) constantPool lstVarTypTupel stck instructionsList = (translateReturnStatement maybeExpr typ constantPool lstVarTypTupel stck instructionsList)
-translateStatement (TypedStatement ((Continue), typ)) constantPool lstVarTypTupel stck instructionsList = (translateContinueStatement lstVarTypTupel stck instructionsList)
--- translateStatement (TypedStatement ((Break), typ)) constantPool lstVarTypTupel stck instructionsList = mein job
-translateStatement (TypedStatement ((LocalVar lclVar), typ)) constantPool lstVarTypTupel stck instructionsList = (translateLocalVarStatement lclVar constantPool lstVarTypTupel stck instructionsList)
-translateStatement (TypedStatement ((StmtExprStmt stmtExpr), typ)) constantPool lstVarTypTupel stck instructionsList = 
-    (translateStatementExpresion stmtExpr constantPool lstVarTypTupel stck instructionsList)
+translateStatement :: Compiler.Ast.Statement -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translateStatement (TypedStatement ((While cnd bdy), typ)) constantPool lstVarTypTupel   instructionsList = (translateWhileStatement cnd bdy constantPool lstVarTypTupel   instructionsList)
+translateStatement (TypedStatement ((If cnd thn els), typ)) constantPool lstVarTypTupel   instructionsList = (translateIfStatement cnd thn els constantPool lstVarTypTupel   instructionsList)
+translateStatement (TypedStatement ((Block stmt), typ)) constantPool lstVarTypTupel   instructionsList = (translateBlockStatement stmt constantPool lstVarTypTupel   instructionsList)
+translateStatement (TypedStatement ((Compiler.Ast.Return maybeExpr), typ)) constantPool lstVarTypTupel   instructionsList = (translateReturnStatement maybeExpr typ constantPool lstVarTypTupel   instructionsList)
+translateStatement (TypedStatement ((Continue), typ)) constantPool lstVarTypTupel   instructionsList = (translateContinueStatement lstVarTypTupel   instructionsList)
+translateStatement (TypedStatement ((LocalVar lclVar), typ)) constantPool lstVarTypTupel   instructionsList = (translateLocalVarStatement lclVar constantPool lstVarTypTupel   instructionsList)
+translateStatement (TypedStatement ((StmtExprStmt stmtExpr), typ)) constantPool lstVarTypTupel   instructionsList = 
+    (translateStatementExpresion stmtExpr constantPool lstVarTypTupel   instructionsList)
                                                                                                                                
-
-
---                                              ___ -> typ von rückgabewert
-translateReturnStatement :: Maybe Expression -> Type -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateReturnStatement (Just expr) (PrimType _) constantPool lstVarTypTupel stck instructionsList = let
-    translatedExpression = (getInstructionListOfReturnTupel (translateExpression expr constantPool lstVarTypTupel stck instructionsList))
+translateReturnStatement :: Maybe Expression -> Type -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translateReturnStatement (Just expr) (PrimType _) constantPool lstVarTypTupel   instructionsList = let
+    translatedExpression = (getInstructionListOfReturnTupel (translateExpression expr constantPool lstVarTypTupel   instructionsList))
     newInstructionLstWithReturn = translatedExpression ++ [(Ireturn)]
     in (lstVarTypTupel, newInstructionLstWithReturn)
-translateReturnStatement (Just expr) (RefType _) constantPool lstVarTypTupel stck instructionsList = let
-    translatedExpression = (getInstructionListOfReturnTupel (translateExpression expr constantPool lstVarTypTupel stck instructionsList))
+translateReturnStatement (Just expr) (RefType _) constantPool lstVarTypTupel   instructionsList = let
+    translatedExpression = (getInstructionListOfReturnTupel (translateExpression expr constantPool lstVarTypTupel   instructionsList))
     newInstructionLstWithReturn = translatedExpression ++ [(Areturn)]
     in (lstVarTypTupel, newInstructionLstWithReturn)
-translateReturnStatement (Just expr) (JVoid) constantPool lstVarTypTupel stck instructionsList = let 
+translateReturnStatement (Just expr) (JVoid) constantPool lstVarTypTupel   instructionsList = let 
     newInstructionLstWithReturn = instructionsList ++ [(Compiler.Instructions.Return)]
     in (lstVarTypTupel, newInstructionLstWithReturn)
-translateReturnStatement Nothing _ constantPool lstVarTypTupel stck instructionsList = let
+translateReturnStatement Nothing _ constantPool lstVarTypTupel   instructionsList = let
     newInstructionLstWithReturn = instructionsList ++ [(Compiler.Instructions.Return)]
     in (lstVarTypTupel, newInstructionLstWithReturn)
 
-translateContinueStatement :: [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateContinueStatement lstVarTypTupel stck instructionsList = let
-    instrListWithContinue = instructionsList ++ [(Goto (fromIntegral (top stck)))] 
+translateContinueStatement :: [ListVarTypTupel]  -> Instructions -> ReturnValueTupel
+translateContinueStatement lstVarTypTupel   instructionsList = let
+    gtoAdr = (-1) * (((getInstructionSize (Ifne 1))  + (sumInstructionSizeInInstructionList instructionsList))) 
+    instrListWithContinue = instructionsList ++ [(Goto (fromIntegral gtoAdr))] 
     in (lstVarTypTupel, instrListWithContinue)
 
 
-translateWhileStatement :: Expression -> Maybe Statement -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateWhileStatement cnd (Just bdy) constantPool lstVarTypTupel stck instructionsList = let
-    stckWthGotoAddr =  (push (getNextInstructionIndex instructionsList) stck)
-    translatedCondition = (getInstructionListOfReturnTupel (translateExpression cnd constantPool lstVarTypTupel stck instructionsList)) ++ [(Ifne 1)]
-    currentListSize = (length translatedCondition)
-    translatedBody = (getInstructionListOfReturnTupel (translateStatement bdy constantPool lstVarTypTupel stckWthGotoAddr instructionsList)) ++ [(Goto (top stckWthGotoAddr))]
-    ifFalseAddress = (getNextInstructionIndex translatedBody)
-    splittedList = (splitAt currentListSize translatedBody)
-    replacedIfJumpAddressInstrListFinished = (init (fst splittedList)) ++ [(Ifne ifFalseAddress)] ++ (snd splittedList)
-    in (lstVarTypTupel, replacedIfJumpAddressInstrListFinished)
-translateWhileStatement cnd Nothing constantPool lstVarTypTupel stck instructionsList = let
-    ifIndex =  (getNextInstructionIndex instructionsList)
-    translatedCondition = (getInstructionListOfReturnTupel (translateExpression cnd constantPool lstVarTypTupel stck instructionsList)) ++ [(Ifne ifIndex)]  
-    in (lstVarTypTupel, translatedCondition)
+translateWhileStatement :: Expression -> Maybe Statement -> Dictionary -> [ListVarTypTupel]  -> Instructions -> ReturnValueTupel
+translateWhileStatement cnd (Just bdy) constantPool lstVarTypTupel   instructionsList = let
+    translatedCondition = (getInstructionListOfReturnTupel (translateExpression cnd constantPool lstVarTypTupel   []))
+    translatedBody = (getInstructionListOfReturnTupel (translateStatement bdy constantPool lstVarTypTupel  translatedCondition)) 
+    splittedList = (splitAt (length translatedCondition) translatedBody)
+    
+    gtoAdr = (-1) * (((getInstructionSize (Ifne 1))  + (sumInstructionSizeInInstructionList translatedBody))) 
+    gto = [(Goto (fromIntegral gtoAdr))] 
+    
+    ifFalseAddress = (sumInstructionSizeInInstructionList (snd splittedList))  + (getInstructionSize (Goto 1)) +  (getInstructionSize (Ifne 1))  
+
+    finishedWhile = instructionsList ++ (fst splittedList) ++ [(Ifeq ifFalseAddress)] ++ (snd splittedList) ++ gto
+    in (lstVarTypTupel, finishedWhile)
+
+translateWhileStatement cnd Nothing constantPool lstVarTypTupel   instructionsList = let
+    translatedCondition = (getInstructionListOfReturnTupel (translateExpression cnd constantPool lstVarTypTupel   [])) 
+    condLength = (sumInstructionSizeInInstructionList translatedCondition) 
+    condFinished = instructionsList ++ translatedCondition ++ [(Ifne (-condLength))] 
+    in (lstVarTypTupel, condFinished)
 
 
 
-translateBlockStatement :: [Statement] -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateBlockStatement [] constantPool lstVarTypTupel stck instructionsList = (lstVarTypTupel, instructionsList)
-translateBlockStatement (x : []) constantPool lstVarTypTupel stck instructionsList = (translateStatement x constantPool lstVarTypTupel stck instructionsList)
-translateBlockStatement (x : xs ) constantPool lstVarTypTupel stck instructionsList = let
-    translatedFirstStatement = (translateStatement x constantPool lstVarTypTupel stck instructionsList)
-    translatedRest = (translateBlockStatement xs constantPool (getLocalVarIndexListOfReturnTupel translatedFirstStatement) stck (getInstructionListOfReturnTupel translatedFirstStatement))
+translateBlockStatement :: [Statement] -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translateBlockStatement [] constantPool lstVarTypTupel   instructionsList = (lstVarTypTupel, instructionsList)
+translateBlockStatement (x : []) constantPool lstVarTypTupel   instructionsList = (translateStatement x constantPool lstVarTypTupel   instructionsList)
+translateBlockStatement (x : xs ) constantPool lstVarTypTupel   instructionsList = let
+    translatedFirstStatement = (translateStatement x constantPool lstVarTypTupel  instructionsList)
+    translatedRest = (translateBlockStatement xs constantPool (getLocalVarIndexListOfReturnTupel translatedFirstStatement) (getInstructionListOfReturnTupel translatedFirstStatement))
     in (lstVarTypTupel, (getInstructionListOfReturnTupel translatedRest))
 
-translateIfStatement :: Expression -> Maybe Statement -> Maybe Statement -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateIfStatement cnd Nothing Nothing constantPool lstVarTypTupel stck instructionsList = (translateExpression cnd constantPool lstVarTypTupel stck instructionsList) -- könnte wegoptimiert werden
-translateIfStatement cnd (Just thn) Nothing constantPool lstVarTypTupel stck instructionsList = let
-    translatedConditionInstructionLst = (getInstructionListOfReturnTupel (translateExpression cnd constantPool lstVarTypTupel stck instructionsList)) ++ [(Ifne 1)]
-    lengthInstructionFixIf = (length translatedConditionInstructionLst)
-    thenInstructionList = (getInstructionListOfReturnTupel (translateStatement thn constantPool lstVarTypTupel stck translatedConditionInstructionLst))
-    getNextInstructionIndex = (sumInstructionSizeInInstructionList thenInstructionList)
-    splitTupel = (splitAt lengthInstructionFixIf thenInstructionList)
-    fixedConditionLst = (init (fst splitTupel)) ++ [(Ifne getNextInstructionIndex)] ++ (snd splitTupel)
-    in (lstVarTypTupel, fixedConditionLst)
-translateIfStatement cnd (Just thn) (Just els) constantPool lstVarTypTupel stck instructionsList = let
-    translatedConditionInstructionLst = (getInstructionListOfReturnTupel (translateExpression cnd constantPool lstVarTypTupel stck instructionsList)) ++ [(Ifne 1)]
-    lengthInstructionFixIf = (length translatedConditionInstructionLst)
-    thenInstructionList = (getInstructionListOfReturnTupel (translateStatement thn constantPool lstVarTypTupel stck translatedConditionInstructionLst))
-    getNextInstructionIndex = (sumInstructionSizeInInstructionList thenInstructionList) + 3 -- um goto für then zu überspringen -> erste zeile else
-    splitTupel = (splitAt lengthInstructionFixIf thenInstructionList)
-    fixedConditionLstWithGotoPlaceholder = (init (fst splitTupel)) ++ [(Ifne getNextInstructionIndex)] ++ (snd splitTupel) ++ [(Goto 1)]
-    splitForGoto = (length fixedConditionLstWithGotoPlaceholder)
-    translatedElseStatement = (getInstructionListOfReturnTupel (translateStatement els constantPool lstVarTypTupel stck fixedConditionLstWithGotoPlaceholder))
-    afterIfIndex = (sumInstructionSizeInInstructionList translatedElseStatement)
-    splitTupelGoto = (splitAt splitForGoto translatedElseStatement)
-    finishedLst = (init (fst splitTupelGoto)) ++ [(Goto afterIfIndex)] ++ (snd splitTupelGoto)
-    in (lstVarTypTupel, finishedLst)
+translateIfStatement :: Expression -> Maybe Statement -> Maybe Statement -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel 
+translateIfStatement cnd Nothing Nothing constantPool lstVarTypTupel   instructionsList = (translateExpression cnd constantPool lstVarTypTupel   instructionsList) -- könnte wegoptimiert werden
+translateIfStatement cnd (Just thn) Nothing constantPool lstVarTypTupel   instructionsList = let
+    translatedConditionInstructionLst = (getInstructionListOfReturnTupel (translateExpression cnd constantPool lstVarTypTupel   [])) 
+    thenInstructionList = (getInstructionListOfReturnTupel (translateStatement thn constantPool lstVarTypTupel   []))
+    ifFalseAdr = (sumInstructionSizeInInstructionList thenInstructionList) + (getInstructionSize (Ifeq 1)) 
+    finishedIfThen = instructionsList ++ translatedConditionInstructionLst ++ [(Ifeq ifFalseAdr)] ++ thenInstructionList 
+    in (lstVarTypTupel, finishedIfThen)
+translateIfStatement cnd (Just thn) (Just els) constantPool lstVarTypTupel   instructionsList = let
+    translatedConditionInstructionLst = (getInstructionListOfReturnTupel (translateExpression cnd constantPool lstVarTypTupel   [])) 
+    thenInstructionList = (getInstructionListOfReturnTupel (translateStatement thn constantPool lstVarTypTupel   []))
+    translatedElseStatement = (getInstructionListOfReturnTupel (translateStatement els constantPool lstVarTypTupel   []))
+    ifFalseAdr =  (getInstructionSize (Ifeq 1)) + (sumInstructionSizeInInstructionList thenInstructionList) + (getInstructionSize (Goto 1)) + (sumInstructionSizeInInstructionList translatedElseStatement) 
+    gtoAdr = (sumInstructionSizeInInstructionList translatedElseStatement)  + (getInstructionSize (Goto 1)) 
+    finishedIfThenElse = instructionsList ++ translatedConditionInstructionLst ++ [(Ifeq ifFalseAdr)] ++ thenInstructionList ++ [(Goto gtoAdr)] ++ translatedElseStatement 
 
-translateLocalVarStatement :: Compiler.Ast.VarDecl -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateLocalVarStatement (VarDecl identifier mods typ (Just expr)) cp lstVarTypTupel stck instructionList = let
-  rhs = (translateExpression expr cp lstVarTypTupel stck instructionList)
+    in (lstVarTypTupel, finishedIfThenElse)
+
+translateLocalVarStatement :: Compiler.Ast.VarDecl -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translateLocalVarStatement (VarDecl identifier mods typ (Just expr)) cp lstVarTypTupel   instructionList = let
+  rhs = (translateExpression expr cp lstVarTypTupel instructionList)
   number = (Just (getNextFreeIndex lstVarTypTupel 0))
   addedListVatTupel = lstVarTypTupel ++ [((identifierToString [identifier]),(fromIntegral (fromJust number)), typ)]
   updatedList = (getStoreCommandLocal number typ cp addedListVatTupel (getInstructionListOfReturnTupel rhs))
   in updatedList
-translateLocalVarStatement (VarDecl identifier mods typ Nothing) cp lstVarTypTupel stck instructionList = let
+translateLocalVarStatement (VarDecl identifier mods typ Nothing) cp lstVarTypTupel   instructionList = let
   number = (Just (getNextFreeIndex lstVarTypTupel 0))
   addedListVatTupel = lstVarTypTupel ++ [((identifierToString [identifier]), (fromIntegral (fromJust number)), typ)]
   updatedList = (getStoreCommandLocal number typ cp addedListVatTupel instructionList)
   in updatedList
 
                                             -- EXPRESSION TRANSLATION --
-translateExpression :: Compiler.Ast.Expression -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateExpression (TypedExpression ((TernaryIf cond els thn), typ)) constantPool lstVarTypTupel stck instructionsList = (translateTernaryIf cond els thn constantPool lstVarTypTupel stck instructionsList)
-translateExpression (TypedExpression ((PrimBinOp binOp exprL exprR), typ)) constantPool lstVarTypTupel stck instructionsList = (translatePrimBinOp binOp exprL exprR constantPool lstVarTypTupel stck instructionsList)
-translateExpression (TypedExpression ((PrimUnOp unOp expr), typ)) constantPool lstVarTypTupel stck instructionsList = (translatePrimUnOp unOp expr constantPool lstVarTypTupel stck instructionsList)
-translateExpression (TypedExpression ((Iden name), typ)) constantPool lstVarTypTupel stck instructionsList = (translateExpressionIden name typ constantPool lstVarTypTupel instructionsList) -- todo fast fertig außer strings
--- translateExpression (TypedExpression ((Select expr ident), typ)) constantPool lstVarTypTupel stck instructionsList = -- TODO was ist das?
-translateExpression (TypedExpression ((Literal lit), typ)) constantPool lstVarTypTupel stck instructionsList = (translateExpressionLiteral constantPool lstVarTypTupel instructionsList lit)
-translateExpression (TypedExpression ((ExprExprStmt stmtExpr), typ)) constantPool lstVarTypTupel stck instructionsList = (translateStatementExpresion stmtExpr constantPool lstVarTypTupel stck instructionsList)
-translateExpression (TypedExpression ((Cast typ1 expr), typ2)) constantPool lstVarTypTupel stck instructionsList = (translateExpressionCast typ1 expr constantPool lstVarTypTupel stck instructionsList)
+
+translateExpression :: Compiler.Ast.Expression -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translateExpression (TypedExpression ((TernaryIf cond els thn), typ)) constantPool lstVarTypTupel   instructionsList = (translateTernaryIf cond els thn constantPool lstVarTypTupel   instructionsList)
+translateExpression (TypedExpression ((PrimBinOp binOp exprL exprR), typ)) constantPool lstVarTypTupel   instructionsList = (translatePrimBinOp binOp exprL exprR constantPool lstVarTypTupel   instructionsList)
+translateExpression (TypedExpression ((PrimUnOp unOp expr), typ)) constantPool lstVarTypTupel   instructionsList = (translatePrimUnOp unOp expr constantPool lstVarTypTupel   instructionsList)
+translateExpression (TypedExpression ((Iden name), typ)) constantPool lstVarTypTupel   instructionsList = (translateExpressionIden name typ constantPool lstVarTypTupel instructionsList) 
+translateExpression (TypedExpression ((Literal lit), typ)) constantPool lstVarTypTupel   instructionsList = (translateExpressionLiteral constantPool lstVarTypTupel instructionsList lit)
+translateExpression (TypedExpression ((ExprExprStmt stmtExpr), typ)) constantPool lstVarTypTupel   instructionsList = (translateStatementExpresion stmtExpr constantPool lstVarTypTupel   instructionsList)
+translateExpression (TypedExpression ((Cast typ1 expr), typ2)) constantPool lstVarTypTupel   instructionsList = (translateExpressionCast typ1 expr constantPool lstVarTypTupel   instructionsList)
 
 
-
-
-translateExpressionCast :: Compiler.Ast.Type -> Compiler.Ast.Expression -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateExpressionCast (PrimType Char) expr cp lstVarTypTupel stck instructionsList = let
-    e = (translateExpression expr cp lstVarTypTupel stck instructionsList)
+translateExpressionCast :: Compiler.Ast.Type -> Compiler.Ast.Expression -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translateExpressionCast (PrimType Char) expr cp lstVarTypTupel   instructionsList = let
+    e = (translateExpression expr cp lstVarTypTupel   instructionsList)
     in ((getLocalVarIndexListOfReturnTupel e), ((getInstructionListOfReturnTupel e) ++ [I2C]))
-translateExpressionCast (PrimType Int) expr cp lstVarTypTupel stck instructionsList = let
-    e = (translateExpression expr cp lstVarTypTupel stck instructionsList)
+translateExpressionCast (PrimType Int) expr cp lstVarTypTupel   instructionsList = let
+    e = (translateExpression expr cp lstVarTypTupel   instructionsList)
     in e
-translateExpressionCast (RefType nme) (TypedExpression (expr, (PrimType Int))) cp lstVarTypTupel stck instructionsList = let
-    e = (translateExpression expr cp lstVarTypTupel stck instructionsList)
-    in ((getLocalVarIndexListOfReturnTupel e),((getInstructionListOfReturnTupel e) ++ [Invokestatic 10])) -- TODO 
+translateExpressionCast (RefType nme) (TypedExpression (expr, (PrimType Int))) cp lstVarTypTupel   instructionsList = let
+    e = (translateExpression expr cp lstVarTypTupel   instructionsList)
+    in ((getLocalVarIndexListOfReturnTupel e),((getInstructionListOfReturnTupel e) ++ [Invokestatic 10])) 
 
-translateExpressionCast (RefType nme) (TypedExpression (expr, (PrimType Char))) cp lstVarTypTupel stck instructionsList = let
-    e = (translateExpression expr cp lstVarTypTupel stck instructionsList)
-    in ((getLocalVarIndexListOfReturnTupel e),((getInstructionListOfReturnTupel e) ++ [Invokestatic 11])) -- TODO
+translateExpressionCast (RefType nme) (TypedExpression (expr, (PrimType Char))) cp lstVarTypTupel   instructionsList = let
+    e = (translateExpression expr cp lstVarTypTupel   instructionsList)
+    in ((getLocalVarIndexListOfReturnTupel e),((getInstructionListOfReturnTupel e) ++ [Invokestatic 11])) 
 
-translateExpressionCast (RefType nme) (TypedExpression (expr, (PrimType Boolean))) cp lstVarTypTupel stck instructionsList = let
-    e = (translateExpression expr cp lstVarTypTupel stck instructionsList)
-    in ((getLocalVarIndexListOfReturnTupel e),((getInstructionListOfReturnTupel e) ++ [Invokestatic 12])) -- TODO
-translateExpressionCast (RefType nme) (TypedExpression (expr, (RefType name))) cp lstVarTypTupel stck instructionsList = let
-    e = (translateExpression expr cp lstVarTypTupel stck instructionsList)
+translateExpressionCast (RefType nme) (TypedExpression (expr, (PrimType Boolean))) cp lstVarTypTupel   instructionsList = let
+    e = (translateExpression expr cp lstVarTypTupel   instructionsList)
+    in ((getLocalVarIndexListOfReturnTupel e),((getInstructionListOfReturnTupel e) ++ [Invokestatic 12])) 
+translateExpressionCast (RefType nme) (TypedExpression (expr, (RefType name))) cp lstVarTypTupel   instructionsList = let
+    e = (translateExpression expr cp lstVarTypTupel   instructionsList)
     in e
 
 
-translateStatementExpresion :: StmtExpr -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateStatementExpresion (TypedStmtExpr ((Assign assignOp nme expr), typ)) cp lstVarTypTupel stck instructionsList =
-    (translateAssignStmtExpr assignOp nme expr typ cp lstVarTypTupel stck instructionsList)
-translateStatementExpresion (TypedStmtExpr ((Instantiation nme expr), typ)) cp lstVarTypTupel stck instructionsList = 
-    (translateInstantiationStmtExpr nme expr cp lstVarTypTupel stck instructionsList)
-translateStatementExpresion (TypedStmtExpr ((Apply expr exprsns), typ)) cp lstVarTypTupel stck instructionsList = 
-    (translateApplyExpression expr exprsns cp lstVarTypTupel stck instructionsList)
--- translateStatementExpresion (TypedStmtExpr ((SEUnOp incrOrDecr expr), typ)) cp lstVarTypTupel stck instructionsList = TODO
+translateStatementExpresion :: StmtExpr -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translateStatementExpresion (TypedStmtExpr ((Assign assignOp nme expr), typ)) cp lstVarTypTupel   instructionsList =
+    (translateAssignStmtExpr assignOp nme expr typ cp lstVarTypTupel   instructionsList) 
+translateStatementExpresion (TypedStmtExpr ((Instantiation nme expr), typ)) cp lstVarTypTupel   instructionsList = 
+    (translateInstantiationStmtExpr nme expr cp lstVarTypTupel instructionsList typ)
+translateStatementExpresion (TypedStmtExpr ((Apply expr exprsns), typ)) cp lstVarTypTupel   instructionsList = 
+    (translateApplyExpression expr exprsns cp lstVarTypTupel  instructionsList typ)  
+translateStatementExpresion (TypedStmtExpr ((SEUnOp incrOrDecr expr), typ)) cp lstVarTypTupel   instructionsList = 
+    (translateSEUnOpExprssion incrOrDecr expr cp lstVarTypTupel instructionsList)
 
-translateApplyExpression :: Expression -> [Expression] -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
---                                   _________________________________________ > kann ich das so annehmen? TODO
-translateApplyExpression (Iden (Name [(Identifier pth)] (Identifier methodName))) passedToList cp lstVarTypTupel stck instructionsList = let
---                       ^^^^^^^^^^^^^^^^^^^^^ einzige Möglichkeit, sonst gibts haue
-    
-    translatedPassedToList = (getInstructionListOfReturnTupel (translateListOfExpressions passedToList cp lstVarTypTupel stck (instructionsList ++ [Aload_0])))
-    --                                                                                                           ^^^^^^^^^ lade derzeitiges objekt, dann übergabeparameter
-    pthPth | (length pth) == 0 = "this"
-           | otherwise = pth
-    getCpIndexOfMethod = (fromJust (dictLookUp ("Method " ++ pthPth ++ "." ++  methodName ++ ":" ++ (mapParametersMethodToDiscriptor passedToList JVoid)) cp))
+translateApplyExpression :: Expression -> [Expression] -> Dictionary -> [ListVarTypTupel]  -> Instructions -> Type -> ReturnValueTupel
+translateApplyExpression (Iden (Name [This] (Identifier methodName))) passedToList cp lstVarTypTupel instructionsList typ = let    
+    translatedPassedToList = (getInstructionListOfReturnTupel (translateListOfExpressions passedToList cp lstVarTypTupel   (instructionsList ++ [Aload_0])))
+  
+    getCpIndexOfMethod = (fromJust (dictLookUp ("Method " ++ "this." ++  methodName ++ ":" ++ (mapParametersMethodToDiscriptor passedToList typ)) cp))
                                         
-    ivokeMethod = translatedPassedToList ++ [(Invokespecial (fromIntegral getCpIndexOfMethod))]
+    ivokeMethod = translatedPassedToList ++ [(Invokevirtual (fromIntegral getCpIndexOfMethod))]
     
     in (lstVarTypTupel, ivokeMethod)
 
+translateApplyExpression (Iden (Name [idl@(Identifier pth)] (Identifier methodName))) passedToList cp lstVarTypTupel instructionsList typ = let    
+    pthPth | (length pth) == 0 = "this" 
+           | otherwise = (removeFirstAndListItemOfList (typeToString (fromJust (searchTypInListVarTypTupel idl lstVarTypTupel)))) 
+    
+    aloadCommand = (getInstructionListOfReturnTupel (getLoadRefTypeFromLocalVar (fromJust (searchIdentInListVarTypTupel idl lstVarTypTupel)) lstVarTypTupel []))
+    translatedPassedToList = (getInstructionListOfReturnTupel (translateListOfExpressions passedToList cp lstVarTypTupel   (instructionsList ++ aloadCommand)))
+
+    
+    getCpIndexOfMethod = (fromJust (dictLookUp ("Method " ++ pthPth ++ "." ++  methodName ++ ":" ++ (mapParametersMethodToDiscriptor passedToList typ)) cp))
+                                        
+    ivokeMethod = translatedPassedToList ++ [(Invokevirtual (fromIntegral getCpIndexOfMethod))]
+    
+    in (lstVarTypTupel, ivokeMethod)
+
+removeFirstAndListItemOfList :: String -> String
+removeFirstAndListItemOfList x = (snd (splitAt  1 (init x)))
 
 
+translateSEUnOpExprssion :: IncrOrDecr -> Expression -> Dictionary -> [ListVarTypTupel]  -> Instructions -> ReturnValueTupel
+translateSEUnOpExprssion (PreIncr) (TypedExpression ((Iden (Name [] iden@(Identifier name))), _ )) cp lstVarTypTupel  instructionsList = let   
+    -- index von wert wenn dieser lokal gespeichert ist
+    indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel) 
+    -- index von wert wenn dieser global gespeichert ist
+    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp)  
+                -- globale variable  
+    preincr     | (isNothing indexOfValueInLstVarTypTupel)  = let
+                    incr = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool))), (Iconst_1), (Iadd), (Putfield (fromIntegral (fromJust indexInConstantPool)))]
+                    in incr
+                -- lokale variable
+                | otherwise = let
+                    incr = instructionsList ++ [(Iinc (fromJust indexOfValueInLstVarTypTupel) 1)]
+                    in incr
+    in (lstVarTypTupel, preincr)
 
--- in einer anderen klase
--- translateApplyExpression (Iden pth methodName) exprsnList cp lstVarTypTupel stck instructionsList = let
+translateSEUnOpExprssion (PostIncr) (TypedExpression ((Iden (Name [] iden@(Identifier name))), _ )) cp lstVarTypTupel  instructionsList = let   
+    -- index von wert wenn dieser lokal gespeichert ist
+    indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel) 
+    -- index von wert wenn dieser global gespeichert ist
+    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp)  
+                -- globale variable  
+    preincr     | (isNothing indexOfValueInLstVarTypTupel)  = let
+                    incr = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool))), (Iconst_1), (Iadd), (Putfield (fromIntegral (fromJust indexInConstantPool)))]
+                    in incr
+                -- lokale variable
+                | otherwise = let
+                    incr = instructionsList ++ [(Iinc (fromJust indexOfValueInLstVarTypTupel) 1)]
+                    in incr
+    in (lstVarTypTupel, preincr)
+translateSEUnOpExprssion (PreDecr) (TypedExpression ((Iden (Name [] iden@(Identifier name))), _ )) cp lstVarTypTupel  instructionsList = let
+    -- index von wert wenn dieser lokal gespeichert ist
+    indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel) 
+    -- index von wert wenn dieser global gespeichert ist
+    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp)  
+                -- globale variable  
+    preincr     | (isNothing indexOfValueInLstVarTypTupel)  = let
+                    incr = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool))), (Iconst_1), (Isub), (Putfield (fromIntegral (fromJust indexInConstantPool)))]
+                    in incr
+                -- lokale variable
+                | otherwise = let
+                    incr = instructionsList ++ [(Iinc (fromJust indexOfValueInLstVarTypTupel) (-1))]
+                    in incr
+    in (lstVarTypTupel, preincr)   
+translateSEUnOpExprssion (PostDecr) (TypedExpression ((Iden (Name [] iden@(Identifier name))), _ )) cp lstVarTypTupel  instructionsList = let 
+    -- index von wert wenn dieser lokal gespeichert ist
+    indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel) 
+    -- index von wert wenn dieser global gespeichert ist
+    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp)  
+                -- globale variable  
+    preincr     | (isNothing indexOfValueInLstVarTypTupel)  = let
+                    incr = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool))), (Iconst_1), (Isub), (Putfield (fromIntegral (fromJust indexInConstantPool)))]
+                    in incr
+                -- lokale variable
+                | otherwise = let
+                    incr = instructionsList ++ [(Iinc (fromJust indexOfValueInLstVarTypTupel) (-1))]
+                    in incr
+    in (lstVarTypTupel, preincr)  
 
--- da wir eh keine for schleifen unterstüzen ist es eigentlich nutzlos zwischen pre und post zu unterscheiden --> ich glaub mit unserer definiton wird das hier nicht umsetzbar
--- translateSEUnOpExprssion :: IncrOrDecr -> Expression -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
--- translateSEUnOpExprssion (PreIncr) expr cp lstVarTypTupel stck instructionsList = let
---     translatedExpression = (translateExpression expr cp lstVarTypTupel stck instructionsList)
 
--- translateSEUnOpExprssion (PostIncr)
--- translateSEUnOpExprssion (PreDecr)
--- translateSEUnOpExprssion (PostDecr)
-
-translateInstantiationStmtExpr :: Name -> [Expression]  -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateInstantiationStmtExpr (Name pth (Identifier iden)) exprsns constantPool lstVarTypTupel stck instructionsList = let
+translateInstantiationStmtExpr :: Name -> [Expression]  -> Dictionary -> [ListVarTypTupel] -> Instructions -> Type -> ReturnValueTupel
+translateInstantiationStmtExpr (Name pth (Identifier iden)) exprsns constantPool lstVarTypTupel  instructionsList name@(RefType (Name pthCls (Identifier clsName))) = let
     -- get the class ref for: "new" - Operation
-    classIndexCP_OfName = (fromJust (dictLookUp ("class " ++ iden) constantPool)) -- TESTEN TODO
+    classIndexCP_OfName = (fromJust (dictLookUp ("class " ++ clsName) constantPool)) 
     -- get method ref of constructor from class
-    getConstructorIndex_OfName = (fromJust (dictLookUp ("Method " ++ iden ++ ".<init>:" ++ (mapParametersMethodToDiscriptor exprsns JVoid)) constantPool))
+    getConstructorIndex_OfName = (fromJust (dictLookUp ("Method " ++ clsName ++ ".<init>:" ++ (mapParametersMethodToDiscriptor exprsns JVoid)) constantPool))
     -- create object and dublicate
     newAndDupList = instructionsList ++ [(New (fromIntegral classIndexCP_OfName)), (Dup)]
     -- translate Expression
-    translatedExpressions = (getInstructionListOfReturnTupel (translateListOfExpressions exprsns constantPool lstVarTypTupel stck instructionsList))
+    translatedExpressions = (getInstructionListOfReturnTupel (translateListOfExpressions exprsns constantPool lstVarTypTupel  []))
     -- contructor call
-    contructorTranslated = translatedExpressions ++ [(Invokespecial (fromIntegral getConstructorIndex_OfName))]
+    contructorTranslated = newAndDupList ++  translatedExpressions ++ [(Invokespecial (fromIntegral getConstructorIndex_OfName))]
     in (lstVarTypTupel, contructorTranslated)
 
 mapParametersMethodToDiscriptor :: [Expression] -> Type -> String
 mapParametersMethodToDiscriptor exprs returnType = methodDescriptorToString (map (\(TypedExpression(_, t)) -> t) exprs) returnType
 
-translateListOfExpressions :: [Expression] -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateListOfExpressions [] constantPool lstVarTypTupel stck instructionsList = (lstVarTypTupel, instructionsList)
-translateListOfExpressions (x : []) constantPool lstVarTypTupel stck instructionsList = (translateExpression x constantPool lstVarTypTupel stck instructionsList)
-translateListOfExpressions (x : xs ) constantPool lstVarTypTupel stck instructionsList = let
-    translatedFirstExpression = (translateExpression x constantPool lstVarTypTupel stck instructionsList)
-    translatedRest = (translateListOfExpressions xs constantPool lstVarTypTupel stck (getInstructionListOfReturnTupel translatedFirstExpression))
+translateListOfExpressions :: [Expression] -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translateListOfExpressions [] constantPool lstVarTypTupel   instructionsList = (lstVarTypTupel, instructionsList)
+translateListOfExpressions (x : []) constantPool lstVarTypTupel   instructionsList = (translateExpression x constantPool lstVarTypTupel   instructionsList)
+translateListOfExpressions (x : xs ) constantPool lstVarTypTupel   instructionsList = let
+    translatedFirstExpression = (translateExpression x constantPool lstVarTypTupel   instructionsList)
+    translatedRest = (translateListOfExpressions xs constantPool lstVarTypTupel   (getInstructionListOfReturnTupel translatedFirstExpression))
     in (lstVarTypTupel, (getInstructionListOfReturnTupel translatedRest))
 
 
-translateAssignStmtExpr :: AssignOp -> Name -> Expression -> Type -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
--- TODO null, I2c evtl noch hinzufügen
--- TODO check pth != " " -> dann nicht in eigenem objekt
-translateAssignStmtExpr (NormalAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel stck instructionsList = let
+translateAssignStmtExpr :: AssignOp -> Name -> Expression -> Type -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translateAssignStmtExpr (NormalAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel   instructionsList = let
     -- index von wert wenn dieser lokal gespeichert ist
     indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel) 
     -- index von wert wenn dieser global gespeichert ist
-    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp) 
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+
+    indexInConstantPool = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)    
                                 -- globale variable, speichere mit putfield
     assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel)  = let
                            loadFieldInstrLst = instructionsList ++ [(Aload_0)]
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadFieldInstrLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadFieldInstrLst))
                            saveInFieldInstr = translatedAssignmentExpression ++ [(Putfield (fromIntegral (fromJust indexInConstantPool)))]      -- is in constantenpool
                            in saveInFieldInstr
                                 -- lokale variable
                           | otherwise = let
-                            translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck instructionsList))
+                            translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   instructionsList))
                             saveToLoacVarInstr = (getInstructionListOfReturnTupel (getStoreCommandLocal indexOfValueInLstVarTypTupel typ cp lstVarTypTupel translatedAssignmentExpression))
                             in saveToLoacVarInstr
 
    in (lstVarTypTupel, assignmetInstructions)
 
-translateAssignStmtExpr (MultiplyAssign) (Name _ iden@(Identifier name)) expr typ cp lstVarTypTupel stck instructionsList = let
+translateAssignStmtExpr (MultiplyAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel   instructionsList = let
      -- index von wert wenn dieser lokal gespeichert ist
-     indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel)
+    indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel)
      -- index von wert wenn dieser global gespeichert ist
-     indexInConstantPool = (dictLookUp ("Field this." ++ name) cp)                     
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+
+    indexInConstantPool = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)                 
                                  -- globale variable, speichere mit putfield  
-     assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel) = let
+    assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel) = let
                             loadFieldInstrLst = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool)))]
-                            translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadFieldInstrLst))
+                            translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadFieldInstrLst))
                             mulAndSaveInFieldInstr = translatedAssignmentExpression ++ [(Imul), (Putfield (fromIntegral (fromJust indexInConstantPool)))] -- is in constantenpool
                             in mulAndSaveInFieldInstr
                                  -- lokale variable
                            | (otherwise) = let
                             loadLocalVarInstLst = (getInstructionListOfReturnTupel (getLoadFromLocalVar indexOfValueInLstVarTypTupel typ lstVarTypTupel instructionsList))
-                            translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadLocalVarInstLst))
+                            translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadLocalVarInstLst))
                             mulInstruction = translatedAssignmentExpression ++ [(Imul)]
                             saveInLocalVarInstr =  (getInstructionListOfReturnTupel (getStoreCommandLocal indexOfValueInLstVarTypTupel typ cp lstVarTypTupel mulInstruction))
                             in saveInLocalVarInstr
     in (lstVarTypTupel, assignmetInstructions)
 
-translateAssignStmtExpr (DivideAssign) (Name _ iden@(Identifier name)) expr typ cp lstVarTypTupel stck instructionsList = let
+translateAssignStmtExpr (DivideAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel   instructionsList = let
     -- index von wert wenn dieser lokal gespeichert ist
     indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel)
     -- index von wert wenn dieser global gespeichert ist
-    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp)    
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+    indexInConstantPool = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)    
                                 -- globale variable, speichere mit putfield
     assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel) = let
                            loadFieldInstrLst = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool)))]
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadFieldInstrLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadFieldInstrLst))
                            mulAndSaveInFieldInstr = translatedAssignmentExpression ++ [(Idiv), (Putfield (fromIntegral (fromJust indexInConstantPool)))] -- is in constantenpool
                            in mulAndSaveInFieldInstr
                                 -- lokale variable
                           | (otherwise) = let
                            loadLocalVarInstLst = (getInstructionListOfReturnTupel (getLoadFromLocalVar indexOfValueInLstVarTypTupel typ lstVarTypTupel instructionsList))
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadLocalVarInstLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadLocalVarInstLst))
                            mulInstruction = translatedAssignmentExpression ++ [(Idiv)]
                            saveInLocalVarInstr =  (getInstructionListOfReturnTupel (getStoreCommandLocal indexOfValueInLstVarTypTupel typ cp lstVarTypTupel mulInstruction))
                            in saveInLocalVarInstr
    in (lstVarTypTupel, assignmetInstructions)
 
-translateAssignStmtExpr (ModuloAssign) (Name _ iden@(Identifier name)) expr typ cp lstVarTypTupel stck instructionsList = let
+translateAssignStmtExpr (ModuloAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel   instructionsList = let
     -- index von wert wenn dieser lokal gespeichert ist
     indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel)
     -- index von wert wenn dieser global gespeichert ist
-    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp)    
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+    indexInConstantPool = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)        
                                 -- globale variable, speichere mit putfield
     assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel) = let
                            loadFieldInstrLst = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool)))]
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadFieldInstrLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadFieldInstrLst))
                            mulAndSaveInFieldInstr = translatedAssignmentExpression ++ [(Irem), (Putfield (fromIntegral (fromJust indexInConstantPool)))] -- is in constantenpool
                            in mulAndSaveInFieldInstr
                                 -- lokale variable
                           | (otherwise) = let
                            loadLocalVarInstLst = (getInstructionListOfReturnTupel (getLoadFromLocalVar indexOfValueInLstVarTypTupel typ lstVarTypTupel instructionsList))
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadLocalVarInstLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadLocalVarInstLst))
                            mulInstruction = translatedAssignmentExpression ++ [(Irem)]
                            saveInLocalVarInstr =  (getInstructionListOfReturnTupel (getStoreCommandLocal indexOfValueInLstVarTypTupel typ cp lstVarTypTupel mulInstruction))
                            in saveInLocalVarInstr
    in (lstVarTypTupel, assignmetInstructions)
 
-translateAssignStmtExpr (PlusAssign) (Name _ iden@(Identifier name)) expr typ cp lstVarTypTupel stck instructionsList = let
+translateAssignStmtExpr (PlusAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel   instructionsList = let
     -- index von wert wenn dieser lokal gespeichert ist
     indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel)
     -- index von wert wenn dieser global gespeichert ist
-    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp)    
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+    indexInConstantPool = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)        
                                 -- globale variable, speichere mit putfield
     assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel) = let
                            loadFieldInstrLst = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool)))]
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadFieldInstrLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadFieldInstrLst))
                            mulAndSaveInFieldInstr = translatedAssignmentExpression ++ [(Iadd), (Putfield (fromIntegral (fromJust indexInConstantPool)))] -- is in constantenpool
                            in mulAndSaveInFieldInstr
                                 -- lokale variable
                           | (otherwise) = let
                            loadLocalVarInstLst = (getInstructionListOfReturnTupel (getLoadFromLocalVar indexOfValueInLstVarTypTupel typ lstVarTypTupel instructionsList))
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadLocalVarInstLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadLocalVarInstLst))
                            mulInstruction = translatedAssignmentExpression ++ [(Iadd)]
                            saveInLocalVarInstr =  (getInstructionListOfReturnTupel (getStoreCommandLocal indexOfValueInLstVarTypTupel typ cp lstVarTypTupel mulInstruction))
                            in saveInLocalVarInstr
    in (lstVarTypTupel, assignmetInstructions)
 
-translateAssignStmtExpr (MinusAssign) (Name _ iden@(Identifier name)) expr typ cp lstVarTypTupel stck instructionsList = let
+translateAssignStmtExpr (MinusAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel   instructionsList = let
     -- index von wert wenn dieser lokal gespeichert ist
     indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel)
     -- index von wert wenn dieser global gespeichert ist
-    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp)    
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+    indexInConstantPool = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)        
                                 -- globale variable, speichere mit putfield
     assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel) = let
                            loadFieldInstrLst = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool)))]
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadFieldInstrLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadFieldInstrLst))
                            mulAndSaveInFieldInstr = translatedAssignmentExpression ++ [(Isub), (Putfield (fromIntegral (fromJust indexInConstantPool)))] -- is in constantenpool
                            in mulAndSaveInFieldInstr
                                 -- lokale variable,
                           | (otherwise) = let
                            loadLocalVarInstLst = (getInstructionListOfReturnTupel (getLoadFromLocalVar indexOfValueInLstVarTypTupel typ lstVarTypTupel instructionsList))
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadLocalVarInstLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadLocalVarInstLst))
                            mulInstruction = translatedAssignmentExpression ++ [(Isub)]
                            saveInLocalVarInstr =  (getInstructionListOfReturnTupel (getStoreCommandLocal indexOfValueInLstVarTypTupel typ cp lstVarTypTupel mulInstruction))
                            in saveInLocalVarInstr
    in (lstVarTypTupel, assignmetInstructions)
 
-translateAssignStmtExpr (LeftShiftAssign) (Name _ iden@(Identifier name)) expr typ cp lstVarTypTupel stck instructionsList = let
+translateAssignStmtExpr (LeftShiftAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel   instructionsList = let
     -- index von wert wenn dieser lokal gespeichert ist
     indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel)
     -- index von wert wenn dieser global gespeichert ist
-    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp)   
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+    indexInConstantPool = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)       
                                 -- globale variable, speichere mit putfield
     assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel) = let
                            loadFieldInstrLst = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool)))]
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadFieldInstrLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadFieldInstrLst))
                            mulAndSaveInFieldInstr = translatedAssignmentExpression ++ [(Ishl), (Putfield (fromIntegral (fromJust indexInConstantPool)))] -- is in constantenpool
                            in mulAndSaveInFieldInstr
                                 -- lokale variable
                           | (otherwise) = let
                            loadLocalVarInstLst = (getInstructionListOfReturnTupel (getLoadFromLocalVar indexOfValueInLstVarTypTupel typ lstVarTypTupel instructionsList))
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadLocalVarInstLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadLocalVarInstLst))
                            mulInstruction = translatedAssignmentExpression ++ [(Ishl)]
                            saveInLocalVarInstr =  (getInstructionListOfReturnTupel (getStoreCommandLocal indexOfValueInLstVarTypTupel typ cp lstVarTypTupel mulInstruction))
                            in saveInLocalVarInstr
    in (lstVarTypTupel, assignmetInstructions)
 
-translateAssignStmtExpr (ShiftRightAssign) (Name _ iden@(Identifier name)) expr typ cp lstVarTypTupel stck instructionsList = let
+translateAssignStmtExpr (ShiftRightAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel   instructionsList = let
     -- index von wert wenn dieser lokal gespeichert ist
     indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel)
     -- index von wert wenn dieser global gespeichert ist
-    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp) 
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+    indexInConstantPool = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)     
                                 -- globale variable, speichere mit putfield
     assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel) = let
                            loadFieldInstrLst = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool)))]
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadFieldInstrLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadFieldInstrLst))
                            mulAndSaveInFieldInstr = translatedAssignmentExpression ++ [(Ishr), (Putfield (fromIntegral (fromJust indexInConstantPool)))] -- is in constantenpool
                            in mulAndSaveInFieldInstr
                                 -- lokale variable
                           | (otherwise) = let
                            loadLocalVarInstLst = (getInstructionListOfReturnTupel (getLoadFromLocalVar indexOfValueInLstVarTypTupel typ lstVarTypTupel instructionsList))
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadLocalVarInstLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadLocalVarInstLst))
                            mulInstruction = translatedAssignmentExpression ++ [(Ishr)]
                            saveInLocalVarInstr =  (getInstructionListOfReturnTupel (getStoreCommandLocal indexOfValueInLstVarTypTupel typ cp lstVarTypTupel mulInstruction))
                            in saveInLocalVarInstr
    in (lstVarTypTupel, assignmetInstructions)
 
-translateAssignStmtExpr (UnsignedShiftRightAssign) (Name _ iden@(Identifier name)) expr typ cp lstVarTypTupel stck instructionsList = let
+translateAssignStmtExpr (UnsignedShiftRightAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel   instructionsList = let
     -- index von wert wenn dieser lokal gespeichert ist
     indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel)
     -- index von wert wenn dieser global gespeichert ist
-    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp) 
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+    indexInConstantPool = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)     
                                 -- globale variable, speichere mit putfield
     assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel) = let
                            loadFieldInstrLst = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool)))]
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadFieldInstrLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadFieldInstrLst))
                            mulAndSaveInFieldInstr = translatedAssignmentExpression ++ [(Iushr), (Putfield (fromIntegral (fromJust indexInConstantPool)))] -- is in constantenpool
                            in mulAndSaveInFieldInstr
                                 -- lokale variable
                           | (otherwise) = let
                            loadLocalVarInstLst = (getInstructionListOfReturnTupel (getLoadFromLocalVar indexOfValueInLstVarTypTupel typ lstVarTypTupel instructionsList))
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadLocalVarInstLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadLocalVarInstLst))
                            mulInstruction = translatedAssignmentExpression ++ [(Iushr)]
                            saveInLocalVarInstr =  (getInstructionListOfReturnTupel (getStoreCommandLocal indexOfValueInLstVarTypTupel typ cp lstVarTypTupel mulInstruction))
                            in saveInLocalVarInstr
    in (lstVarTypTupel, assignmetInstructions)
 
-translateAssignStmtExpr (AndAssign) (Name _ iden@(Identifier name)) expr typ cp lstVarTypTupel stck instructionsList = let
+translateAssignStmtExpr (AndAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel   instructionsList = let
     -- index von wert wenn dieser lokal gespeichert ist
     indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel)
     -- index von wert wenn dieser global gespeichert ist
-    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp) 
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+    indexInConstantPool = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)     
                                 -- globale variable, speichere mit putfield
     assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel) = let
                            loadFieldInstrLst = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool)))]
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadFieldInstrLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadFieldInstrLst))
                            mulAndSaveInFieldInstr = translatedAssignmentExpression ++ [(Iand), (Putfield (fromIntegral (fromJust indexInConstantPool)))] -- is in constantenpool
                            in mulAndSaveInFieldInstr
                                 -- lokale variable
                           | (otherwise) = let
                            loadLocalVarInstLst = (getInstructionListOfReturnTupel (getLoadFromLocalVar indexOfValueInLstVarTypTupel typ lstVarTypTupel instructionsList))
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadLocalVarInstLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadLocalVarInstLst))
                            mulInstruction = translatedAssignmentExpression ++ [(Iand)]
                            saveInLocalVarInstr =  (getInstructionListOfReturnTupel (getStoreCommandLocal indexOfValueInLstVarTypTupel typ cp lstVarTypTupel mulInstruction))
                            in saveInLocalVarInstr
    in (lstVarTypTupel, assignmetInstructions)
 
-translateAssignStmtExpr (BitXOrAssign) (Name _ iden@(Identifier name)) expr typ cp lstVarTypTupel stck instructionsList = let
+translateAssignStmtExpr (BitXOrAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel   instructionsList = let
     -- index von wert wenn dieser lokal gespeichert ist
     indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel)
     -- index von wert wenn dieser global gespeichert ist
-    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp) 
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+    indexInConstantPool = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)     
                                 -- globale variable, speichere mit putfield
     assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel) = let
                            loadFieldInstrLst = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool)))]
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadFieldInstrLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadFieldInstrLst))
                            mulAndSaveInFieldInstr = translatedAssignmentExpression ++ [(Ixor), (Putfield (fromIntegral (fromJust indexInConstantPool)))] -- is in constantenpool
                            in mulAndSaveInFieldInstr
                                 -- lokale variable,
                           | (otherwise) = let
                            loadLocalVarInstLst = (getInstructionListOfReturnTupel (getLoadFromLocalVar indexOfValueInLstVarTypTupel typ lstVarTypTupel instructionsList))
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadLocalVarInstLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadLocalVarInstLst))
                            mulInstruction = translatedAssignmentExpression ++ [(Ixor)]
                            saveInLocalVarInstr =  (getInstructionListOfReturnTupel (getStoreCommandLocal indexOfValueInLstVarTypTupel typ cp lstVarTypTupel mulInstruction))
                            in saveInLocalVarInstr
    in (lstVarTypTupel, assignmetInstructions)
 
-translateAssignStmtExpr (OrAssign) (Name _ iden@(Identifier name)) expr typ cp lstVarTypTupel stck instructionsList = let
+translateAssignStmtExpr (OrAssign) (Name pth iden@(Identifier name)) expr typ cp lstVarTypTupel   instructionsList = let
     -- index von wert wenn dieser lokal gespeichert ist
     indexOfValueInLstVarTypTupel = (searchIdentInListVarTypTupel iden lstVarTypTupel)
     -- index von wert wenn dieser global gespeichert ist
-    indexInConstantPool = (dictLookUp ("Field this." ++ name) cp) 
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+    indexInConstantPool = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)     
                                 -- globale variable, speichere mit putfield
     assignmetInstructions | (isNothing indexOfValueInLstVarTypTupel) = let
                            loadFieldInstrLst = instructionsList ++ [(Aload_0), (Dup), (Getfield (fromIntegral (fromJust indexInConstantPool)))]
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadFieldInstrLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadFieldInstrLst))
                            mulAndSaveInFieldInstr = translatedAssignmentExpression ++ [(Ior), (Putfield (fromIntegral (fromJust indexInConstantPool)))] -- is in constantenpool
                            in mulAndSaveInFieldInstr
                                 -- lokale variable
                           | (otherwise) = let
                            loadLocalVarInstLst = (getInstructionListOfReturnTupel (getLoadFromLocalVar indexOfValueInLstVarTypTupel typ lstVarTypTupel instructionsList))
-                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel stck loadLocalVarInstLst))
+                           translatedAssignmentExpression = (getInstructionListOfReturnTupel (translateExpression expr cp lstVarTypTupel   loadLocalVarInstLst))
                            mulInstruction = translatedAssignmentExpression ++ [(Ior)]
                            saveInLocalVarInstr =  (getInstructionListOfReturnTupel (getStoreCommandLocal indexOfValueInLstVarTypTupel typ cp lstVarTypTupel mulInstruction))
                            in saveInLocalVarInstr
    in (lstVarTypTupel, assignmetInstructions)
 
-translateTernaryIf :: Expression -> Expression -> Expression -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translateTernaryIf cond els thn cp lstVarTypTupel stck instructionsList = let -- warum in ast verkehrt ?!?
-    translatedCondition = (translateExpression cond cp lstVarTypTupel stck instructionsList) -- condition übersetzt
-    instrLstWithPlaceHolder_If = (getInstructionListOfReturnTupel translatedCondition) ++ [(Ifne 1)] -- instruktionsliste mit platzhalter if
-    sizeOfListUntilNow = (length instrLstWithPlaceHolder_If) -- länge der instruktionsliste ink neuem platzhalter if
-    thenInstructionList = (getInstructionListOfReturnTupel (translateExpression thn cp lstVarTypTupel stck instrLstWithPlaceHolder_If)) -- intrliste then statement
-    --                                                                          ^^^ wirklich ?
-    addressToThenStatement = (getNextInstructionIndex thenInstructionList) + 3 -- adresse von else anfang (voerst mit normalem goto größe)
-    splittedList = (splitAt sizeOfListUntilNow thenInstructionList) -- splitte : links mit if platzhalter rechts then statment
-    listWithCorrectIndex_if = (init (fst splittedList)) ++ [(Ifne addressToThenStatement)] ++ (snd splittedList) ++ [(Goto 1)] -- list mit cond richtigem if jump und then statement + platzhalter goto
-    sizeOfListUntilNow_second = (length listWithCorrectIndex_if) -- länge der instruktionsliste ink neuem platzhalter goto
-    elseInstructionList = (getInstructionListOfReturnTupel (translateExpression els cp lstVarTypTupel stck instrLstWithPlaceHolder_If)) -- intrliste else statement
-    gotoJumpAddress = (getNextInstructionIndex elseInstructionList) -- sprungadresse für then GOTO hinter else
-    splittedList_second = (splitAt sizeOfListUntilNow_second elseInstructionList) -- splitte
-    finishedTranslationStmtLst =  (init (fst splittedList)) ++ [(Goto gotoJumpAddress)] ++ (snd splittedList) -- ändere goto adresse
-    in (lstVarTypTupel, finishedTranslationStmtLst) -- gebe zurück
+translateTernaryIf :: Expression -> Expression -> Expression -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translateTernaryIf cond els thn cp lstVarTypTupel   instructionsList = let 
+    translatedCondition = (getInstructionListOfReturnTupel (translateExpression cond cp lstVarTypTupel   instructionsList))  
+    thenInstructionList = (getInstructionListOfReturnTupel (translateExpression thn cp lstVarTypTupel   []))  
+    addressToThenStatement = (getNextInstructionIndex thenInstructionList) + (getInstructionSize (Ifne 1)) + (getInstructionSize (Goto 1))  
+    conditionFinished = translatedCondition ++ [(Ifne addressToThenStatement)]
+    elseInstructionList = (getInstructionListOfReturnTupel (translateExpression els cp lstVarTypTupel   []))
+    gotoJumpAddress = (getNextInstructionIndex elseInstructionList) + (getInstructionSize (Goto 1))
+    thenFinished = thenInstructionList ++ [(Goto gotoJumpAddress)]
+    finishedTranslationStmtLst = conditionFinished ++ thenFinished ++ elseInstructionList        
+    in (lstVarTypTupel, finishedTranslationStmtLst)
 
 
     -- START OF PRIM BIN OP - EXPRESSION TRANSLATION --
-translatePrimBinOp :: BinOp -> Expression -> Expression -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
--- TODO
--- translatePrimBinOp (And) exprL exprR cp lstVarTypTupel stck instructionsList = let
--- translatePrimBinOp (Or)
--- translatePrimBinOp (InstaneOf)
-translatePrimBinOp (Eq) exprL exprR cp lstVarTypTupel stck instructionsList = let
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp :: BinOp -> Expression -> Expression -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translatePrimBinOp (And) exprL exprR cp lstVarTypTupel instructionsList = let
+    translateLeft = (getInstructionListOfReturnTupel (translateExpression exprL cp lstVarTypTupel []))
+    translateRight = (getInstructionListOfReturnTupel (translateExpression exprR cp lstVarTypTupel []))
+    ifFirstFalseJumpLength = (sumInstructionSizeInInstructionList translateRight) + (sumInstructionSizeInInstructionList [(Ifeq 1), (Ifeq 1), (Iconst_1), (Goto 1)])
+    andFinished = instructionsList ++ translateLeft ++ [(Ifeq ifFirstFalseJumpLength)] ++ translateRight ++ [(Ifeq 7), (Iconst_1), (Goto  ((sumInstructionSizeInInstructionList [(Goto 0), (Iconst_0)]))), (Iconst_0)] 
+    in (lstVarTypTupel, andFinished)
+
+translatePrimBinOp (Or) exprL exprR cp lstVarTypTupel instructionsList = let
+    translateLeft = (getInstructionListOfReturnTupel (translateExpression exprL cp lstVarTypTupel []))
+    translateRight = (getInstructionListOfReturnTupel (translateExpression exprR cp lstVarTypTupel []))
+    ifFirstTrueJumpLength = (sumInstructionSizeInInstructionList translateRight) + (sumInstructionSizeInInstructionList [(Ifeq 1), (Ifeq 1), (Iconst_1), (Goto 1)])
+    orFinished = instructionsList ++ translateLeft ++ [(Ifne ifFirstTrueJumpLength)] ++ translateRight ++ [(Ifne 7), (Iconst_0), (Goto  ((sumInstructionSizeInInstructionList [(Goto 0), (Iconst_0)]))), (Iconst_1)]  
+    in (lstVarTypTupel, orFinished)
+translatePrimBinOp (Eq) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     nextIndexOfInstruction = (getNextInstructionIndex leftAndRightSideTranslated)
-    finalInstructionList = leftAndRightSideTranslated ++ [(If_Icmpne (nextIndexOfInstruction + 7)), (Iconst_1), (Goto (nextIndexOfInstruction + 8)), (Iconst_0)] -- schreibe wert auf stack (entweder 1 oder 0), abhängig von vergleich
+    finalInstructionList = leftAndRightSideTranslated ++ [(If_Icmpeq 7), (Iconst_0), (Goto  ((sumInstructionSizeInInstructionList [(Goto 1), (Iconst_0)])) ), (Iconst_1)] 
+    in (lstVarTypTupel, finalInstructionList) 
+
+translatePrimBinOp (Less) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
+    nextIndexOfInstruction = (getNextInstructionIndex leftAndRightSideTranslated)
+    finalInstructionList = leftAndRightSideTranslated ++ [(If_Icmpge 7), (Iconst_1), (Goto  ((sumInstructionSizeInInstructionList [(Goto 1), (Iconst_0)])) ), (Iconst_0)]
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (Less) exprL exprR cp lstVarTypTupel stck instructionsList = let -- anders herum als im ast, da java anders herum funktioniert
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (LessEq) exprL exprR cp lstVarTypTupel   instructionsList = let 
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     nextIndexOfInstruction = (getNextInstructionIndex leftAndRightSideTranslated)
-    finalInstructionList = leftAndRightSideTranslated ++ [(If_Icmpge (nextIndexOfInstruction + 7)), (Iconst_1), (Goto (nextIndexOfInstruction + 8)), (Iconst_0)] -- schreibe wert auf stack (entweder 1 oder 0), abhängig von vergleich
+    finalInstructionList = leftAndRightSideTranslated ++ [(If_Icmpgt 7), (Iconst_1), (Goto  (sumInstructionSizeInInstructionList [(Goto 1), (Iconst_0)])), (Iconst_0)] 
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (LessEq) exprL exprR cp lstVarTypTupel stck instructionsList = let -- anders herum als im ast, da java anders herum funktioniert
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (Greater) exprL exprR cp lstVarTypTupel   instructionsList = let 
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     nextIndexOfInstruction = (getNextInstructionIndex leftAndRightSideTranslated)
-    finalInstructionList = leftAndRightSideTranslated ++ [(If_Icmpgt (nextIndexOfInstruction + 7)), (Iconst_1), (Goto (nextIndexOfInstruction + 8)), (Iconst_0)] -- schreibe wert auf stack (entweder 1 oder 0), abhängig von vergleich
+    finalInstructionList = leftAndRightSideTranslated ++ [(If_Icmple 7), (Iconst_1), (Goto  (sumInstructionSizeInInstructionList [(Goto 1), (Iconst_0)])), (Iconst_0)] 
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (Greater) exprL exprR cp lstVarTypTupel stck instructionsList = let -- anders herum als im ast, da java anders herum funktioniert
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (GreaterEq) exprL exprR cp lstVarTypTupel   instructionsList = let 
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     nextIndexOfInstruction = (getNextInstructionIndex leftAndRightSideTranslated)
-    finalInstructionList = leftAndRightSideTranslated ++ [(If_Icmple (nextIndexOfInstruction + 7)), (Iconst_1), (Goto (nextIndexOfInstruction + 8)), (Iconst_0)] -- schreibe wert auf stack (entweder 1 oder 0), abhängig von vergleich
+    finalInstructionList = leftAndRightSideTranslated ++ [(If_Icmplt 7), (Iconst_1), (Goto  (sumInstructionSizeInInstructionList [(Goto 1), (Iconst_0)])), (Iconst_0)] 
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (GreaterEq) exprL exprR cp lstVarTypTupel stck instructionsList = let -- anders herum als im ast, da java anders herum funktioniert
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
-    nextIndexOfInstruction = (getNextInstructionIndex leftAndRightSideTranslated)
-    finalInstructionList = leftAndRightSideTranslated ++ [(If_Icmplt (nextIndexOfInstruction + 7)), (Iconst_1), (Goto (nextIndexOfInstruction + 8)), (Iconst_0)] -- schreibe wert auf stack (entweder 1 oder 0), abhängig von vergleich
-    in (lstVarTypTupel, finalInstructionList)
-
-translatePrimBinOp (Multiply) exprL exprR cp lstVarTypTupel stck instructionsList = let
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (Multiply) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     finalInstructionList = leftAndRightSideTranslated ++ [(Imul)]
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (Divide) exprL exprR cp lstVarTypTupel stck instructionsList = let
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (Divide) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     finalInstructionList = leftAndRightSideTranslated ++ [(Idiv)]
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (Add) exprL exprR cp lstVarTypTupel stck instructionsList = let
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (Add) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     finalInstructionList = leftAndRightSideTranslated ++ [(Iadd)]
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (Subtract) exprL exprR cp lstVarTypTupel stck instructionsList = let
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (Subtract) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     finalInstructionList = leftAndRightSideTranslated ++ [(Isub)]
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (Modulo) exprL exprR cp lstVarTypTupel stck instructionsList = let
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (Modulo) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     finalInstructionList = leftAndRightSideTranslated ++ [(Irem)]
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (ShiftRight) exprL exprR cp lstVarTypTupel stck instructionsList = let
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (ShiftRight) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     finalInstructionList = leftAndRightSideTranslated ++ [(Ishr)]
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (ShiftLeft) exprL exprR cp lstVarTypTupel stck instructionsList = let
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (ShiftLeft) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     finalInstructionList = leftAndRightSideTranslated ++ [(Ishl)]
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (UnsignedShiftRight) exprL exprR cp lstVarTypTupel stck instructionsList = let
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (UnsignedShiftRight) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     finalInstructionList = leftAndRightSideTranslated ++ [(Iushr)]
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (BitAnd) exprL exprR cp lstVarTypTupel stck instructionsList = let
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (BitAnd) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     finalInstructionList = leftAndRightSideTranslated ++ [(Iand)]
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (BitOr) exprL exprR cp lstVarTypTupel stck instructionsList = let
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (BitOr) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     finalInstructionList = leftAndRightSideTranslated ++ [(Ior)]
     in (lstVarTypTupel, finalInstructionList)
 
-translatePrimBinOp (BitXOr) exprL exprR cp lstVarTypTupel stck instructionsList = let
-    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel stck instructionsList))
+translatePrimBinOp (BitXOr) exprL exprR cp lstVarTypTupel   instructionsList = let
+    leftAndRightSideTranslated = (getInstructionListOfReturnTupel (translatePrimBinOpBase exprL exprR cp lstVarTypTupel   instructionsList))
     finalInstructionList = leftAndRightSideTranslated ++ [(Ixor)]
     in (lstVarTypTupel, finalInstructionList)
 
 
 -- Hilfsfunktion für PrimBinOps von Expression Übersetzung
-translatePrimBinOpBase :: Expression -> Expression -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translatePrimBinOpBase exprL exprR constantPool lstVarTypTupel stck instructionsList = let
-    leftSideOfExpressionTranslated = (getInstructionListOfReturnTupel (translateExpression exprL constantPool lstVarTypTupel stck instructionsList))
-    rightSideOfExpressionTranslated = (getInstructionListOfReturnTupel (translateExpression exprR constantPool lstVarTypTupel stck leftSideOfExpressionTranslated))
+translatePrimBinOpBase :: Expression -> Expression -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translatePrimBinOpBase exprL exprR constantPool lstVarTypTupel   instructionsList = let
+    leftSideOfExpressionTranslated = (getInstructionListOfReturnTupel (translateExpression exprL constantPool lstVarTypTupel   instructionsList))
+    rightSideOfExpressionTranslated = (getInstructionListOfReturnTupel (translateExpression exprR constantPool lstVarTypTupel   leftSideOfExpressionTranslated))
     in (lstVarTypTupel, rightSideOfExpressionTranslated)
 -- END OF PRIM BIN OP - EXPRESSION TRANSLATION --
 
-translatePrimUnOp :: UnOp -> Expression -> Dictionary -> [ListVarTypTupel] -> Stack Word16 -> Instructions -> ReturnValueTupel
-translatePrimUnOp (Not) expr cp lstVarTypTupel stck instructionsList = let
-    translatedExpression = (translateExpression expr cp lstVarTypTupel stck instructionsList) -- transtalted expression (must be boolean)
+translatePrimUnOp :: UnOp -> Expression -> Dictionary -> [ListVarTypTupel]   -> Instructions -> ReturnValueTupel
+translatePrimUnOp (Not) expr cp lstVarTypTupel   instructionsList = let
+    translatedExpression = (translateExpression expr cp lstVarTypTupel   instructionsList) -- transtalted expression (must be boolean)
     newInstructionLst = (getInstructionListOfReturnTupel translatedExpression)
-    nextIndexOfInstruction = (getNextInstructionIndex newInstructionLst)
-    finishedIntruction = newInstructionLst ++ [(Ifne (nextIndexOfInstruction + 7)), (Iconst_1), (Goto (nextIndexOfInstruction + 8)), (Iconst_0)]
+    finishedIntruction = newInstructionLst ++ [(Ifne 7), (Iconst_1), (Goto  (sumInstructionSizeInInstructionList [(Goto 1), (Iconst_0)])), (Iconst_0)]
     in (lstVarTypTupel, finishedIntruction)
 
-translatePrimUnOp (Neg) expr cp lstVarTypTupel stck instructionsList = let
-    translatedExpression = (translateExpression expr cp lstVarTypTupel stck instructionsList) -- transtalted expression (must be int)
+translatePrimUnOp (Neg) expr@(TypedExpression (_, typ)) cp lstVarTypTupel   instructionsList = let
+    translatedExpression = (translateExpression expr cp lstVarTypTupel   instructionsList) -- transtalted expression (must be int)
     newInstructionLst = (getInstructionListOfReturnTupel translatedExpression)
-    finishedIntruction = newInstructionLst ++ [(Iconst_M1), (Ixor)]
+    finishedIntruction | (isPrimTypeInt typ) = newInstructionLst ++ [(Iconst_M1), (Ixor), (Iconst_1), (Iadd)] -- two complement
+                       | otherwise = newInstructionLst ++ [(Iconst_M1), (Ixor)]
     in (lstVarTypTupel, finishedIntruction)
--- translatePrimUnOp (BitCompl) existiert nicht, nur bei assignment oder binary
 
 
 
 translateExpressionIden :: Compiler.Ast.Name -> Compiler.Ast.Type  -> Dictionary -> [ListVarTypTupel] -> Instructions -> ReturnValueTupel
--- translateExpressionIden nme (JVoid) cp lstVarTypTupel instructionsList TODO
---                           ____ -> ist in dem derzeitigen objekt
-translateExpressionIden (Name [] iden@(Identifier name)) typ cp lstVarTypTupel instructionsList = let
+translateExpressionIden (Name pth iden@(Identifier name)) typ cp lstVarTypTupel instructionsList = let
     -- get Index in Local variable list
     localVarLstIndex = (searchIdentInListVarTypTupel iden lstVarTypTupel) 
     -- get Index in constant pool
-    constanPoolIndex = (dictLookUp ("Field this." ++ name) cp)    
+    maybeThis | (null pth) = "this"
+              | (isIdenThis (head pth)) = "this"
+              | otherwise = (identifierToString  pth)
+    constanPoolIndex = (dictLookUp ("Field " ++ maybeThis ++ "." ++ name) cp)    
 
     loadInstruction | (isNothing localVarLstIndex) = instructionsList ++ [(Aload_0), (Getfield (fromIntegral (fromJust constanPoolIndex)))] -- in cp
                     | otherwise = (getInstructionListOfReturnTupel (getLoadFromLocalVar localVarLstIndex  typ lstVarTypTupel instructionsList)) -- local
     in (lstVarTypTupel, loadInstruction)
---                            ____ -> ist in einem anderen objekt
--- translateExpressionIden (Name pth iden) typ cp lstVarTypTupel instructionsList = let
---      -- get Index in Local variable list
---      localVarLstIndex = (searchIdentInListVarTypTupel (identifierToString pth) lstVarTypTupel)
---      -- get Index in constant pool
---     constanPoolIndex = (dictLookUp (identifierToString (pth ++ [iden])) cp)
 
---     -- load index of field ref
---     constantPoolInde = (getFieldRefIndex pth iden) -- TODO
---     --
-
+isIdenThis :: Identifier -> Bool
+isIdenThis (This) = True
+isIdenThis _ = False
 
 getLoadFromLocalVar :: Maybe Word8 -> Type -> [ListVarTypTupel] -> Instructions -> ReturnValueTupel
 getLoadFromLocalVar (Just index) (PrimType _) lstVarTypTupel instructionsList = (getLoadPrimCommandFromLocalVars index lstVarTypTupel instructionsList)
@@ -668,16 +752,18 @@ translateExpressionLiteral cp lstVarTypTupel instructionsList (IntegerL iVal) = 
 translateExpressionLiteral cp lstVarTypTupel instructionsList (BooleanL bVal) = (loadBooleanToStackInstruction bVal lstVarTypTupel instructionsList)
 translateExpressionLiteral cp lstVarTypTupel instructionsList (CharL cVal) = (loadCharacterToStackInstruction cVal lstVarTypTupel instructionsList)
 translateExpressionLiteral cp lstVarTypTupel instructionsList (StringL sVal) = (loadStringToStackInstruction sVal lstVarTypTupel cp instructionsList)
-translateExpressionLiteral cp lstVarTypTupel instructionsList (Null) = (loadNullToStackInstruction lstVarTypTupel instructionsList)-- eigentlich wird das hier nicht "direkt" benötigt weil auf not null prüft
+translateExpressionLiteral cp lstVarTypTupel instructionsList (Null) = (loadNullToStackInstruction lstVarTypTupel instructionsList)
 
 loadNullToStackInstruction :: [ListVarTypTupel] -> Instructions -> ReturnValueTupel
 loadNullToStackInstruction lstVarTypTupel instructionsList  = (lstVarTypTupel, instructionsList ++ [(Aconst_Null)])
 
 
 loadStringToStackInstruction :: String -> [ListVarTypTupel] -> Dictionary -> Instructions -> ReturnValueTupel
-loadStringToStackInstruction sVal lstVarTypTupel cp instructionsList = (lstVarTypTupel, instructionsList ++ [(Ldc (fromIntegral (fromJust (dictLookUp ("String " ++ sVal) cp))))]) -- TODO  anpassen (evtl swtich nach LDC_w oder LDC)
+loadStringToStackInstruction sVal lstVarTypTupel cp instructionsList = (lstVarTypTupel, instructionsList ++ [(Ldc (fromIntegral (fromJust (dictLookUp ("String " ++ sVal) cp))))]) 
 
-
+isPrimTypeInt :: Type -> Bool
+isPrimTypeInt (PrimType Int) = True
+isPrimTypeInt _ = False
 
 loadCharacterToStackInstruction :: Char -> [ListVarTypTupel] -> Instructions -> ReturnValueTupel
 loadCharacterToStackInstruction cVal lstVarTypTupel instructionsList | (ord cVal) < 128 = (lstVarTypTupel, instructionsList ++ [(Bipush (fromIntegral (ord cVal)))])
@@ -691,13 +777,13 @@ loadBooleanToStackInstruction bVal lstVarTypTupel instructionsList | bVal = (lst
 
 loadIntegerToStackInstruction :: Integer -> [ListVarTypTupel] -> Dictionary -> Instructions -> ReturnValueTupel
 loadIntegerToStackInstruction iVal lstVarTypTupel cp instructionsList | iVal > 32768 = let
-                                                                        indexCP = (fromIntegral (fromJust (dictLookUp ("Int "++ (show iVal)) cp))) -- TODO anpassen constant int im cp
+                                                                        indexCP = (fromIntegral (fromJust (dictLookUp ("Int " ++ (show iVal)) cp))) 
                                                                         newInstructionLst | indexCP > 256 = instructionsList ++ [(Ldc_W (fromIntegral indexCP))]
                                                                                           | otherwise = instructionsList ++ [(Ldc (fromIntegral indexCP))]
                                                                         in (lstVarTypTupel, newInstructionLst)
                                                                      | iVal > 127 = (lstVarTypTupel, instructionsList ++ [(Sipush (fromIntegral iVal))])
                                                                      | iVal < (-32769) = let
-                                                                        indexCP = (fromIntegral (fromJust (dictLookUp ("Int "++ (show iVal)) cp))) -- TODO anpassen constant int im cp
+                                                                        indexCP = (fromIntegral (fromJust (dictLookUp ("Int " ++ (show iVal)) cp))) 
                                                                         newInstructionLst | indexCP > 256 = instructionsList ++ [(Ldc_W  (fromIntegral indexCP))]
                                                                                           | otherwise = instructionsList ++ [(Ldc (fromIntegral indexCP))]
                                                                         in (lstVarTypTupel, newInstructionLst)
@@ -722,12 +808,17 @@ sumInstructionSizeInInstructionList (currentInstr : []) = (getInstructionSize cu
 sumInstructionSizeInInstructionList (currentInstr : remainingIntrs) = (getInstructionSize currentInstr) + (sumInstructionSizeInInstructionList remainingIntrs)
 
 
-searchIdentInListVarTypTupel :: Identifier -> [ListVarTypTupel] -> Maybe Word8 -- -> existiert die funktion schon?
+searchIdentInListVarTypTupel :: Identifier -> [ListVarTypTupel] -> Maybe Word8 
 searchIdentInListVarTypTupel (Identifier iden) [] = Nothing
 searchIdentInListVarTypTupel (Identifier iden) (x : []) | (getVarNameOfListVarTypTupel x) == iden = Just (getIndexOfListVarTypTupel x)
 searchIdentInListVarTypTupel (Identifier iden) (x :xs) | (getVarNameOfListVarTypTupel x) == iden = Just (getIndexOfListVarTypTupel x)
                                                        | otherwise = (searchIdentInListVarTypTupel (Identifier iden) xs)
 
+searchTypInListVarTypTupel :: Identifier -> [ListVarTypTupel] -> Maybe Type 
+searchTypInListVarTypTupel (Identifier iden) [] = Nothing
+searchTypInListVarTypTupel (Identifier iden) (x : []) | (getVarNameOfListVarTypTupel x) == iden = Just (getTypeOfListVarTypTupel x)
+searchTypInListVarTypTupel (Identifier iden) (x :xs) | (getVarNameOfListVarTypTupel x) == iden = Just (getTypeOfListVarTypTupel x)
+                                                     | otherwise = (searchTypInListVarTypTupel (Identifier iden) xs)
 
 getVarNameOfListVarTypTupel :: ListVarTypTupel -> String
 getVarNameOfListVarTypTupel (s, _ , _) = s
@@ -739,19 +830,12 @@ getTypeOfListVarTypTupel :: ListVarTypTupel -> Type
 getTypeOfListVarTypTupel (_,_,typ) = typ
 
 
+
+
 identifierToString :: [Identifier] -> String
 identifierToString [] = ""
 identifierToString ((Identifier s) : []) = s
 identifierToString ((Identifier s) : xs) = s ++ (identifierToString xs)
-
-                                                       -- (TypedExpression
---  ((TernaryIf
---   (TypedExpression ((PrimBinOp
---                      Less
---                      (TypedExpression ((Literal (IntegerL 4)), (PrimType Int)))
---                      (TypedExpression ((Literal (IntegerL 4)), (PrimType Int)))), (PrimType Boolean)))
---    (TypedExpression ((Literal (IntegerL 4)), (PrimType (Int))))
---    (TypedExpression ((Literal (IntegerL 4)), (PrimType (Int))))), (PrimType Int)))
 
 
 
