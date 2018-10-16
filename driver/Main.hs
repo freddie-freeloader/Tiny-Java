@@ -1,7 +1,7 @@
-{-# LANGUAGE MultiWayIf        #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE Rank2Types #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE MultiWayIf          #-}
+{-# LANGUAGE Rank2Types          #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE OverloadedStrings   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 
 import           Compiler.AbstractBytecode                                   (ClassFile)
@@ -13,16 +13,16 @@ import           Compiler.Type_Check                                         (ty
 import           Compiler.Utils                                              (Error (..))
 import           Control.Arrow                                               (first)
 import           Control.Applicative                                         (optional, (<|>))
-import           Control.Monad                                               (when)
+import           Control.Monad                                               (when, liftM2)
 import           Control.Monad.Loops                                         (unfoldM)
 import           Data.Maybe                                                  (fromMaybe)
 import qualified Data.Text as Text                                           (pack, unpack)
-import Control.Monad.Except                                                  (MonadError,throwError)
+import           Control.Monad.Except                                        (MonadError,throwError)
 import qualified Turtle as T                                                 (FilePath, Text, linesToText)
 import           Turtle.Format                                               (eprintf,printf,w,s,(%))
 import           Turtle.Options                                              (switch,Parser,argPath,options)
-import qualified           Turtle.Prelude as T                               (readTextFile,readline)
-import Control.Monad.Reader                                                  (MonadReader,MonadIO,ask,runReaderT,liftIO)
+import qualified Turtle.Prelude as T                                         (readTextFile,readline)
+import           Control.Monad.Reader                                        (MonadReader,MonadIO,ask,runReaderT,liftIO)
 
 main :: IO ()
 main = run
@@ -126,5 +126,6 @@ fullPipeline = untilTypecheck >>= mapM (mapM compileByteCode)
 fromEither :: MonadError e m => Either e a -> m a
 fromEither = either throwError pure
 
-applySndAndZip :: (Monad m)  => ([b] -> m [c]) -> [(a, b)] -> m [(a, c)]
-applySndAndZip f xs = f (map snd xs) >>= pure . zip (map fst xs)
+-- This looks like it could use some lens magic
+applySndAndZip :: (Monad m, Monad m2)  => (m b -> m2 (m c)) -> m (a, b) -> m2 (m (a, c))
+applySndAndZip f xs = f (fmap snd xs) >>= pure . liftM2 (,) (fmap fst xs)
